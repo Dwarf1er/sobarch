@@ -45,7 +45,7 @@ tokens:
 | `__TIMEZONE__` | `base.json` | e.g. `America/Montreal` |
 | `__USERNAME__` | `credentials.json` | |
 | `__ENC_PASSWORD__` | `credentials.json` | Must be replaced with a raw string; quotes can stay since this one *is* a string field. |
-| `__BLUETOOTH_DETECTED__` | `base.json` | Must be replaced with a raw `true`/`false` (remove the surrounding quotes too), based on whether a Bluetooth adapter is actually detected. Drives `archinstall`'s own `bluetooth_config` app mechanism, which installs `bluez`/`bluez-utils` and enables `bluetooth.service` together, so those packages are deliberately not in the plain `packages` list. |
+| `__BLUETOOTH_DETECTED__` | `base.json` | Must be replaced with a raw `true`/`false` (remove the surrounding quotes too), based on whether a Bluetooth adapter is actually detected. Drives `archinstall`'s own `bluetooth_config` app mechanism, which installs `bluez`/`bluez-utils` and enables `bluetooth.service` together. |
 
 ## Hardware Detection
 
@@ -110,9 +110,18 @@ straight from the GRUB menu, inspect or recover a file, reboot back.
 Nothing is touched or replaced. For the rarer case of wanting an old
 snapshot to become the new permanent `@`, `scripts/snapshot-rollback.sh`
 implements the Arch Wiki's [documented manual
-procedure](https://wiki.archlinux.org/title/Snapper#Restoring_/_to_its_previous_snapshot)
-run from a live ISO, not the `snapper rollback` subcommand, which the
-Wiki's own suggested layout explicitly isn't meant to be used with.
+procedure](https://wiki.archlinux.org/title/Snapper#Restoring_/_to_its_previous_snapshot),
+not the `snapper rollback` subcommand, which the Wiki's own suggested
+layout explicitly isn't meant to be used with (a guard at
+`/usr/local/bin/snapper` also warns and requires typed confirmation
+before letting `rollback` run at all, for anyone who tries it anyway).
+It supports two modes: a live ISO or rescue chroot (the only one that
+always works, even if the installed system can't boot at all), or
+`--online`, running directly on the currently booted system with no
+live ISO needed, since `fstab`'s `subvol=@` only resolves by name once,
+at mount time, so the running system stays bound to its subvolume by
+internal ID regardless of what the `@` directory entry gets renamed to
+on a separate, secondary mount of the same volume. This approach was taken directly from [yabsnap](https://github.com/hirak99/yabsnap).
 
 ## Documentation
 

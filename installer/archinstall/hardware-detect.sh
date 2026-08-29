@@ -1,7 +1,6 @@
 #!/bin/bash
 # One-time hardware detection, run by the TUI before generating
-# the archinstall JSON config from base.json. This is
-# not an ongoing runtime service: it runs once, at install time.
+# the archinstall JSON config from base.json.
 #
 # Prints shell variable assignments to stdout. The caller sources or
 # evals the output, then uses it to fill in base.json's placeholder
@@ -23,7 +22,8 @@
 # Hybrid-laptop-specific handling (PRIME/switcheroo-control,
 # chassis-type detection, an NVIDIA RTD3 power-management workaround)
 # is deliberately not included here: real value, but laptop-specific
-# scope beyond GPU-generation detection.
+# scope beyond GPU-generation detection, and again, I do not own that kind
+# of hardware so I can't test it'.
 
 set -euo pipefail
 
