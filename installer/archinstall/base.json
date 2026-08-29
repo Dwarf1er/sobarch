@@ -1,0 +1,232 @@
+{
+    "app_config": {
+        "audio_config": {
+            "audio": "pipewire"
+        },
+        "bluetooth_config": {
+            "enabled": false
+        },
+        "fonts_config": {
+            "fonts": [
+                "noto-fonts",
+                "noto-fonts-emoji",
+                "noto-fonts-cjk",
+                "ttf-liberation"
+            ]
+        },
+        "print_service_config": {
+            "enabled": false
+        }
+    },
+    "archinstall_language": "English",
+    "auth_config": {},
+    "bootloader_config": {
+        "bootloader": "Grub",
+        "removable": true,
+        "uki": false
+    },
+    "custom_commands": [],
+    "disk_config": {
+        "btrfs_options": {
+            "snapshot_config": {
+                "type": "Timeshift"
+            }
+        },
+        "config_type": "default_layout",
+        "device_modifications": [
+            {
+                "device": "__DISK_DEVICE__",
+                "partitions": [
+                    {
+                        "btrfs": [],
+                        "dev_path": null,
+                        "flags": [
+                            "boot",
+                            "esp"
+                        ],
+                        "fs_type": "fat32",
+                        "mount_options": [],
+                        "mountpoint": "/boot",
+                        "obj_id": "f183a408-983a-4d6f-b324-58f26193d7cf",
+                        "size": {
+                            "sector_size": {
+                                "unit": "B",
+                                "value": 512
+                            },
+                            "unit": "GiB",
+                            "value": 1
+                        },
+                        "start": {
+                            "sector_size": {
+                                "unit": "B",
+                                "value": 512
+                            },
+                            "unit": "MiB",
+                            "value": 1
+                        },
+                        "status": "create",
+                        "type": "primary"
+                    },
+                    {
+                        "btrfs": [
+                            {
+                                "mountpoint": "/",
+                                "name": "@"
+                            },
+                            {
+                                "mountpoint": "/home",
+                                "name": "@home"
+                            },
+                            {
+                                "mountpoint": "/var/log",
+                                "name": "@log"
+                            },
+                            {
+                                "mountpoint": "/var/cache/pacman/pkg",
+                                "name": "@pkg"
+                            }
+                        ],
+                        "dev_path": null,
+                        "flags": [],
+                        "fs_type": "btrfs",
+                        "mount_options": [
+                            "compress=zstd:3",
+                            "ssd",
+                            "discard=async",
+                            "space_cache=v2"
+                        ],
+                        "mountpoint": null,
+                        "obj_id": "f6e1016f-60b8-4815-b228-1ac56e408005",
+                        "size": {
+                            "sector_size": {
+                                "unit": "B",
+                                "value": 512
+                            },
+                            "unit": "B",
+                            "value": "__ROOT_PARTITION_SIZE_BYTES__"
+                        },
+                        "start": {
+                            "sector_size": {
+                                "unit": "B",
+                                "value": 512
+                            },
+                            "unit": "MiB",
+                            "value": 1025
+                        },
+                        "status": "create",
+                        "type": "primary"
+                    }
+                ],
+                "wipe": true
+            }
+        ]
+    },
+    "hostname": "__HOSTNAME__",
+    "kernels": [
+        "linux"
+    ],
+    "locale_config": {
+        "console_font": "default8x16",
+        "kb_layout": "__KB_LAYOUT__",
+        "sys_enc": "UTF-8",
+        "sys_lang": "__SYS_LANG__"
+    },
+    "mirror_config": {
+        "custom_repositories": [],
+        "custom_servers": [],
+        "mirror_regions": {}
+    },
+    "network_config": {
+        "type": "nm"
+    },
+    "ntp": true,
+    "packages": [
+        "adw-gtk-theme",
+        "archlinux-xdg-menu",
+        "bash-completion",
+        "bluez",
+        "bluez-utils",
+        "brightnessctl",
+        "calf",
+        "easyeffects",
+        "fastfetch",
+        "fcitx5",
+        "fcitx5-configtool",
+        "fcitx5-gtk",
+        "fcitx5-hangul",
+        "fuzzel",
+        "git",
+        "gnome-disk-utility",
+        "grim",
+        "grub-btrfs",
+        "htop",
+        "hypridle",
+        "hyprland",
+        "hyprlock",
+        "hyprpaper",
+        "hyprpicker",
+        "hyprpolkitagent",
+        "hyprshot",
+        "imv",
+        "inotify-tools",
+        "kitty",
+        "lib32-mesa",
+        "librewolf",
+        "lsp-plugins",
+        "ly",
+        "mako",
+        "mesa",
+        "mise",
+        "mpv",
+        "networkmanager",
+        "nftables",
+        "oo7",
+        "openssh",
+        "papirus-icon-theme",
+        "pcmanfm",
+        "pipewire",
+        "pipewire-alsa",
+        "pipewire-pulse",
+        "playerctl",
+        "qrencode",
+        "qt5-wayland",
+        "qt6-wayland",
+        "qt6ct",
+        "slurp",
+        "starship",
+        "tesseract",
+        "tesseract-data-eng",
+        "timeshift",
+        "ttf-d2coding-nerd",
+        "vulkan-tools",
+        "waybar",
+        "wireplumber",
+        "wl-clipboard",
+        "woff2-font-awesome",
+        "xarchiver",
+        "xdg-desktop-portal-gtk",
+        "xdg-desktop-portal-hyprland",
+        "xdg-utils",
+        "zbar"
+    ],
+    "pacman_config": {
+        "color": true,
+        "parallel_downloads": 5
+    },
+    "profile_config": {
+        "gfx_driver": null,
+        "greeter": null,
+        "profile": {}
+    },
+    "script": null,
+    "services": [
+        "NetworkManager",
+        "ly"
+    ],
+    "swap": {
+        "algorithm": "zstd",
+        "enabled": true
+    },
+    "timezone": "__TIMEZONE__",
+    "version": "4.4"
+}

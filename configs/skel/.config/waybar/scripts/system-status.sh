@@ -1,5 +1,4 @@
 #!/bin/bash
-# Combined audio/network/bluetooth status for the custom/system waybar module.
 
 vol_raw=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null)
 volpct=$(echo "$vol_raw" | awk '{printf "%d", $2*100}')

@@ -1,5 +1,4 @@
 #!/bin/bash
-# Fuzzel-based audio menu, replaces pwvucontrol.
 
 choice=$(printf "%s\n" \
     "󰕾  Toggle Output Mute" \

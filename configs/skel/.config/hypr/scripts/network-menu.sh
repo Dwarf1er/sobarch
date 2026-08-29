@@ -1,5 +1,4 @@
 #!/bin/bash
-# Fuzzel-based network menu, replaces nmgui.
 
 choice=$(printf "%s\n" \
     "󰤨  Wi-Fi Networks" \

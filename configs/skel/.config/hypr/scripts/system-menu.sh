@@ -1,5 +1,4 @@
 #!/bin/bash
-# Top-level fuzzel menu that routes to audio/network/bluetooth submenus.
 
 choice=$(printf "%s\n" \
     "󰕾  Audio" \

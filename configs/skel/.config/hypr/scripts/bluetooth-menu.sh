@@ -1,7 +1,6 @@
 #!/bin/bash
-# Fuzzel-based bluetooth menu, replaces blueman-manager.
 
-choice=$(printf "%s\n" \
+choice=$(print "%s\n" \
     "⏻  Toggle Power" \
     "  Scan & Connect" \
     "  Paired Devices" \

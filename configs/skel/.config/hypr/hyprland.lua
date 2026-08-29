@@ -2,8 +2,7 @@
 ---- MONITORS ----
 ------------------
 
--- Generic fallback: matches any monitor not covered by a machine-specific
--- rule below.
+-- Generic fallback: matches any monitor not covered by a machine-specific rule below.
 hl.monitor({
 	output = "",
 	mode = "preferred",
@@ -11,8 +10,7 @@ hl.monitor({
 	scale = "auto",
 })
 
--- Machine-specific monitor layout and workspace pinning. Not tracked by
--- the dotfiles/distro defaults; safe to be absent.
+-- Machine-specific monitor layout and workspace pinning. Not tracked by the dotfiles/distro defaults; safe to be absent.
 pcall(dofile, os.getenv("HOME") .. "/.config/hypr/local.lua")
 
 ---------------------
@@ -148,7 +146,10 @@ hl.bind(mainMod .. " + CTRL + L", hl.dsp.exec_cmd(lockScreen))
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd(colorPicker .. " | wl-copy"))
 hl.bind(mainMod .. " + A", hl.dsp.exec_cmd("bash " .. os.getenv("HOME") .. "/.config/hypr/scripts/audio-menu.sh"))
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("bash " .. os.getenv("HOME") .. "/.config/hypr/scripts/network-menu.sh"))
-hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd("bash " .. os.getenv("HOME") .. "/.config/hypr/scripts/bluetooth-menu.sh"))
+hl.bind(
+	mainMod .. " + SHIFT + B",
+	hl.dsp.exec_cmd("bash " .. os.getenv("HOME") .. "/.config/hypr/scripts/bluetooth-menu.sh")
+)
 hl.bind(
 	mainMod .. " + SUPER_L",
 	hl.dsp.exec_cmd("bash -c \"if ! hyprctl activewindow | grep -q 'fullscreen: [1-9][0-9]*'; then " .. menu .. '; fi"')
@@ -156,8 +157,8 @@ hl.bind(
 
 hl.bind("PRINT", hl.dsp.exec_cmd(screenshot .. " -m output --clipboard-only"))
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd(screenshot .. " -m region --clipboard-only"))
-hl.bind(mainMod .. " + O", hl.dsp.exec_cmd("grim -g \"$(slurp)\" - | tesseract - - | wl-copy"))
-hl.bind(mainMod .. " + SHIFT + O", hl.dsp.exec_cmd("grim -g \"$(slurp)\" - | zbarimg --raw - | wl-copy"))
+hl.bind(mainMod .. " + O", hl.dsp.exec_cmd('grim -g "$(slurp)" - | tesseract - - | wl-copy'))
+hl.bind(mainMod .. " + SHIFT + O", hl.dsp.exec_cmd('grim -g "$(slurp)" - | zbarimg --raw - | wl-copy'))
 hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("makoctl mode -t do-not-disturb"))
 
 -- Move focus (vim-style)
@@ -244,8 +245,6 @@ hl.window_rule({
 	match = { title = ".*Network Manager.*" },
 	float = true,
 })
-
-
 
 hl.layer_rule({
 	name = "no-anim-fuzzel",

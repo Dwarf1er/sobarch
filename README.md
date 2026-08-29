@@ -11,12 +11,38 @@ The distribution is primarily built for its maintainer, but it hopes to stay und
 <!-- mtoc-start -->
 
 * [Quickstart](#quickstart)
+* [Installer](#installer)
 * [Documentation](#documentation)
 * [License](#license)
 
 <!-- mtoc-end -->
 
 ## Quickstart
+
+Not available yet.
+
+**Note:** the installer currently only supports full-disk installs. It
+partitions and wipes the entire target disk, and dual/multi-boot
+(installing alongside an existing OS) is not supported.
+
+## Installer
+
+`installer/archinstall/base.json` and `credentials.json` are not valid
+input to `archinstall` as-is. The TUI must perform a plain text
+substitution pass before invoking `archinstall --config base.json
+--creds credentials.json --silent`, replacing each of the following
+tokens:
+
+| Token | Found in | Notes |
+|---|---|---|
+| `__DISK_DEVICE__` | `base.json` | The target disk chosen in the TUI (e.g. `/dev/nvme0n1`). |
+| `__ROOT_PARTITION_SIZE_BYTES__` | `base.json` | Must be replaced with a raw integer (remove the surrounding quotes too), not another quoted string. |
+| `__HOSTNAME__` | `base.json` | |
+| `__KB_LAYOUT__` | `base.json` | e.g. `us` |
+| `__SYS_LANG__` | `base.json` | e.g. `en_US.UTF-8` |
+| `__TIMEZONE__` | `base.json` | e.g. `America/Montreal` |
+| `__USERNAME__` | `credentials.json` | |
+| `__ENC_PASSWORD__` | `credentials.json` | Must be replaced with a raw string; quotes can stay since this one *is* a string field. |
 
 ## Documentation
 
