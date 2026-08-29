@@ -1,0 +1,26 @@
+# Maintainer: Dwarf1er
+pkgname=sobarch-skel
+# Pure-data meta-package with no upstream releases of its own; pkgver
+# tracks the date configs/skel/ last changed in this monorepo.
+pkgver=20260828
+pkgrel=1
+pkgdesc="Sobarch distribution-owned default desktop configuration (skel)"
+arch=('any')
+url="https://github.com/Dwarf1er/sobarch"
+license=('MIT')
+source=()
+sha256sums=()
+
+package() {
+    install -dm755 "$pkgdir/usr/share/sobarch/skel"
+    cp -a "$startdir/../../../configs/skel/." "$pkgdir/usr/share/sobarch/skel/"
+
+    # Normalize permissions: some source files (e.g. fcitx5's own config,
+    # which it writes as 600) must stay world-readable once packaged, since
+    # a regular user (not root) needs to read them back out of
+    # /usr/share/sobarch/skel/ later (sobarch update-config).
+    find "$pkgdir/usr/share/sobarch/skel" -type d -exec chmod 755 {} +
+    find "$pkgdir/usr/share/sobarch/skel" -type f -exec chmod 644 {} +
+    chmod 755 "$pkgdir"/usr/share/sobarch/skel/.config/hypr/scripts/*.sh
+    chmod 755 "$pkgdir"/usr/share/sobarch/skel/.config/waybar/scripts/*.sh
+}

@@ -1,0 +1,51 @@
+@define-color nord0 #2e3440;
+@define-color nord4 #d8dee9;
+@define-color nord8 #88c0d0;
+@define-color nord11 #bf616a;
+
+* {
+    background-image: none;
+    font-family: "D2CodingLigature Nerd Font Mono", monospace;
+}
+
+window {
+    background-color: rgba(46, 52, 64, 0.85);
+}
+
+button {
+    color: @nord4;
+    background-color: @nord0;
+    border: 2px solid @nord8;
+    border-radius: 10px;
+    margin: 10px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 25%;
+}
+
+button:focus,
+button:active,
+button:hover {
+    background-color: @nord8;
+    color: @nord0;
+}
+
+#lock {
+    background-image: image(url("/usr/share/wlogout/icons/lock.png"));
+}
+
+#logout {
+    background-image: image(url("/usr/share/wlogout/icons/logout.png"));
+}
+
+#suspend {
+    background-image: image(url("/usr/share/wlogout/icons/suspend.png"));
+}
+
+#reboot {
+    background-image: image(url("/usr/share/wlogout/icons/reboot.png"));
+}
+
+#shutdown {
+    background-image: image(url("/usr/share/wlogout/icons/shutdown.png"));
+}

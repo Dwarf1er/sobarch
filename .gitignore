@@ -1,0 +1,4 @@
+# makepkg build artifacts (packages/aur/*/, packages/custom/*/)
+pkg/
+src/
+*.pkg.tar.*

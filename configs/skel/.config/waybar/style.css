@@ -1,0 +1,184 @@
+@define-color nord0 #2e3440;
+@define-color nord1 #3b4252;
+@define-color nord2 #434c5e;
+@define-color nord3 #4c566a;
+@define-color nord4 #d8dee9;
+@define-color nord5 #e5e9f0;
+@define-color nord6 #eceff4;
+@define-color nord7 #8fbcbb;
+@define-color nord8 #88c0d0;
+@define-color nord9 #81a1c1;
+@define-color nord10 #5e81ac;
+@define-color nord11 #bf616a;
+@define-color nord12 #d08770;
+@define-color nord13 #ebcb8b;
+@define-color nord14 #a3be8c;
+@define-color nord15 #b48ead;
+
+* {
+    font-family: "D2CodingLigature Nerd Font Mono", monospace;
+    font-size: 14px;
+    font-weight: 500;
+    min-height: 0;
+}
+
+window#waybar {
+    background-color: @nord0;
+    color: @nord4;
+    border: 2px solid @nord8;
+}
+
+/* Workspaces */
+#workspaces {
+    background: transparent;
+    margin: 4px 0;
+}
+
+#workspaces button {
+    background: transparent;
+    color: @nord4;
+    border: none;
+    border-radius: 8px;
+    padding: 4px 8px;
+    margin: 0 2px;
+    transition: all 0.3s ease;
+}
+
+#workspaces button:hover {
+    background-color: rgba(136, 192, 208, 0.2);
+    color: @nord8;
+}
+
+#workspaces button.active {
+    background-color: @nord8;
+    color: @nord0;
+}
+
+#workspaces button.urgent {
+    background-color: @nord11;
+    color: @nord0;
+}
+
+/* Window title */
+#window {
+    color: @nord4;
+    font-style: italic;
+    margin: 4px 8px;
+}
+
+/* Clock */
+#clock {
+    color: @nord8;
+    background: transparent;
+    padding: 4px 12px;
+    border-radius: 8px;
+    margin: 4px 0;
+    border: 1px solid transparent;
+}
+
+#clock:hover {
+    border: 1px solid @nord8;
+}
+
+/* System tray */
+#tray {
+    background: transparent;
+    margin: 4px 4px;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+}
+
+/* Module styling */
+#battery,
+#custom-system,
+#language,
+#custom-power {
+    background: transparent;
+    color: @nord4;
+    padding: 4px 8px;
+    margin: 4px 2px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+/* Do Not Disturb (collapses to zero width when inactive) */
+#custom-dnd {
+    color: @nord11;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+#custom-dnd.active {
+    padding: 4px 8px;
+    margin: 4px 2px;
+}
+
+#custom-dnd:hover {
+    border: 1px solid @nord11;
+}
+
+/* Individual module colors and hover effects */
+#battery {
+    color: @nord14;
+}
+
+#battery:hover {
+    border: 1px solid @nord14;
+}
+
+#battery.warning {
+    color: @nord13;
+}
+
+#battery.critical {
+    color: @nord11;
+    animation: blink 1s linear infinite alternate;
+}
+
+#custom-system {
+    color: @nord8;
+}
+
+#custom-system:hover {
+    border: 1px solid @nord8;
+}
+
+/* Language/Keyboard layout */
+#custom-fcitx5{
+    color: @nord7;
+}
+
+#custom-fcitx5:hover {
+    border: 1px solid @nord7;
+}
+
+/* Power button */
+#custom-power {
+    color: @nord11;
+    font-size: 16px;
+    padding: 4px 10px;
+}
+
+#custom-power:hover {
+    border: 1px solid @nord11;
+    background-color: rgba(191, 97, 106, 0.1);
+}
+
+/* Animations */
+@keyframes blink {
+    to {
+        background-color: @nord11;
+        color: @nord0;
+    }
+}

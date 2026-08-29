@@ -1,0 +1,86 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 40,
+  "spacing": 4,
+  "modules-left": ["hyprland/workspaces"],
+  "modules-center": ["clock"],
+  "modules-right": ["custom/fcitx5", "custom/dnd", "custom/system", "battery", "custom/power"],
+
+    "hyprland/workspaces": {
+        "on-click": "activate",
+        "format": "{icon}",
+		"all-outputs": true
+    },
+
+  "clock": {
+    "interval": 1,
+    "format": "{:%a %d  %H:%M}",
+    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      "mode": "year",
+      "mode-mon-col": 3,
+      "weeks-pos": "right",
+      "on-scroll": 1,
+      "format": {
+        "months": "<span color='#88c0d0'><b>{}</b></span>",
+        "days": "<span color='#d8dee9'><b>{}</b></span>",
+        "weeks": "<span color='#5e81ac'><b>W{}</b></span>",
+        "weekdays": "<span color='#81a1c1'><b>{}</b></span>",
+        "today": "<span color='#bf616a'><b><u>{}</u></b></span>"
+      }
+    }
+  },
+
+    "custom/fcitx5": {
+      "exec": "~/.config/waybar/scripts/fcitx5-status.sh",
+      "interval": 1,
+      "return-type": "json",
+      "format": "{text}",
+      "on-click": "fcitx5-remote -t"
+    },
+
+  "battery": {
+    "format": "{icon}  {capacity}%",
+    "format-icons": {
+      "charging": [
+        "󰢜","󰂆","󰂇","󰂈","󰢝","󰂉","󰢞","󰂊","󰂋","󰂅"
+      ],
+      "default": [
+        "󰁺","󰁻","󰁼","󰁽","󰁾","󰁿","󰂀","󰂁","󰂂","󰁹"
+      ]
+    },
+    "format-full": "Charged ",
+    "interval": 5,
+    "states": {
+      "warning": 20,
+      "critical": 10
+    },
+    "tooltip": true
+  },
+
+  "custom/dnd": {
+    "exec": "~/.config/waybar/scripts/dnd-status.sh",
+    "interval": 2,
+    "return-type": "json",
+    "format": "{}",
+    "on-click": "makoctl mode -t do-not-disturb"
+  },
+
+  "custom/system": {
+    "exec": "~/.config/waybar/scripts/system-status.sh",
+    "interval": 5,
+    "return-type": "json",
+    "format": "{}",
+    "on-click": "bash ~/.config/hypr/scripts/system-menu.sh",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "on-scroll-up": "wpctl set-volume --limit 1.0 @DEFAULT_AUDIO_SINK@ 5%+",
+    "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
+  },
+
+  "custom/power": {
+      "format": "⏻",
+      "on-click": "wlogout",
+      "interval": "once"
+    }
+}
