@@ -49,7 +49,7 @@ tokens:
 | `__BLUETOOTH_DETECTED__` | `base.json` | Must be replaced with a raw `true`/`false` (remove the surrounding quotes too), based on whether a Bluetooth adapter is actually detected. Drives `archinstall`'s own `bluetooth_config` app mechanism, which installs `bluez`/`bluez-utils` and enables `bluetooth.service` together. |
 
 `base.json`'s disk layout also reserves a third, unmounted partition
-for rescue media (see the [Rescue Media](#rescure-media) section below). If the user
+for rescue media (see the [Rescue Media](#rescue-media) section below). If the user
 opts out of it, the TUI must remove that partition entry entirely and
 shift the BTRFS partition's `start` back down from 6145 MiB to 1025 MiB.
 
