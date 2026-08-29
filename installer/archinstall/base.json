@@ -68,6 +68,33 @@
                         "type": "primary"
                     },
                     {
+                        "btrfs": [],
+                        "dev_path": null,
+                        "flags": [],
+                        "fs_type": "ext4",
+                        "mount_options": [],
+                        "mountpoint": null,
+                        "obj_id": "8c9f1e2d-2f0e-4b8a-9d0e-6a2c5b3e7f1a",
+                        "size": {
+                            "sector_size": {
+                                "unit": "B",
+                                "value": 512
+                            },
+                            "unit": "GiB",
+                            "value": 5
+                        },
+                        "start": {
+                            "sector_size": {
+                                "unit": "B",
+                                "value": 512
+                            },
+                            "unit": "MiB",
+                            "value": 1025
+                        },
+                        "status": "create",
+                        "type": "primary"
+                    },
+                    {
                         "btrfs": [
                             {
                                 "mountpoint": "/",
@@ -119,7 +146,7 @@
                                 "value": 512
                             },
                             "unit": "MiB",
-                            "value": 1025
+                            "value": 6145
                         },
                         "status": "create",
                         "type": "primary"

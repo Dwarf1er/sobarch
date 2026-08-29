@@ -14,6 +14,7 @@ The distribution is primarily built for its maintainer, but it hopes to stay und
 * [Installer](#installer)
 * [Hardware Detection](#hardware-detection)
 * [Snapshots](#snapshots)
+* [Rescue Media](#rescue-media)
 * [Documentation](#documentation)
 * [License](#license)
 
@@ -46,6 +47,11 @@ tokens:
 | `__USERNAME__` | `credentials.json` | |
 | `__ENC_PASSWORD__` | `credentials.json` | Must be replaced with a raw string; quotes can stay since this one *is* a string field. |
 | `__BLUETOOTH_DETECTED__` | `base.json` | Must be replaced with a raw `true`/`false` (remove the surrounding quotes too), based on whether a Bluetooth adapter is actually detected. Drives `archinstall`'s own `bluetooth_config` app mechanism, which installs `bluez`/`bluez-utils` and enables `bluetooth.service` together. |
+
+`base.json`'s disk layout also reserves a third, unmounted partition
+for rescue media (see the [Rescue Media](#rescure-media) section below). If the user
+opts out of it, the TUI must remove that partition entry entirely and
+shift the BTRFS partition's `start` back down from 6145 MiB to 1025 MiB.
 
 ## Hardware Detection
 
@@ -122,6 +128,26 @@ live ISO needed, since `fstab`'s `subvol=@` only resolves by name once,
 at mount time, so the running system stays bound to its subvolume by
 internal ID regardless of what the `@` directory entry gets renamed to
 on a separate, secondary mount of the same volume. This approach was taken directly from [yabsnap](https://github.com/hirak99/yabsnap).
+
+## Rescue Media
+
+`base.json`'s disk layout reserves a dedicated, generously-sized ext4
+partition (recommended by default, opt-out for anyone tight on disk
+space) so `scripts/snapshot-rollback.sh`'s rescue mode has a full Arch
+ISO available on local disk, with no separate USB device needed at all
+if a machine can't boot. `installer/archinstall/rescue-iso-setup.sh`
+(run alongside `nvidia-setup.sh`/`snapper-setup.sh`) fetches the
+current monthly release from an official mirror, verifies its
+checksum, formats the partition, writes the ISO to it, and adds a
+permanent GRUB boot entry that loads the ISO's own bundled
+`loopback.cfg`, the Arch Wiki's own [documented
+recipe](https://wiki.archlinux.org/title/Multiboot_USB_drive#Using_GRUB_and_loopback_devices)
+for booting an ISO file in place.
+
+The stored ISO is refreshed manually only, never automatically: a
+background download on every boot or update would be surprising and
+wasteful, and a slightly outdated rescue ISO is still far better than
+none at all.
 
 ## Documentation
 
