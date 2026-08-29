@@ -13,6 +13,11 @@ hl.monitor({
 -- Machine-specific monitor layout and workspace pinning. Not tracked by the dotfiles/distro defaults; safe to be absent.
 pcall(dofile, os.getenv("HOME") .. "/.config/hypr/local.lua")
 
+-- NVIDIA-specific env vars, deployed only on machines where hardware
+-- detection found an NVIDIA GPU (see installer/archinstall/nvidia.lua).
+-- Safe to be absent on AMD/Intel-only systems.
+pcall(dofile, os.getenv("HOME") .. "/.config/hypr/nvidia.lua")
+
 ---------------------
 ---- MY PROGRAMS ----
 ---------------------
@@ -30,7 +35,7 @@ local colorPicker = "hyprpicker"
 -------------------
 
 hl.on("hyprland.start", function()
-	hl.exec_cmd("waybar & mako & hypridle & hyprpaper")
+	hl.exec_cmd("waybar & mako & hypridle & hyprpaper & udiskie")
 	hl.exec_cmd("fcitx5")
 end)
 

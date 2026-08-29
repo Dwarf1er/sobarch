@@ -4,7 +4,7 @@
             "audio": "pipewire"
         },
         "bluetooth_config": {
-            "enabled": false
+            "enabled": "__BLUETOOTH_DETECTED__"
         },
         "fonts_config": {
             "fonts": [
@@ -29,7 +29,7 @@
     "disk_config": {
         "btrfs_options": {
             "snapshot_config": {
-                "type": "Timeshift"
+                "type": "Snapper"
             }
         },
         "config_type": "default_layout",
@@ -84,6 +84,14 @@
                             {
                                 "mountpoint": "/var/cache/pacman/pkg",
                                 "name": "@pkg"
+                            },
+                            {
+                                "mountpoint": "/.snapshots",
+                                "name": "@snapshots"
+                            },
+                            {
+                                "mountpoint": "/home/.snapshots",
+                                "name": "@home-snapshots"
                             }
                         ],
                         "dev_path": null,
@@ -144,11 +152,7 @@
         "adw-gtk-theme",
         "archlinux-xdg-menu",
         "bash-completion",
-        "bluez",
-        "bluez-utils",
         "brightnessctl",
-        "calf",
-        "easyeffects",
         "fastfetch",
         "fcitx5",
         "fcitx5-configtool",
@@ -156,9 +160,8 @@
         "fcitx5-hangul",
         "fuzzel",
         "git",
-        "gnome-disk-utility",
+        "gparted",
         "grim",
-        "grub-btrfs",
         "htop",
         "hypridle",
         "hyprland",
@@ -168,39 +171,32 @@
         "hyprpolkitagent",
         "hyprshot",
         "imv",
-        "inotify-tools",
         "kitty",
         "lib32-mesa",
         "librewolf",
-        "lsp-plugins",
         "ly",
         "mako",
         "mesa",
-        "mise",
         "mpv",
         "networkmanager",
         "nftables",
         "oo7",
-        "openssh",
         "papirus-icon-theme",
         "pcmanfm",
-        "pipewire",
-        "pipewire-alsa",
-        "pipewire-pulse",
         "playerctl",
         "qrencode",
         "qt5-wayland",
         "qt6-wayland",
         "qt6ct",
         "slurp",
+        "snap-pac",
         "starship",
         "tesseract",
         "tesseract-data-eng",
-        "timeshift",
         "ttf-d2coding-nerd",
+        "udiskie",
         "vulkan-tools",
         "waybar",
-        "wireplumber",
         "wl-clipboard",
         "woff2-font-awesome",
         "xarchiver",
