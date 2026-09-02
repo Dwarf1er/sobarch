@@ -181,10 +181,7 @@ snapshot to become the new permanent `@`, `scripts/snapshot-rollback.sh`
 implements the Arch Wiki's [documented manual
 procedure](https://wiki.archlinux.org/title/Snapper#Restoring_/_to_its_previous_snapshot),
 not the `snapper rollback` subcommand, which the Wiki's own suggested
-layout explicitly isn't meant to be used with (a guard at
-`/usr/local/bin/snapper` also warns and requires typed confirmation
-before letting `rollback` run at all, for anyone who tries it anyway).
-It supports two modes: a live ISO or rescue chroot (the only one that
+layout explicitly isn't meant to be used with. It supports two modes: a live ISO or rescue chroot (the only one that
 always works, even if the installed system can't boot at all), or
 `--online`, running directly on the currently booted system with no
 live ISO needed, since `fstab`'s `subvol=@` only resolves by name once,

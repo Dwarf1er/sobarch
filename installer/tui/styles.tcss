@@ -65,22 +65,43 @@ Button.-style-flat {
 }
 
 Button.-style-flat:hover {
+    background: $primary;
     border: round $primary;
 }
 
 Button.-style-flat.-primary {
+    border: round $primary 60%;
+}
+
+Button.-style-flat.-primary:hover {
+    background: $primary;
     border: round $primary;
 }
 
 Button.-style-flat.-success {
+    border: round $success 60%;
+}
+
+Button.-style-flat.-success:hover {
+    background: $success;
     border: round $success;
 }
 
 Button.-style-flat.-warning {
+    border: round $warning 60%;
+}
+
+Button.-style-flat.-warning:hover {
+    background: $warning;
     border: round $warning;
 }
 
 Button.-style-flat.-error {
+    border: round $error 60%;
+}
+
+Button.-style-flat.-error:hover {
+    background: $error;
     border: round $error;
 }
 
