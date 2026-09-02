@@ -105,20 +105,8 @@
                                 "name": "@home"
                             },
                             {
-                                "mountpoint": "/var/log",
-                                "name": "@log"
-                            },
-                            {
-                                "mountpoint": "/var/cache/pacman/pkg",
-                                "name": "@pkg"
-                            },
-                            {
                                 "mountpoint": "/.snapshots",
                                 "name": "@snapshots"
-                            },
-                            {
-                                "mountpoint": "/home/.snapshots",
-                                "name": "@home-snapshots"
                             }
                         ],
                         "dev_path": null,

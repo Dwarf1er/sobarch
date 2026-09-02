@@ -35,7 +35,10 @@
 #
 # The previous @ is renamed, not deleted, so this is reversible if the
 # chosen snapshot turns out to be wrong. Remove the renamed copy
-# manually once you've confirmed the restore actually worked.
+# manually once you've confirmed the restore actually worked. This also
+# means /var/log and the pacman cache (which live inside @, not their
+# own subvolumes) aren't lost on rollback: they're still there under
+# the renamed copy for as long as you keep it around.
 #
 # Usage:
 #   snapshot-rollback.sh <device> <snapshot-number>

@@ -1,0 +1,114 @@
+/* Material-inspired styling on top of the OneDark palette (theme.py):
+   rounded "cards" as the main layout unit, filled/tonal buttons instead
+   of the classic 3D-bevel look, generous padding instead of tight
+   packing. */
+
+Screen {
+    background: $background;
+    align: center middle;
+}
+
+.card {
+    background: $surface;
+    border: round $primary 50%;
+    padding: 1 3;
+    margin: 1;
+    width: 70%;
+    min-width: 50;
+    max-width: 90;
+    height: 80%;
+    min-height: 20;
+    max-height: 40;
+    overflow-y: auto;
+}
+
+.card-title {
+    text-style: bold;
+    color: $primary;
+    margin-bottom: 1;
+}
+
+.card-subtitle {
+    color: $foreground 70%;
+    margin-bottom: 1;
+}
+
+.field-label {
+    color: $foreground 80%;
+    margin-top: 1;
+}
+
+.error-message {
+    color: $error;
+    text-style: bold;
+    margin-top: 1;
+    height: auto;
+    min-height: 1;
+}
+
+.button-row {
+    height: auto;
+    margin-top: 2;
+    align-horizontal: right;
+}
+
+.button-row Button {
+    margin-left: 1;
+}
+
+Button {
+    min-width: 16;
+}
+
+Button.-style-flat {
+    border: round $surface;
+}
+
+Button.-style-flat:hover {
+    border: round $primary;
+}
+
+Button.-style-flat.-primary {
+    border: round $primary;
+}
+
+Button.-style-flat.-success {
+    border: round $success;
+}
+
+Button.-style-flat.-warning {
+    border: round $warning;
+}
+
+Button.-style-flat.-error {
+    border: round $error;
+}
+
+Input {
+    border: round $surface;
+    background: $background;
+}
+
+Input:focus {
+    border: round $primary;
+}
+
+RadioSet, SelectionList {
+    border: round $surface;
+    background: $background;
+}
+
+RadioSet:focus, SelectionList:focus-within {
+    border: round $primary;
+}
+
+Switch {
+    border: round $surface;
+}
+
+#logo {
+    color: $primary;
+    text-align: center;
+    width: auto;
+    margin-bottom: 1;
+}

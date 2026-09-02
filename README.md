@@ -31,10 +31,14 @@ partitions and wipes the entire target disk, and dual/multi-boot
 ## Installer
 
 `installer/archinstall/base.json` and `credentials.json` are not valid
-input to `archinstall` as-is. The TUI must perform a plain text
-substitution pass before invoking `archinstall --config base.json
---creds credentials.json --silent`, replacing each of the following
-tokens:
+input to `archinstall` as-is: they need each of the following tokens
+replaced before `archinstall --config base.json --creds
+credentials.json --silent` is invoked. `installer/tui/config_gen.py`
+does this by parsing both files as JSON and editing them as data
+(some of the required edits, like the rescue partition below, are
+structural, not simple token replacement); the table exists as the
+raw template's own contract, for anyone hand-running `archinstall`
+against these files directly instead of through the TUI.
 
 | Token | Found in | Notes |
 |---|---|---|
@@ -52,6 +56,32 @@ tokens:
 for rescue media (see the [Rescue Media](#rescue-media) section below). If the user
 opts out of it, the TUI must remove that partition entry entirely and
 shift the BTRFS partition's `start` back down from 6145 MiB to 1025 MiB.
+
+### Running and testing the TUI
+
+`installer/tui/` is plain Python on `python-textual`, which
+`archinstall` already depends on, so nothing extra needs installing on
+the live ISO to run it there:
+
+    python3 installer/tui/__main__.py --dry-run
+
+It also runs the same way on an ordinary dev machine, not only from a
+live ISO, which is what makes iterating on it without a VM or a spare
+disk possible. `installer/tui/__main__.py` carries
+[PEP 723](https://peps.python.org/pep-0723/) inline metadata, so
+[uv](https://github.com/astral-sh/uv) can run it standalone, in its
+own isolated environment, with no other setup:
+
+    uv run installer/tui/__main__.py --dry-run
+
+`--dry-run` walks every prompt and generates the resulting
+`archinstall` config, but the review screen only offers saving it,
+never installing (mirroring `archinstall`'s own `--dry-run`). Without
+that flag, "Install now" is also offered, but only when running as
+root, since partitioning a real disk needs it. Either way, "Save
+configuration" writes `base.json`/`credentials.json` to `--output-dir`
+(default: `/root/sobarch-install` as root, `./sobarch-install-output`
+otherwise) for inspection.
 
 ## Hardware Detection
 
@@ -94,20 +124,24 @@ Every install gets automatic BTRFS snapshots via Snapper + `snap-pac`,
 almost entirely set up natively by `archinstall` itself (not custom
 first-boot logic): package installs, `snapper create-config`, both
 systemd timers, and a `grub-btrfsd` GRUB-integration drop-in all happen
-as part of the same install run. `installer/archinstall/
-snapper-setup.sh` (run alongside `nvidia-setup.sh`) only overrides the
-retention preset (daily snapshots, 5 kept) for both root and home:
-home is snapshotted too, since accidentally deleting or overwriting a
-personal file is a real, common risk worth its own safety net, not
-just package upgrades. Bounded disk usage doesn't rely on that count
-alone, Snapper's own untouched `SPACE_LIMIT`/`FREE_LIMIT` settings mean
-`snapper-cleanup.timer` (already enabled) prunes the oldest snapshots
-of either config, beyond the normal retention if needed, whenever
-actual free space drops below 20%.
+as part of the same install run. Snapshots are root-only: personal-file
+backup is a distinct concern left to the user's own tools, not this
+safety net. `archinstall` unconditionally creates a `home` Snapper
+config too (hardcoded, no way to opt out from the JSON config), so
+`installer/archinstall/snapper-setup.sh` (run alongside
+`nvidia-setup.sh`) deletes it immediately, then overrides `root`'s
+retention preset: daily snapshots, 5 kept, plus `snap-pac`'s
+per-transaction limit lowered to 5 (from Snapper's stock 50). Bounded
+disk usage doesn't rely on those counts alone, Snapper's own untouched
+`SPACE_LIMIT`/`FREE_LIMIT` settings mean `snapper-cleanup.timer`
+(already enabled) prunes the oldest snapshots beyond the normal
+retention if needed, whenever actual free space drops below 20%.
 
-Two subvolumes, `@snapshots` and `@home-snapshots`, exist specifically
-so a full rollback of `@` can never wipe out its own snapshot history,
-the Arch Wiki's own [documented
+The pacman cache and system logs live inside `@` rather than their own
+subvolumes, matching the Arch Wiki's own suggested layout exactly; the
+one subvolume that layout does call for, `@snapshots`, exists
+specifically so a full rollback of `@` can never wipe out its own
+snapshot history, the Arch Wiki's own [documented
 fix](https://wiki.archlinux.org/title/Snapper#Suggested_filesystem_layout)
 for a well-known problem with the standard flat Arch layout.
 
