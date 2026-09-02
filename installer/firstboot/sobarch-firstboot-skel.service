@@ -1,0 +1,12 @@
+[Unit]
+Description=Deploy sobarch-skel default configuration into the user's $HOME
+ConditionPathExists=!/home/__USERNAME__/.local/state/sobarch/skel-version
+After=local-fs.target
+
+[Service]
+Type=oneshot
+User=__USERNAME__
+ExecStart=/usr/local/lib/sobarch/apply-skel.sh
+
+[Install]
+WantedBy=multi-user.target

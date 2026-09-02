@@ -15,6 +15,7 @@ The distribution is primarily built for its maintainer, but it hopes to stay und
 * [Hardware Detection](#hardware-detection)
 * [Snapshots](#snapshots)
 * [Rescue Media](#rescue-media)
+* [First Boot](#first-boot)
 * [Documentation](#documentation)
 * [License](#license)
 
@@ -208,6 +209,52 @@ The stored ISO is refreshed manually only, never automatically: a
 background download on every boot or update would be surprising and
 wasteful, and a slightly outdated rescue ISO is still far better than
 none at all.
+
+## First Boot
+
+`installer/firstboot/` holds every first-boot unit; `install_runner.py`
+deploys and enables all of them (`/usr/local/lib/sobarch/<script>` +
+`/etc/systemd/system/<service>`) as its last step before unmounting the
+target, each as its own `ConditionPathExists`-guarded oneshot that
+retries on the next boot if it fails rather than being silently
+skipped. `install-profile-packages.sh` (optional packages, see
+Installer above) is one of three; the other two are new:
+
+- **`apply-skel.sh`** / `sobarch-firstboot-skel.service` deploys
+  `sobarch-skel`'s defaults into the new account's `$HOME`, using the
+  three-way `diff3`-based reconciliation: for each file, compare the current
+  `$HOME` copy, the recorded *baseline* (a snapshot of what was applied
+  last, under `~/.local/state/sobarch/skel-baseline/`), and the *new*
+  version, merging cleanly wherever only one side changed and dropping
+  a `<file>.sobarch-new` (never touching the real file) on a genuine
+  conflict. With no baseline recorded yet, first boot resolves every
+  file to "take new" trivially: this is the mechanism's first
+  invocation, not a separate copy path. `sobarch update-config`
+  (not built yet) later exposes this exact script,
+  unmodified, as a user-invoked command, adding only its own
+  interactive conflict walkthrough on top. Needs `-a`/`--text` on the
+  `diff3` call: without it, `diff3` hard-fails outright on any binary
+  skel file (the default wallpaper) even in the trivial no-baseline
+  case, a real bug caught before shipping, not a theoretical one. Runs
+  as the new account (`User=` in the unit, substituted in by
+  `install_runner.py`), never as root, since it only ever writes inside
+  that account's own `$HOME`.
+- **`apply-security-baseline.sh`** / `sobarch-firstboot-security.service`
+  is currently a stub: it logs that it's a no-op and marks itself
+  done. Wired in now so implementing the real baseline only has to
+  fill in the script body, no further install_runner.py/unit changes
+  needed once it lands.
+
+Since no vendored/local package build-and-sync mechanism exists yet
+either, `install_runner.py`
+also locally builds `packages/custom/sobarch-skel` from this checkout
+and installs it into the target right after `archinstall` finishes, as
+the newly created user (`makepkg` refuses outright to run as root, no
+override flag), so `/usr/share/sobarch/skel/` and a real `pacman -Qi
+sobarch-skel` both exist by the time `apply-skel.sh` needs them. This
+is a minimal, one-off stand-in a future vendored-package mechanism
+will supersede for keeping `sobarch-skel` current after install; this
+step only needed *something* to get it installed the very first time.
 
 ## Documentation
 

@@ -168,6 +168,7 @@
         "archlinux-xdg-menu",
         "bash-completion",
         "brightnessctl",
+        "fakeroot",
         "fastfetch",
         "fcitx5",
         "fcitx5-configtool",

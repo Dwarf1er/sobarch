@@ -1,0 +1,10 @@
+[Unit]
+Description=Apply the sobarch security baseline
+ConditionPathExists=!/var/lib/sobarch/security-baseline-applied
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/sobarch/apply-security-baseline.sh
+
+[Install]
+WantedBy=multi-user.target
