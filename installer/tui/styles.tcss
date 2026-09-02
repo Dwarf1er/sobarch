@@ -106,6 +106,30 @@ Switch {
     border: round $surface;
 }
 
+.install-everything-row {
+    height: auto;
+    margin-bottom: 1;
+}
+
+#profile-list {
+    height: auto;
+}
+
+Collapsible {
+    background: $background;
+    border: round $surface;
+    margin-bottom: 1;
+}
+
+Collapsible:focus-within {
+    border: round $primary;
+}
+
+Collapsible SelectionList {
+    height: auto;
+    max-height: 10;
+}
+
 #logo {
     color: $primary;
     text-align: center;

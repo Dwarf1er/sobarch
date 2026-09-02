@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from config_gen import GeneratedConfig, partition_device_path, write_configs
+from config_gen import GeneratedConfig, partition_device_path, write_configs, write_firstboot_package_lists
 from hardware import HardwareInfo
 from state import WizardState
 
@@ -20,6 +20,19 @@ MOUNTPOINT = Path("/mnt")
 ARCHINSTALL_DIR = Path(__file__).resolve().parent.parent / "archinstall"
 CHROOT_SETUP_SCRIPTS = ["nvidia-setup.sh", "snapper-setup.sh", "rescue-iso-setup.sh"]
 CHROOT_SETUP_DIR_IN_TARGET = Path("/root/sobarch-setup")
+
+# Optional packages selected during the TUI are installed after first
+# boot, not here (see README.md's Installer section):
+# keeps the base install itself fast and minimal, and every profile
+# installs the same way whether or not it happens to contain an AUR
+# package. This only deploys and enables that first-boot step; it
+# never runs pacman for these itself.
+FIRSTBOOT_DIR = Path(__file__).resolve().parent.parent / "firstboot"
+FIRSTBOOT_SCRIPT = "install-profile-packages.sh"
+FIRSTBOOT_SERVICE = "sobarch-firstboot-packages.service"
+FIRSTBOOT_SCRIPT_DIR_IN_TARGET = Path("/usr/local/lib/sobarch")
+FIRSTBOOT_SERVICE_DIR_IN_TARGET = Path("/etc/systemd/system")
+SOBARCH_DIR_IN_TARGET = Path("/etc/sobarch")
 
 OutputCallback = Callable[[str], None]
 
@@ -83,6 +96,27 @@ def run_install(
             raise InstallError(f"archinstall exited with status {returncode}", log_path)
 
         on_output("archinstall finished. Running post-install configuration...")
+
+        write_firstboot_package_lists(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
+
+        firstboot_script_dir = MOUNTPOINT / FIRSTBOOT_SCRIPT_DIR_IN_TARGET.relative_to("/")
+        firstboot_script_dir.mkdir(parents=True, exist_ok=True)
+        firstboot_script_path = firstboot_script_dir / FIRSTBOOT_SCRIPT
+        shutil.copy2(FIRSTBOOT_DIR / FIRSTBOOT_SCRIPT, firstboot_script_path)
+        firstboot_script_path.chmod(0o755)
+
+        firstboot_service_dir = MOUNTPOINT / FIRSTBOOT_SERVICE_DIR_IN_TARGET.relative_to("/")
+        firstboot_service_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(FIRSTBOOT_DIR / FIRSTBOOT_SERVICE, firstboot_service_dir / FIRSTBOOT_SERVICE)
+
+        on_output("Enabling first-boot package installation...")
+        returncode = _run_logged(
+            ["arch-chroot", str(MOUNTPOINT), "systemctl", "enable", FIRSTBOOT_SERVICE],
+            log_file,
+            on_output,
+        )
+        if returncode != 0:
+            raise InstallError(f"failed to enable {FIRSTBOOT_SERVICE}", log_path)
 
         target_setup_dir = MOUNTPOINT / CHROOT_SETUP_DIR_IN_TARGET.relative_to("/")
         target_setup_dir.mkdir(parents=True, exist_ok=True)

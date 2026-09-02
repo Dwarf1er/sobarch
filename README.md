@@ -83,6 +83,35 @@ configuration" writes `base.json`/`credentials.json` to `--output-dir`
 (default: `/root/sobarch-install` as root, `./sobarch-install-output`
 otherwise) for inspection.
 
+The optional-profiles screen (`installer/tui/profiles_data.py` for the
+package lists, `installer/tui/screens/profiles.py` for the screen
+itself) offers "install everything" or, per profile, either taking it
+whole or expanding it to hand-pick individual packages, per the two
+selection levels. This choice isn't part of
+`archinstall`'s own config at all: selected packages are deliberately
+installed after first boot rather than during the install session, so
+the base install itself stays fast and minimal, and every profile
+installs the same way whether or not it happens to contain an AUR
+package (`archinstall --silent` can only pacman-install official-repo
+packages, so "some profiles ready immediately, others delayed" isn't
+actually avoidable if any of it happened during install instead).
+"Save configuration" and a real install both write `profile-selection.json`
+(a human-readable, per-profile breakdown, for inspection) alongside
+`base.json`/`credentials.json`.
+
+The actual first-boot mechanism lives in `installer/firstboot/`:
+`install-profile-packages.sh` reads two flat package lists
+(`/etc/sobarch/profile-packages-{official,aur}.txt`, written by
+`config_gen.write_firstboot_package_lists`) and `pacman -S`s the
+official-repo ones. AUR packages are listed but not installed yet:
+that needs `packages/aur/`'s vendored PKGBUILDs and the local
+build/update mechanism, which don't exist yet.
+`sobarch-firstboot-packages.service`, a `ConditionPathExists`-guarded
+oneshot enabled by `install_runner.py` right after `archinstall`
+finishes, runs that script once on first boot and retries on the next
+boot if it fails (e.g. no network yet), rather than being silently
+skipped.
+
 ## Hardware Detection
 
 `installer/archinstall/hardware-detect.sh` runs once, on the live ISO,

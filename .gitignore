@@ -6,3 +6,6 @@ src/
 # Python bytecode (installer/tui/)
 __pycache__/
 *.pyc
+
+# Installer test output
+sobarch-install-output/*

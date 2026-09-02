@@ -14,6 +14,7 @@ from pathlib import Path
 from archinstall.lib.crypt import crypt_yescrypt
 
 from hardware import HardwareInfo
+from profiles_data import resolve_selection, split_by_source
 from state import WizardState
 
 ARCHINSTALL_DIR = Path(__file__).resolve().parent.parent / "archinstall"
@@ -130,3 +131,35 @@ def write_configs(generated: GeneratedConfig, out_dir: Path) -> tuple[Path, Path
     base_path.write_text(json.dumps(generated.base, indent=4) + "\n")
     credentials_path.write_text(json.dumps(generated.credentials, indent=4) + "\n")
     return base_path, credentials_path
+
+
+def write_profile_selection(state: WizardState, out_dir: Path) -> Path:
+    """The optional-profile answer, by profile name, kept at this
+    granularity rather than flattened into one package list so
+    a future consumer (the first-boot hook, and `sobarch setup
+    <profile>`/`sobarch remove <profile>`, neither built yet) can still
+    reason about it per profile, not just per package."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / "profile-selection.json"
+    selection = resolve_selection(state.install_everything, state.profile_packages)
+    path.write_text(json.dumps(selection, indent=4) + "\n")
+    return path
+
+
+def write_firstboot_package_lists(state: WizardState, sobarch_dir: Path) -> tuple[Path, Path]:
+    """Flat, one-package-per-line lists for installer/firstboot/
+    install-profile-packages.sh to consume with plain bash on the
+    installed system, no JSON/jq dependency needed there. Profile
+    boundaries don't matter to that script (pacman installs a flat
+    package set either way), so this flattens and dedupes across every
+    selected profile, unlike write_profile_selection() above."""
+    sobarch_dir.mkdir(parents=True, exist_ok=True)
+    selection = resolve_selection(state.install_everything, state.profile_packages)
+    all_selected = {pkg for packages in selection.values() for pkg in packages}
+    official, aur = split_by_source(all_selected)
+
+    official_path = sobarch_dir / "profile-packages-official.txt"
+    aur_path = sobarch_dir / "profile-packages-aur.txt"
+    official_path.write_text("".join(f"{pkg}\n" for pkg in official))
+    aur_path.write_text("".join(f"{pkg}\n" for pkg in aur))
+    return official_path, aur_path

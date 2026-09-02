@@ -20,7 +20,12 @@ class WizardState:
 
     rescue_media: bool = True
 
-    profiles: list[str] = field(default_factory=list)
+    install_everything: bool = False
+    # Profile name -> selected package list. A profile only appears
+    # here once the user has selected at least one of its packages;
+    # "install everything" (above) is resolved separately, at output
+    # time, rather than flattened into this dict.
+    profile_packages: dict[str, list[str]] = field(default_factory=dict)
 
     def is_complete(self) -> bool:
         return bool(self.disk_device and self.hostname and self.username and self.password)

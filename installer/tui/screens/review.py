@@ -4,8 +4,24 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Static
 
-from config_gen import ConfigGenError, generate_configs, write_configs
+from config_gen import (
+    ConfigGenError,
+    generate_configs,
+    write_configs,
+    write_firstboot_package_lists,
+    write_profile_selection,
+)
+from profiles_data import resolve_selection
 from screens.base import WizardScreen
+
+
+def _profiles_summary(state) -> str:
+    if state.install_everything:
+        return "all profiles (every package)"
+    selection = resolve_selection(state.install_everything, state.profile_packages)
+    if not selection:
+        return "none"
+    return ", ".join(f"{name} ({len(packages)} pkgs)" for name, packages in selection.items())
 
 
 class ReviewScreen(WizardScreen):
@@ -22,7 +38,7 @@ class ReviewScreen(WizardScreen):
                 f"Language:   {state.sys_lang}",
                 f"Timezone:   {state.timezone}",
                 f"Rescue ISO: {'yes' if state.rescue_media else 'no'}",
-                f"Profiles:   {', '.join(state.profiles) or 'none'}",
+                f"Profiles:   {_profiles_summary(state)}",
             ]
             yield Static("\n".join(summary_lines), classes="card-subtitle")
 
@@ -61,14 +77,19 @@ class ReviewScreen(WizardScreen):
             self.sobarch_app.begin_install()
 
     def _save_configuration(self) -> None:
+        state = self.sobarch_app.state
+        out_dir = self.sobarch_app.output_dir
         try:
-            generated = generate_configs(self.sobarch_app.state, self.sobarch_app.get_hardware())
-            base_path, credentials_path = write_configs(generated, self.sobarch_app.output_dir)
+            generated = generate_configs(state, self.sobarch_app.get_hardware())
+            base_path, credentials_path = write_configs(generated, out_dir)
+            profiles_path = write_profile_selection(state, out_dir)
+            official_path, aur_path = write_firstboot_package_lists(state, out_dir)
         except ConfigGenError as error:
             self.show_error(str(error))
             return
 
         self.clear_error()
+        saved_paths = [base_path, credentials_path, profiles_path, official_path, aur_path]
         self.query_one("#status-message", Static).update(
-            f"Saved: {base_path}\nSaved: {credentials_path}"
+            "\n".join(f"Saved: {path}" for path in saved_paths)
         )
