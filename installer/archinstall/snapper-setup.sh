@@ -11,17 +11,21 @@
 # `@` during a rollback wipes the snapshot history out along with it.
 # (https://wiki.archlinux.org/title/Snapper#Suggested_filesystem_layout)
 #
-# Snapshots are root-only. archinstall's own setup_btrfs_snapshot()
-# unconditionally creates a second Snapper config for `home`/`/home`
-# (confirmed by reading archinstall/lib/installer.py directly: the two
-# configs are hardcoded, not conditional on the disk layout), with no
-# way to opt out of its creation from the JSON config. Since this
-# project deliberately doesn't snapshot /home (personal-file backup is
-# the user's own concern, not this safety net's), and since /home has
-# no dedicated `@home-snapshots` subvolume for it to reuse, that
-# auto-created config would otherwise nest its own `.snapshots` inside
-# `@home`, the exact problem `@snapshots` exists to avoid for root. So
-# it's deleted here, before it can create even one snapshot.
+# Snapshots are root-only. archinstall's own setup_btrfs_snapshot() has
+# been observed to unconditionally create a second Snapper config for
+# `home`/`/home` (confirmed by reading archinstall/lib/installer.py
+# directly: the two configs are hardcoded, not conditional on the disk
+# layout), with no way to opt out of its creation from the JSON config.
+# Since this project deliberately doesn't snapshot /home (personal-file
+# backup is the user's own concern, not this safety net's), and since
+# /home has no dedicated `@home-snapshots` subvolume for it to reuse,
+# that auto-created config would otherwise nest its own `.snapshots`
+# inside `@home`, the exact problem `@snapshots` exists to avoid for
+# root. So it's deleted here, before it can create even one snapshot.
+#
+# Deletion is best-effort: this has varied across archinstall versions
+# (some runs don't create a `home` config at all), so a missing config
+# is treated as already satisfying the goal rather than as a failure.
 #
 # `@pkg`/`@log` don't exist either: the pacman cache and system logs
 # live inside `@`, matching the Arch Wiki's own suggested layout
@@ -53,9 +57,12 @@ if ! mountpoint -q /.snapshots; then
     exit 1
 fi
 
-echo "snapper-setup.sh: deleting the auto-created 'home' Snapper config (snapshots are root-only)..."
-
-snapper --no-dbus -c home delete-config
+if snapper --no-dbus list-configs | awk '{print $1}' | grep -qx home; then
+    echo "snapper-setup.sh: deleting the auto-created 'home' Snapper config (snapshots are root-only)..."
+    snapper --no-dbus -c home delete-config
+else
+    echo "snapper-setup.sh: no 'home' Snapper config was created, nothing to delete."
+fi
 
 echo "snapper-setup.sh: applying retention preset (daily, 5 kept) to root..."
 
