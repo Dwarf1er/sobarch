@@ -4,12 +4,22 @@
 #
 # `@snapshots` (base.json's disk_config) is what makes this safe to run
 # at all: it's already mounted at /.snapshots as its own top-level
-# BTRFS subvolume before this runs, so `snapper create-config` detects
-# and reuses it instead of nesting `.snapshots` inside `@`. This is the
-# Arch Wiki's own documented fix for a well-known problem with the flat
+# BTRFS subvolume before this runs. This is the Arch Wiki's own
+# documented fix for a well-known problem with the flat
 # Arch-recommended layout: if `.snapshots` lives inside `@`, replacing
 # `@` during a rollback wipes the snapshot history out along with it.
 # (https://wiki.archlinux.org/title/Snapper#Suggested_filesystem_layout)
+#
+# `snapper create-config` does NOT auto-detect and reuse an
+# already-mounted `.snapshots` subvolume the way that Wiki section's
+# prose might suggest: it unconditionally tries to create the
+# `.snapshots` subvolume itself and fails outright (btrfs EEXIST) when
+# something is already mounted there. So, matching the same Wiki
+# section's actual documented *procedure* rather than its prose, the
+# `root` config creation below (when needed) briefly unmounts
+# `/.snapshots`, lets `create-config` create and populate its own
+# nested `.snapshots` subvolume normally, discards that, then restores
+# the real top-level `@snapshots` subvolume in its place.
 #
 # Snapshots are root-only. archinstall's own setup_btrfs_snapshot() has
 # been observed, by reading archinstall/lib/installer.py directly, to
@@ -70,7 +80,17 @@ fi
 
 if ! grep -qx root <<<"$existing_configs"; then
     echo "snapper-setup.sh: no 'root' Snapper config was created by archinstall; creating it..."
+    # Unmounting alone isn't enough: the empty directory that was used
+    # as the mountpoint is still there afterward and blocks
+    # create-config's subvolume creation the same way the mounted
+    # subvolume did, so it has to be removed too.
+    umount /.snapshots
+    rmdir /.snapshots
     snapper --no-dbus -c root create-config /
+    btrfs subvolume delete /.snapshots
+    mkdir /.snapshots
+    mount /.snapshots
+    chmod 750 /.snapshots
 fi
 
 echo "snapper-setup.sh: applying retention preset (daily, 5 kept) to root..."
