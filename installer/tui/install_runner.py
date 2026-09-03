@@ -70,6 +70,14 @@ FIRSTBOOT_SCRIPT_DIR_IN_TARGET = Path("/usr/local/lib/sobarch")
 FIRSTBOOT_SERVICE_DIR_IN_TARGET = Path("/etc/systemd/system")
 SOBARCH_DIR_IN_TARGET = Path("/etc/sobarch")
 
+# Deployed alongside the units above: a NetworkManager dispatcher hook
+# that (re)triggers sobarch-firstboot-packages.service as soon as a
+# connection actually comes up, since a fresh WiFi-only install has no
+# saved connection for the boot-time attempt above to race against
+# (see 90-sobarch-firstboot-packages's own header comment).
+NM_DISPATCHER_SCRIPT = "90-sobarch-firstboot-packages"
+NM_DISPATCHER_DIR_IN_TARGET = Path("/etc/NetworkManager/dispatcher.d")
+
 OutputCallback = Callable[[str], None]
 
 
@@ -212,6 +220,12 @@ def run_install(
             service_text = (FIRSTBOOT_DIR / service_name).read_text().replace("__USERNAME__", state.username)
             (firstboot_service_dir / service_name).write_text(service_text)
             service_names.append(service_name)
+
+        nm_dispatcher_dir = MOUNTPOINT / NM_DISPATCHER_DIR_IN_TARGET.relative_to("/")
+        nm_dispatcher_dir.mkdir(parents=True, exist_ok=True)
+        nm_dispatcher_path = nm_dispatcher_dir / NM_DISPATCHER_SCRIPT
+        shutil.copy2(FIRSTBOOT_DIR / NM_DISPATCHER_SCRIPT, nm_dispatcher_path)
+        nm_dispatcher_path.chmod(0o755)
 
         on_output("Enabling first-boot units...")
         returncode = _run_logged(
