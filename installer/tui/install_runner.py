@@ -13,7 +13,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from config_gen import GeneratedConfig, partition_device_path, write_configs, write_firstboot_package_lists
+from config_gen import (
+    GeneratedConfig,
+    partition_device_path,
+    write_configs,
+    write_firstboot_package_lists,
+    write_security_flags,
+)
 from hardware import HardwareInfo
 from state import WizardState
 
@@ -39,8 +45,9 @@ SOBARCH_SKEL_BUILD_DIR_IN_TARGET = Path("/tmp/sobarch-skel-build")
 #   TUI.
 # - apply-skel.sh: deploys sobarch-skel's defaults into the new user's
 #   $HOME.
-# - apply-security-baseline.sh: currently a stub; a later change fills
-#   in the real security baseline without needing further wiring here.
+# - apply-security-baseline.sh: nftables firewall, root lock, and the
+#   optional SSH component, reading
+#   the ssh-enabled flag write_security_flags() writes below.
 FIRSTBOOT_DIR = Path(__file__).resolve().parent.parent / "firstboot"
 FIRSTBOOT_UNITS = [
     ("install-profile-packages.sh", "sobarch-firstboot-packages.service"),
@@ -174,6 +181,7 @@ def run_install(
             raise InstallError("failed to build/install sobarch-skel", log_path)
 
         write_firstboot_package_lists(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
+        write_security_flags(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
 
         firstboot_script_dir = MOUNTPOINT / FIRSTBOOT_SCRIPT_DIR_IN_TARGET.relative_to("/")
         firstboot_script_dir.mkdir(parents=True, exist_ok=True)

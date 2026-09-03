@@ -16,6 +16,7 @@ from screens.profiles import ProfilesScreen
 from screens.progress import ProgressScreen
 from screens.rescue import RescueScreen
 from screens.review import ReviewScreen
+from screens.ssh import SshScreen
 from screens.welcome import WelcomeScreen
 from state import WizardState
 from theme import ONEDARK_THEME
@@ -27,6 +28,7 @@ STEPS = [
     LocalizationScreen,
     RescueScreen,
     ProfilesScreen,
+    SshScreen,
     ReviewScreen,
 ]
 

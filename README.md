@@ -23,7 +23,20 @@ The distribution is primarily built for its maintainer, but it hopes to stay und
 
 ## Quickstart
 
-Not available yet.
+Boot the [official Arch Linux ISO](https://archlinux.org/download/),
+connect to the network (`iwctl` for Wi-Fi; wired works out of the box),
+then run:
+
+    curl -fsSL https://raw.githubusercontent.com/Dwarf1er/sobarch/master/bootstrap.sh | bash
+
+This is the only manually-typed, unbranded step.
+`bootstrap.sh` fetches a checkout of this repository into a temp
+directory and launches `installer/tui/__main__.py`, nothing else; no
+separate hosting, no custom ISO. The TUI then walks through disk
+selection, account/locale setup, and optional software profiles before
+handing off to `archinstall`. On success it reboots into a working
+desktop; on failure it points at the full install log rather than
+hiding it behind a branded screen.
 
 **Note:** the installer currently only supports full-disk installs. It
 partitions and wipes the entire target disk, and dual/multi-boot
@@ -87,7 +100,7 @@ otherwise) for inspection.
 The optional-profiles screen (`installer/tui/profiles_data.py` for the
 package lists, `installer/tui/screens/profiles.py` for the screen
 itself) offers "install everything" or, per profile, either taking it
-whole or expanding it to hand-pick individual packages, per the two
+whole or expanding it to hand-pick individual packages, per its two
 selection levels. This choice isn't part of
 `archinstall`'s own config at all: selected packages are deliberately
 installed after first boot rather than during the install session, so
@@ -222,7 +235,8 @@ Installer above) is one of three; the other two are new:
 
 - **`apply-skel.sh`** / `sobarch-firstboot-skel.service` deploys
   `sobarch-skel`'s defaults into the new account's `$HOME`, using the
-  three-way `diff3`-based reconciliation: for each file, compare the current
+  three-way `diff3`-based reconciliation implemented below: for each
+  file, compare the current
   `$HOME` copy, the recorded *baseline* (a snapshot of what was applied
   last, under `~/.local/state/sobarch/skel-baseline/`), and the *new*
   version, merging cleanly wherever only one side changed and dropping
@@ -240,10 +254,20 @@ Installer above) is one of three; the other two are new:
   `install_runner.py`), never as root, since it only ever writes inside
   that account's own `$HOME`.
 - **`apply-security-baseline.sh`** / `sobarch-firstboot-security.service`
-  is currently a stub: it logs that it's a no-op and marks itself
-  done. Wired in now so implementing the real baseline only has to
-  fill in the script body, no further install_runner.py/unit changes
-  needed once it lands.
+  implements the security baseline: writes
+  `/etc/nftables.conf` (default-drop inbound, loopback and
+  established/related always allowed, an exception for LocalSend's
+  53317/tcp+udp), enables `nftables.service`, and locks the root
+  account (`passwd -l root`) unconditionally. It also reads
+  `/etc/sobarch/ssh-enabled` (written by `config_gen.write_security_flags`
+  from the TUI's SSH screen, `installer/tui/screens/ssh.py`): when
+  `true`, it installs `openssh`, drops in
+  `/etc/ssh/sshd_config.d/10-sobarch-no-root-login.conf`
+  (`PermitRootLogin no`), opens the matching firewall exception, and
+  enables `sshd.service`; otherwise it defensively disables `sshd`.
+  SSH is off by default and, like the other optional components, is a
+  toggle in the TUI rather than a package-profile checkbox, since
+  enabling it needs more than installing a package.
 
 Since no vendored/local package build-and-sync mechanism exists yet
 either, `install_runner.py`

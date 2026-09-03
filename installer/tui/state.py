@@ -20,6 +20,14 @@ class WizardState:
 
     rescue_media: bool = True
 
+    # SSH is disabled by default: an optional
+    # component, not a base-install default. Kept separate from
+    # profile_packages below since enabling it needs more than
+    # installing a package (a sshd_config.d drop-in, a firewall
+    # exception), applied by apply-security-baseline.sh, not
+    # install-profile-packages.sh.
+    ssh_enabled: bool = False
+
     install_everything: bool = False
     # Profile name -> selected package list. A profile only appears
     # here once the user has selected at least one of its packages;

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Deploys/reconciles /usr/share/sobarch/skel/ (the `sobarch-skel`
-# package) into $HOME, using the three-way `diff3` reconciliation
-# implemented below.
+# package) into $HOME, using the three-way `diff3`
+# reconciliation implemented below.
 #
 # Authored once, here, for the first-boot hook's initial skel
 # deployment. `sobarch update-config` later

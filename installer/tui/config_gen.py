@@ -163,3 +163,17 @@ def write_firstboot_package_lists(state: WizardState, sobarch_dir: Path) -> tupl
     official_path.write_text("".join(f"{pkg}\n" for pkg in official))
     aur_path.write_text("".join(f"{pkg}\n" for pkg in aur))
     return official_path, aur_path
+
+
+def write_security_flags(state: WizardState, sobarch_dir: Path) -> Path:
+    """A single flat true/false flag, read by apply-security-baseline.sh
+    at first boot: SSH needs more than a package
+    install (a firewall exception, a sshd_config.d drop-in), so it's
+    handled by the security-baseline first-boot unit, not
+    install-profile-packages.sh. Always written (never left absent), so
+    a config hand-run outside the TUI has an explicit answer rather than
+    relying on the first-boot script's own default."""
+    sobarch_dir.mkdir(parents=True, exist_ok=True)
+    path = sobarch_dir / "ssh-enabled"
+    path.write_text("true\n" if state.ssh_enabled else "false\n")
+    return path
