@@ -239,7 +239,8 @@
     "script": null,
     "services": [
         "NetworkManager",
-        "ly@tty1.service"
+        "NetworkManager-wait-online.service",
+        "ly@tty2.service"
     ],
     "swap": {
         "algorithm": "zstd",
