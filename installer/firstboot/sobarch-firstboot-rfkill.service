@@ -1,0 +1,11 @@
+[Unit]
+Description=Unblock soft-blocked wireless radios
+ConditionPathExists=!/var/lib/sobarch/rfkill-unblocked
+Before=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/sobarch/unblock-rfkill.sh
+
+[Install]
+WantedBy=multi-user.target

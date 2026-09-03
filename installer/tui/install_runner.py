@@ -48,6 +48,10 @@ SOBARCH_SKEL_BUILD_DIR_IN_TARGET = Path("/var/tmp/sobarch-skel-build")
 # install fast/minimal, and every profile/step behaves the same
 # regardless of what it needs, e.g. network or a fresh user account).
 #
+# - unblock-rfkill.sh: unblocks any soft-blocked wireless radios (some
+#   laptops persist a firmware/EC-level airplane-mode toggle into a
+#   fresh install), ordered before NetworkManager.service so the two
+#   units below actually have network to work with.
 # - install-profile-packages.sh: the optional packages selected in the
 #   TUI.
 # - apply-skel.sh: deploys sobarch-skel's defaults into the new user's
@@ -57,6 +61,7 @@ SOBARCH_SKEL_BUILD_DIR_IN_TARGET = Path("/var/tmp/sobarch-skel-build")
 #   the ssh-enabled flag write_security_flags() writes below.
 FIRSTBOOT_DIR = Path(__file__).resolve().parent.parent / "firstboot"
 FIRSTBOOT_UNITS = [
+    ("unblock-rfkill.sh", "sobarch-firstboot-rfkill.service"),
     ("install-profile-packages.sh", "sobarch-firstboot-packages.service"),
     ("apply-skel.sh", "sobarch-firstboot-skel.service"),
     ("apply-security-baseline.sh", "sobarch-firstboot-security.service"),
