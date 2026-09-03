@@ -8,6 +8,11 @@ pkgdesc="Sobarch distribution-owned default desktop configuration (skel)"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
 license=('MIT')
+# Pure-data package with no compiled binaries, so there's nothing to
+# strip or generate debug info for; disabling debug avoids needing the
+# debugedit package on the build host (not present on a fresh
+# archinstall base).
+options=('!debug')
 source=()
 sha256sums=()
 
