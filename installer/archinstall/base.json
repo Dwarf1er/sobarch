@@ -156,11 +156,18 @@
     },
     "mirror_config": {
         "custom_repositories": [],
-        "custom_servers": [],
+        "custom_servers": [
+            {
+                "url": "https://geo.mirror.pkgbuild.com/$repo/os/$arch"
+            }
+        ],
         "mirror_regions": {},
         "optional_repositories": [
             "multilib"
         ]
+    },
+    "pacman_config": {
+        "parallel_downloads": 5
     },
     "network_config": {
         "type": "nm"
