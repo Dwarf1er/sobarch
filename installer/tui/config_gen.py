@@ -95,14 +95,14 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
         "value": btrfs_start_mib,
     }
 
-    root_size_bytes = state.disk_size_bytes - (btrfs_start_mib * MIB) - GPT_TRAILING_RESERVE_BYTES
-    if root_size_bytes <= 0:
+    root_size_mib = (state.disk_size_bytes - (btrfs_start_mib * MIB) - GPT_TRAILING_RESERVE_BYTES) // MIB
+    if root_size_mib <= 0:
         raise ConfigGenError("the selected disk is too small for this partition layout")
 
     btrfs["size"] = {
         "sector_size": btrfs["size"]["sector_size"],
-        "unit": "B",
-        "value": root_size_bytes,
+        "unit": "MiB",
+        "value": root_size_mib,
     }
 
     base["hostname"] = state.hostname
