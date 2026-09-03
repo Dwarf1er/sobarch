@@ -156,11 +156,7 @@
     },
     "mirror_config": {
         "custom_repositories": [],
-        "custom_servers": [
-            {
-                "url": "https://geo.mirror.pkgbuild.com/$repo/os/$arch"
-            }
-        ],
+        "custom_servers": [],
         "mirror_regions": {},
         "optional_repositories": [
             "multilib"
