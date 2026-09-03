@@ -109,6 +109,13 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
     base["locale_config"]["kb_layout"] = state.kb_layout
     base["locale_config"]["sys_lang"] = state.sys_lang
     base["timezone"] = state.timezone
+
+    if state.mirror_region:
+        # The list of URLs archinstall's MirrorRegion also carries is
+        # unused by its own region lookup (it re-fetches URLs for the
+        # named region live, from the same mirror-status data the TUI
+        # offered this name from), so an empty list here is enough.
+        base["mirror_config"]["mirror_regions"] = {state.mirror_region: []}
     base["app_config"]["bluetooth_config"]["enabled"] = hardware.bluetooth_detected
 
     extra_packages = {pkg for pkg in (hardware.cpu_microcode_pkg, *hardware.gpu_packages) if pkg}

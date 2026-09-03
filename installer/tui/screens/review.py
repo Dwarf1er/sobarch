@@ -38,6 +38,7 @@ class ReviewScreen(WizardScreen):
                 f"Keyboard:   {state.kb_layout}",
                 f"Language:   {state.sys_lang}",
                 f"Timezone:   {state.timezone}",
+                f"Mirror:     {state.mirror_region or 'automatic'}",
                 f"Rescue ISO: {'yes' if state.rescue_media else 'no'}",
                 f"Profiles:   {_profiles_summary(state)}",
                 f"SSH:        {'enabled' if state.ssh_enabled else 'disabled'}",
