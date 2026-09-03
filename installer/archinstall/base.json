@@ -239,7 +239,7 @@
     "script": null,
     "services": [
         "NetworkManager",
-        "ly"
+        "ly@tty1.service"
     ],
     "swap": {
         "algorithm": "zstd",
