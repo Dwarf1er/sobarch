@@ -157,7 +157,10 @@
     "mirror_config": {
         "custom_repositories": [],
         "custom_servers": [],
-        "mirror_regions": {}
+        "mirror_regions": {},
+        "optional_repositories": [
+            "multilib"
+        ]
     },
     "network_config": {
         "type": "nm"
