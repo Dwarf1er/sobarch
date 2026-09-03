@@ -21,6 +21,9 @@ class WelcomeScreen(WizardScreen):
                 yield Button("Quit", flat=True, id="quit")
                 yield Button("Begin", variant="primary", flat=True, id="begin")
 
+    def on_mount(self) -> None:
+        self.query_one("#begin", Button).focus()
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "begin":
             self.wizard_continue({})
