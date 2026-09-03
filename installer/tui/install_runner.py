@@ -29,7 +29,14 @@ CHROOT_SETUP_SCRIPTS = ["nvidia-setup.sh", "snapper-setup.sh", "rescue-iso-setup
 CHROOT_SETUP_DIR_IN_TARGET = Path("/root/sobarch-setup")
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-SOBARCH_SKEL_BUILD_DIR_IN_TARGET = Path("/tmp/sobarch-skel-build")
+# Not /tmp: arch-chroot mounts a fresh, empty tmpfs over
+# <target>/tmp on every single invocation (see chroot_setup() in
+# /usr/bin/arch-chroot), so anything written there - by this host
+# process directly, or by one arch-chroot call - is invisible to the
+# next arch-chroot call. /var/tmp isn't in arch-chroot's mount list and
+# is still mode 1777, so it survives across calls with the same
+# build-as-non-root permissions.
+SOBARCH_SKEL_BUILD_DIR_IN_TARGET = Path("/var/tmp/sobarch-skel-build")
 
 # The first-boot units below all follow the same shape: a script under
 # installer/firstboot/, deployed to /usr/local/lib/sobarch/, run once
