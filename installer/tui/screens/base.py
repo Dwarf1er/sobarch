@@ -6,6 +6,7 @@ be used to return to a previous wizard step)."""
 
 from typing import TYPE_CHECKING
 
+from textual.binding import Binding
 from textual.screen import Screen
 from textual.widgets import Static
 
@@ -15,6 +16,14 @@ if TYPE_CHECKING:
 
 class WizardScreen(Screen):
     """Base class for every step of the install wizard."""
+
+    # Widgets that already bind left/right themselves (Input, RadioSet)
+    # consume the key before it gets here, so this only ever reaches
+    # widgets like Button that don't: mainly the Back/Continue row.
+    BINDINGS = [
+        Binding("left", "app.focus_previous", show=False),
+        Binding("right", "app.focus_next", show=False),
+    ]
 
     @property
     def sobarch_app(self) -> "SobarchApp":
