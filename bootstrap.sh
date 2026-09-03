@@ -33,5 +33,10 @@ echo "sobarch: fetching installer from ${REPO}@${BRANCH}..."
 curl -fsSL "$ARCHIVE_URL" | tar -xz -C "$WORKDIR" --strip-components=1
 
 echo "sobarch: launching installer..."
-python3 "$WORKDIR/installer/tui/__main__.py" "$@"
+# stdin here is still curl's pipe, not the terminal (this whole script
+# runs as `curl | bash`), so the TUI must read keys from the tty
+# directly or it can't enter raw mode: arrow keys/Enter would just get
+# echoed by the terminal as literal escape sequences instead of being
+# read as input.
+python3 "$WORKDIR/installer/tui/__main__.py" "$@" < /dev/tty
 
