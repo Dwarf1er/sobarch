@@ -41,24 +41,28 @@ SOBARCH_SKEL_BUILD_DIR_IN_TARGET = Path("/var/tmp/sobarch-skel-build")
 # The first-boot units below all follow the same shape: a script under
 # installer/firstboot/, deployed to /usr/local/lib/sobarch/, run once
 # by its own ConditionPathExists-guarded oneshot .service (a failure
-# leaves its marker/state unwritten, so it retries on the next boot
-# rather than being silently skipped forever). None of this runs
-# during the install session itself; it only gets deployed and enabled
-# here (see README.md's Installer section for why: keeps the base
-# install fast/minimal, and every profile/step behaves the same
-# regardless of what it needs, e.g. network or a fresh user account).
+# leaves its marker/state unwritten, so it retries later rather than
+# being silently skipped forever). None of this runs during the install
+# session itself; it only gets deployed and enabled here (see
+# README.md's Installer section for why: keeps the base install
+# fast/minimal, and every profile/step behaves the same regardless of
+# what it needs, e.g. network or a fresh user account).
 #
 # - unblock-rfkill.sh: unblocks any soft-blocked wireless radios (some
 #   laptops persist a firmware/EC-level airplane-mode toggle into a
 #   fresh install), ordered before NetworkManager.service so the two
-#   units below actually have network to work with.
+#   units below actually have network to work with. Boot-enabled.
 # - install-profile-packages.sh: the optional packages selected in the
-#   TUI.
+#   TUI. Needs network, which (see NM_DISPATCHER_SCRIPT
+#   below) is never actually up this early, so it has no [Install]
+#   section and is never started at boot; only the dispatcher hook
+#   starts it.
 # - apply-skel.sh: deploys sobarch-skel's defaults into the new user's
-#   $HOME.
+#   $HOME. Boot-enabled.
 # - apply-security-baseline.sh: nftables firewall, root lock, and the
-#   optional SSH component, reading
-#   the ssh-enabled flag write_security_flags() writes below.
+#   optional SSH component, reading the ssh-enabled
+#   flag write_security_flags() writes below. Same as
+#   install-profile-packages.sh above: no [Install] section, dispatcher-only.
 FIRSTBOOT_DIR = Path(__file__).resolve().parent.parent / "firstboot"
 FIRSTBOOT_UNITS = [
     ("unblock-rfkill.sh", "sobarch-firstboot-rfkill.service"),
@@ -66,16 +70,29 @@ FIRSTBOOT_UNITS = [
     ("apply-skel.sh", "sobarch-firstboot-skel.service"),
     ("apply-security-baseline.sh", "sobarch-firstboot-security.service"),
 ]
+# Subset of FIRSTBOOT_UNITS above that actually has an [Install] section
+# and should be started at boot. install-profile-packages.sh and
+# apply-security-baseline.sh are deliberately left out: `systemctl
+# enable` on a unit with no [Install] section fails, and running them
+# at boot would just mean failing every time anyway, since the network
+# they need is never up that early (see NM_DISPATCHER_SCRIPT below).
+FIRSTBOOT_BOOT_ENABLED_SERVICES = {
+    "sobarch-firstboot-rfkill.service",
+    "sobarch-firstboot-skel.service",
+}
 FIRSTBOOT_SCRIPT_DIR_IN_TARGET = Path("/usr/local/lib/sobarch")
 FIRSTBOOT_SERVICE_DIR_IN_TARGET = Path("/etc/systemd/system")
 SOBARCH_DIR_IN_TARGET = Path("/etc/sobarch")
 
 # Deployed alongside the units above: a NetworkManager dispatcher hook
-# that (re)triggers sobarch-firstboot-packages.service as soon as a
-# connection actually comes up, since a fresh WiFi-only install has no
-# saved connection for the boot-time attempt above to race against
-# (see 90-sobarch-firstboot-packages's own header comment).
-NM_DISPATCHER_SCRIPT = "90-sobarch-firstboot-packages"
+# that is the *only* thing that starts sobarch-firstboot-packages.service
+# and sobarch-firstboot-security.service, firing once a connection
+# actually comes up. A fresh WiFi-only install has no saved connection
+# to auto-connect at boot, and even a once-connected WiFi network needs
+# the user's session (and its oo7 secret store) running to reconnect,
+# so in practice that never happens before login (see
+# 90-sobarch-firstboot's own header comment).
+NM_DISPATCHER_SCRIPT = "90-sobarch-firstboot"
 NM_DISPATCHER_DIR_IN_TARGET = Path("/etc/NetworkManager/dispatcher.d")
 
 OutputCallback = Callable[[str], None]
@@ -228,8 +245,9 @@ def run_install(
         nm_dispatcher_path.chmod(0o755)
 
         on_output("Enabling first-boot units...")
+        enable_names = [name for name in service_names if name in FIRSTBOOT_BOOT_ENABLED_SERVICES]
         returncode = _run_logged(
-            ["arch-chroot", str(MOUNTPOINT), "systemctl", "enable", *service_names],
+            ["arch-chroot", str(MOUNTPOINT), "systemctl", "enable", *enable_names],
             log_file,
             on_output,
         )

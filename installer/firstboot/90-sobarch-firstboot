@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# NetworkManager dispatcher hook: the only thing that starts sobarch's
+# deferred, network-dependent first-boot units (installer/firstboot/
+# install-profile-packages.sh and apply-security-baseline.sh's SSH
+# branch). Neither unit has a [Install] section, so neither is ever
+# started at boot; this hook fires them once a connection actually
+# comes up instead.
+#
+# A boot-time attempt would fail every time anyway: a fresh WiFi-only
+# install has no saved connection to auto-connect with (nothing in
+# this project's archinstall config carries WiFi credentials into the
+# target, see network_config in base.json), and even after the user
+# connects once from within a session, the secret is stored through
+# oo7, which only unlocks once that user's session is running. So
+# there's never a point before login where these units could actually
+# succeed.
+#
+# Cheap and safe to fire on every "up"/connectivity-change event:
+# each service's own ConditionPathExists marker makes a start() on an
+# already-completed run a near-instant no-op.
+
+interface="$1"
+action="$2"
+
+case "$action" in
+    up|connectivity-change)
+        systemctl start --no-block sobarch-firstboot-packages.service
+        systemctl start --no-block sobarch-firstboot-security.service
+        ;;
+esac

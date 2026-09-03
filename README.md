@@ -235,8 +235,8 @@ Installer above) is one of three; the other two are new:
 
 - **`apply-skel.sh`** / `sobarch-firstboot-skel.service` deploys
   `sobarch-skel`'s defaults into the new account's `$HOME`, using the
-  three-way `diff3`-based reconciliation implemented below: for each
-  file, compare the current
+  three-way `diff3`-based reconciliation implemented below: for each file,
+  compare the current
   `$HOME` copy, the recorded *baseline* (a snapshot of what was applied
   last, under `~/.local/state/sobarch/skel-baseline/`), and the *new*
   version, merging cleanly wherever only one side changed and dropping
