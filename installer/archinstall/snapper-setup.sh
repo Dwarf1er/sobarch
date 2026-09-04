@@ -39,6 +39,20 @@
 # archinstall's own behavior: `home` is only deleted if present, and
 # `root` is created here if archinstall didn't already create it.
 #
+# The same unreliability applies to the other half of what
+# archinstall's setup_btrfs_snapshot() does when Grub is the bootloader
+# (installing grub-btrfs/inotify-tools, writing grub-btrfsd's
+# snapshot-path override, enabling grub-btrfsd.service): confirmed, on
+# a real install, to not happen at all in practice, leaving snapshots
+# being created with no way to see or boot into them from Grub.
+# grub-btrfs/inotify-tools are pulled fully out of archinstall's own
+# mechanism and into base.json's static package list instead (so they're
+# on disk by the time this script runs, regardless of what
+# setup_btrfs_snapshot() does or doesn't do), and the drop-in + service
+# enablement + grub.cfg regen below are done unconditionally, matching
+# archinstall's own _configure_grub_btrfsd()
+# (archinstall/lib/installer.py) exactly rather than assuming it ran.
+#
 # `@pkg`/`@log` don't exist either: the pacman cache and system logs
 # live inside `@`, matching the Arch Wiki's own suggested layout
 # exactly rather than adding two more subvolumes for a marginal,
@@ -114,5 +128,24 @@ sed -i \
 echo "snapper-setup.sh: creating initial snapshot..."
 
 snapper --no-dbus -c root create --description "Initial system setup"
+
+echo "snapper-setup.sh: configuring grub-btrfsd..."
+
+# Matches archinstall's own _configure_grub_btrfsd() exactly: an
+# override directory, not editing the shipped unit file directly, per
+# systemd's own documented drop-in mechanism.
+mkdir -p /etc/systemd/system/grub-btrfsd.service.d
+cat > /etc/systemd/system/grub-btrfsd.service.d/override.conf <<'EOF'
+[Service]
+ExecStart=
+ExecStart=/usr/bin/grub-btrfsd --syslog /.snapshots
+EOF
+chmod 644 /etc/systemd/system/grub-btrfsd.service.d/override.conf
+
+systemctl enable grub-btrfsd.service
+
+echo "snapper-setup.sh: regenerating grub.cfg so the snapshot submenu is present regardless of whether rescue media is opted in..."
+
+grub-mkconfig -o /boot/grub/grub.cfg
 
 echo "snapper-setup.sh: done."
