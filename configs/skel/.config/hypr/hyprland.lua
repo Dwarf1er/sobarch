@@ -38,6 +38,7 @@ hl.on("hyprland.start", function()
 	hl.exec_cmd("systemctl --user start hyprpolkitagent")
 	hl.exec_cmd("waybar & mako & hypridle & hyprpaper & udiskie")
 	hl.exec_cmd("fcitx5")
+	hl.exec_cmd("xdg-user-dirs-update")
 end)
 
 hl.exec_cmd('gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"')
