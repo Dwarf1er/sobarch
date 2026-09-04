@@ -1,6 +1,7 @@
 [Unit]
 Description=Apply the sobarch security baseline
 ConditionPathExists=!/var/lib/sobarch/security-baseline-applied
+After=sobarch-firstboot-packages.service
 
 [Service]
 Type=oneshot

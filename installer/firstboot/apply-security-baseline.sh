@@ -13,7 +13,28 @@ set -euo pipefail
 MARKER="/var/lib/sobarch/security-baseline-applied"
 SSH_FLAG="/etc/sobarch/ssh-enabled"
 
+# Best-effort desktop notification into the logged-in user's session:
+# this runs as root with no controlling terminal, so a failure is
+# otherwise invisible until someone thinks to check journalctl. A
+# no-op if no graphical session is active yet (e.g. a network blip
+# right after boot before anyone's logged in) or notify-send isn't
+# installed.
+notify_user() {
+    local urgency="$1" title="$2" body="$3"
+    command -v notify-send >/dev/null 2>&1 || return 0
+    local session_user
+    session_user="$(loginctl list-sessions --no-legend 2>/dev/null | awk '{print $3; exit}')"
+    [[ -n "$session_user" ]] || return 0
+    local uid
+    uid="$(id -u "$session_user" 2>/dev/null)" || return 0
+    runuser -u "$session_user" -- env XDG_RUNTIME_DIR="/run/user/$uid" \
+        notify-send -u "$urgency" "$title" "$body" 2>/dev/null || true
+}
+trap 'rc=$?; [[ $rc -eq 0 ]] || notify_user critical "sobarch: security baseline failed" \
+    "Check: journalctl -u sobarch-firstboot-security.service"; exit $rc' EXIT
+
 mkdir -p "$(dirname "$MARKER")"
+notify_user normal "sobarch: security baseline" "Applying the security baseline..."
 
 # Absent (e.g. a hand-run archinstall config outside the TUI) defaults
 # to disabled, matching SSH's own "off unless explicit" default.
@@ -104,3 +125,4 @@ fi
 
 touch "$MARKER"
 echo "sobarch-firstboot: security baseline applied."
+notify_user normal "sobarch: security baseline" "Security baseline applied."
