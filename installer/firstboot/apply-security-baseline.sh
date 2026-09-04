@@ -132,4 +132,4 @@ fi
 
 touch "$MARKER"
 echo "sobarch-firstboot: security baseline applied."
-notify_user normal "sobarch: security baseline" "Security baseline applied." "$id" >/dev/null
+notify_user critical "sobarch: security baseline" "Security baseline applied." "$id" >/dev/null

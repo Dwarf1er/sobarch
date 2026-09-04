@@ -60,7 +60,7 @@ if [[ -s "$OFFICIAL_LIST" ]]; then
         id=$(notify_user normal "sobarch: installing packages" "Installing ($n/$total): $pkg" "$id")
         pacman -S --needed --noconfirm "$pkg"
     done
-    notify_user normal "sobarch: installing packages" "$total package(s) installed." "$id" >/dev/null
+    notify_user critical "sobarch: installing packages" "$total package(s) installed." "$id" >/dev/null
 else
     echo "sobarch-firstboot: no optional official-repo packages were selected."
 fi
