@@ -11,14 +11,15 @@ choice=$(printf "%s\n" \
 
 case "$choice" in
     "󰤨  Wi-Fi Networks")
-        ssid=$(nmcli -t -f SSID dev wifi list --rescan yes | awk 'NF && !seen[$0]++' | fuzzel --dmenu --prompt "wifi: ")
+        ssid=$(nmcli -e no -t -f SSID dev wifi list --rescan yes | awk 'NF && !seen[$0]++' | fuzzel --dmenu --prompt "wifi: ")
         [ -n "$ssid" ] || exit 0
-        if nmcli -t -f NAME connection show | grep -qxF "$ssid"; then
-            nmcli connection up "$ssid"
+        if nmcli -e no -t -f NAME connection show | grep -qxF "$ssid"; then
+            err=$(nmcli connection up "$ssid" 2>&1 >/dev/null)
         else
             pass=$(fuzzel --dmenu --password --prompt "password: ")
-            nmcli dev wifi connect "$ssid" password "$pass"
+            err=$(nmcli dev wifi connect "$ssid" password "$pass" 2>&1 >/dev/null)
         fi
+        [ -n "$err" ] && notify-send "Network" "$err"
         ;;
     "⏻  Toggle Wi-Fi")
         if [ "$(nmcli radio wifi)" = "enabled" ]; then
@@ -32,7 +33,7 @@ case "$choice" in
         [ -n "$dev" ] && nmcli dev disconnect "$dev"
         ;;
     "󰅙  Forget Network")
-        name=$(nmcli -t -f NAME connection show | fuzzel --dmenu --prompt "forget: ")
+        name=$(nmcli -e no -t -f NAME connection show | fuzzel --dmenu --prompt "forget: ")
         [ -n "$name" ] && nmcli connection delete "$name"
         ;;
     "󰆏  Copy IP Address")
