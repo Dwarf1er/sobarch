@@ -19,22 +19,26 @@ SSH_FLAG="/etc/sobarch/ssh-enabled"
 # no-op if no graphical session is active yet (e.g. a network blip
 # right after boot before anyone's logged in) or notify-send isn't
 # installed.
+#
+# notify_user prints the notification's id (via -p) so a caller can
+# pass it back in as replace_id to update that same notification in
+# place, rather than piling up a new transient one per step.
 notify_user() {
-    local urgency="$1" title="$2" body="$3"
-    command -v notify-send >/dev/null 2>&1 || return 0
+    local urgency="$1" title="$2" body="$3" replace_id="${4:-0}"
+    command -v notify-send >/dev/null 2>&1 || { echo 0; return 0; }
     local session_user
     session_user="$(loginctl list-sessions --no-legend 2>/dev/null | awk '{print $3; exit}')"
-    [[ -n "$session_user" ]] || return 0
+    [[ -n "$session_user" ]] || { echo 0; return 0; }
     local uid
-    uid="$(id -u "$session_user" 2>/dev/null)" || return 0
+    uid="$(id -u "$session_user" 2>/dev/null)" || { echo 0; return 0; }
     runuser -u "$session_user" -- env XDG_RUNTIME_DIR="/run/user/$uid" \
-        notify-send -u "$urgency" "$title" "$body" 2>/dev/null || true
+        notify-send -p -r "$replace_id" -u "$urgency" "$title" "$body" 2>/dev/null || echo 0
 }
 trap 'rc=$?; [[ $rc -eq 0 ]] || notify_user critical "sobarch: security baseline failed" \
     "Check: journalctl -u sobarch-firstboot-security.service"; exit $rc' EXIT
 
 mkdir -p "$(dirname "$MARKER")"
-notify_user normal "sobarch: security baseline" "Applying the security baseline..."
+id=$(notify_user normal "sobarch: security baseline" "Applying the security baseline...")
 
 # Absent (e.g. a hand-run archinstall config outside the TUI) defaults
 # to disabled, matching SSH's own "off unless explicit" default.
@@ -48,6 +52,7 @@ fi
 # prepends "!" to the shadow entry, disabling password auth outright.
 # Harmless to repeat if already locked.
 echo "sobarch-firstboot: locking the root account..."
+id=$(notify_user normal "sobarch: security baseline" "Locking the root account..." "$id")
 passwd -l root
 
 # Base ruleset from Arch's own "Simple & Safe" nftables example:
@@ -58,6 +63,7 @@ passwd -l root
 # is opened unconditionally rather than gated on whether it happens to
 # be installed yet. SSH's exception is appended only when enabled.
 echo "sobarch-firstboot: installing the nftables baseline ruleset..."
+id=$(notify_user normal "sobarch: security baseline" "Installing the firewall ruleset..." "$id")
 
 ssh_rule=""
 if [[ "$ssh_enabled" == "true" ]]; then
@@ -105,6 +111,7 @@ systemctl enable --now nftables.service
 
 if [[ "$ssh_enabled" == "true" ]]; then
     echo "sobarch-firstboot: SSH enabled, installing openssh..."
+    id=$(notify_user normal "sobarch: security baseline" "Installing and enabling SSH..." "$id")
     pacman -S --needed --noconfirm openssh
 
     mkdir -p /etc/ssh/sshd_config.d
@@ -125,4 +132,4 @@ fi
 
 touch "$MARKER"
 echo "sobarch-firstboot: security baseline applied."
-notify_user normal "sobarch: security baseline" "Security baseline applied."
+notify_user normal "sobarch: security baseline" "Security baseline applied." "$id" >/dev/null

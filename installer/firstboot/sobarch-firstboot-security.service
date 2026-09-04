@@ -5,4 +5,5 @@ After=sobarch-firstboot-packages.service
 
 [Service]
 Type=oneshot
+TimeoutStartSec=infinity
 ExecStart=/usr/local/lib/sobarch/apply-security-baseline.sh
