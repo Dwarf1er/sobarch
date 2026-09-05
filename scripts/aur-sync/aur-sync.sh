@@ -282,7 +282,15 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
 done
 
 if ((${#scope_failures[@]} + ${#failures[@]})); then
-    echo "aur-sync: run finished with failures." >&2
+    # Restated here, not just at the point of failure: the per-package
+    # error is easy to lose upstream of everything else a multi-package
+    # run prints (dependency installs, PGP imports, makepkg/pacman
+    # transaction noise), so the final verdict must be self-contained.
+    echo "aur-sync: run finished with failures:" >&2
+    for name in "${scope_failures[@]}"; do
+        echo "  $name (not vendored)" >&2
+    done
+    ((${#failures[@]})) && printf '  %s\n' "${failures[@]}" >&2
     exit 1
 fi
 
