@@ -8,12 +8,17 @@
 
 pkgname=localsend-bin
 pkgver=1.18.0
-pkgrel=1
+pkgrel=2
 pkgdesc='An open source cross-platform alternative to AirDrop'
 url=https://github.com/localsend/localsend
 arch=('x86_64' 'aarch64')
 license=(Apache-2.0)
-depends=(fuse2 xdg-user-dirs libayatana-appindicator)
+# libayatana-indicator added: not in upstream's depends, but
+# libayatana-appindicator doesn't pull it in transitively either, and
+# the localsend binary dlopen()s libayatana-indicator3.so.7 directly at
+# runtime (confirmed: "error while loading shared libraries:
+# libayatana-indicator3.so.7" without it).
+depends=(fuse2 xdg-user-dirs libayatana-appindicator libayatana-indicator)
 conflicts=('localsend')
 provides=('localsend')
 options=(!debug)
