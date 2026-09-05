@@ -172,6 +172,20 @@ build_deps() {
     awk -F' = ' '/^[[:space:]]*(depends|makedepends) = /{print $2}' "$1/.SRCINFO" | sed -E 's/[<>=].*//'
 }
 
+# makepkg verifies a source's PGP signature (when validpgpkeys is set,
+# e.g. wlogout) against gpg's own keyring, never fetching a missing key
+# itself; imported here, into the build user's own keyring, before
+# makepkg runs, rather than relying on it happening implicitly (a fresh
+# account's keyring starts empty, and gpg has no keyserver configured
+# by default to fall back on).
+import_pgp_keys() {
+    local src="$1" key
+    while IFS= read -r key; do
+        [[ -n "$key" ]] || continue
+        runuser -u "$BUILD_USER" -- gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys "$key" || return 1
+    done < <(awk -F' = ' '/^[[:space:]]*validpgpkeys = /{print $2}' "$src/.SRCINFO")
+}
+
 # makepkg's own default OPTIONS (debug packaging) needs the debugedit
 # binary; not part of the base install (sobarch-skel's own PKGBUILD
 # sets !debug specifically to avoid needing it), and most vendored
@@ -218,6 +232,12 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
     if ((${#deps[@]})) && ! pacman -S --needed --noconfirm "${deps[@]}"; then
         echo "aur-sync: $name failed to install dependencies (${deps[*]})" >&2
         failures+=("$name (dependency install failed)")
+        continue
+    fi
+
+    if ! import_pgp_keys "$src"; then
+        echo "aur-sync: $name failed to import required PGP key(s)" >&2
+        failures+=("$name (PGP key import failed)")
         continue
     fi
 
