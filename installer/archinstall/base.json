@@ -21,7 +21,7 @@
     "archinstall_language": "English",
     "auth_config": {},
     "bootloader_config": {
-        "bootloader": "Grub",
+        "bootloader": "Limine",
         "removable": true,
         "uki": false
     },
@@ -71,6 +71,33 @@
                         "btrfs": [],
                         "dev_path": null,
                         "flags": [],
+                        "fs_type": "fat32",
+                        "mount_options": [],
+                        "mountpoint": null,
+                        "obj_id": "3d7a6e5c-9b8f-4a1d-8e2c-7f4b9d1a5c6e",
+                        "size": {
+                            "sector_size": {
+                                "unit": "B",
+                                "value": 512
+                            },
+                            "unit": "MiB",
+                            "value": 512
+                        },
+                        "start": {
+                            "sector_size": {
+                                "unit": "B",
+                                "value": 512
+                            },
+                            "unit": "MiB",
+                            "value": 1025
+                        },
+                        "status": "create",
+                        "type": "primary"
+                    },
+                    {
+                        "btrfs": [],
+                        "dev_path": null,
+                        "flags": [],
                         "fs_type": "ext4",
                         "mount_options": [],
                         "mountpoint": null,
@@ -89,7 +116,7 @@
                                 "value": 512
                             },
                             "unit": "MiB",
-                            "value": 1025
+                            "value": 1537
                         },
                         "status": "create",
                         "type": "primary"
@@ -134,7 +161,7 @@
                                 "value": 512
                             },
                             "unit": "MiB",
-                            "value": 6145
+                            "value": 6657
                         },
                         "status": "create",
                         "type": "primary"
@@ -184,7 +211,6 @@
         "git",
         "gparted",
         "grim",
-        "grub-btrfs",
         "htop",
         "hypridle",
         "hyprland",

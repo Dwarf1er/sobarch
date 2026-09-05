@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Watches Snapper's snapshot directory and regenerates the Limine
+# "Snapshots" boot-menu block (via sobarch-limine-snapshot-sync)
+# whenever a snapshot is created or deleted. This is the Limine
+# equivalent of grub-btrfsd: same inotifywait-driven
+# loop, scoped down since this project only ever runs it against
+# Snapper's own /.snapshots (no Timeshift/syslog/recursive support).
+
+set -euo pipefail
+
+SNAPSHOT_DIR="${1:?usage: sobarch-limine-snapshotd SNAPSHOT_DIR}"
+
+log() {
+    echo "sobarch-limine-snapshotd: $*"
+}
+
+log "watching $SNAPSHOT_DIR for snapshot creation/deletion..."
+
+while true; do
+    inotifywait -q -q -e create -e delete -e unmount "$SNAPSHOT_DIR"
+    # snap-pac and manual `snapper create` both tend to fire several
+    # filesystem events in a short window for one logical snapshot, so
+    # wait a moment and drain anything else that arrives meanwhile
+    # before regenerating, instead of regenerating once per event.
+    sleep 2
+    while inotifywait -q -q -t 1 -e create -e delete -e unmount "$SNAPSHOT_DIR" 2>/dev/null; do
+        :
+    done
+    log "detected a snapshot change, regenerating Limine snapshot entries..."
+    if ! sobarch-limine-snapshot-sync; then
+        log "sobarch-limine-snapshot-sync failed; will retry on the next change"
+    fi
+done

@@ -66,10 +66,11 @@ against these files directly instead of through the TUI.
 | `__ENC_PASSWORD__` | `credentials.json` | Must be replaced with a raw string; quotes can stay since this one *is* a string field. |
 | `__BLUETOOTH_DETECTED__` | `base.json` | Must be replaced with a raw `true`/`false` (remove the surrounding quotes too), based on whether a Bluetooth adapter is actually detected. Drives `archinstall`'s own `bluetooth_config` app mechanism, which installs `bluez`/`bluez-utils` and enables `bluetooth.service` together. |
 
-`base.json`'s disk layout also reserves a third, unmounted partition
-for rescue media (see the [Rescue Media](#rescue-media) section below). If the user
-opts out of it, the TUI must remove that partition entry entirely and
-shift the BTRFS partition's `start` back down from 6145 MiB to 1025 MiB.
+`base.json`'s disk layout also reserves two more unmounted partitions
+for rescue media (see the [Rescue Media](#rescue-media) section below):
+a small FAT32 partition, then a larger ext4 one. If the user opts out,
+the TUI must remove both partition entries entirely and shift the
+BTRFS partition's `start` back down from 6657 MiB to 1025 MiB.
 
 ### Running and testing the TUI
 
@@ -176,9 +177,12 @@ already-completed, still-mounted install instead).
 
 Every install gets automatic BTRFS snapshots via Snapper + `snap-pac`,
 almost entirely set up natively by `archinstall` itself (not custom
-first-boot logic): package installs, `snapper create-config`, both
-systemd timers, and a `grub-btrfsd` GRUB-integration drop-in all happen
-as part of the same install run. Snapshots are root-only: personal-file
+first-boot logic): package installs, `snapper create-config`, and both
+systemd timers happen as part of the same install run. Boot-entry
+integration for snapshots is not one of the things archinstall sets up
+natively (for either bootloader): it's a bespoke, sobarch-authored
+package, `sobarch-limine-snapshots` (see "Snapshot boot entries"
+below). Snapshots are root-only: personal-file
 backup is a distinct concern left to the user's own tools, not this
 safety net. `archinstall` unconditionally creates a `home` Snapper
 config too (hardcoded, no way to opt out from the JSON config), so
@@ -199,9 +203,18 @@ snapshot history, the Arch Wiki's own [documented
 fix](https://wiki.archlinux.org/title/Snapper#Suggested_filesystem_layout)
 for a well-known problem with the standard flat Arch layout.
 
-Day to day recovery is `grub-btrfs`: reboot, pick an old snapshot
-straight from the GRUB menu, inspect or recover a file, reboot back.
-Nothing is touched or replaced. For the rarer case of wanting an old
+Day to day recovery is `sobarch-limine-snapshots`
+(`packages/custom/sobarch-limine-snapshots`): reboot, pick an old
+snapshot straight from the Limine menu, inspect or recover a file,
+reboot back. Nothing is touched or replaced. This is a bespoke,
+sobarch-authored package rather than a vendored tool: it's the Limine
+equivalent of `grub-btrfs`, adapted directly from that project's own
+upstream source (an `inotifywait` daemon watching `/.snapshots`, plus
+an entry generator that rewrites a clearly delimited block in
+`limine.conf`), scoped down since sobarch's own layout is far narrower
+than `grub-btrfs`'s general-purpose design (one kernel, no LUKS, a
+single distro). See decision #12 for why this is bespoke rather than
+the AUR-vendored `limine-snapper-sync`. For the rarer case of wanting an old
 snapshot to become the new permanent `@`, `scripts/snapshot-rollback.sh`
 implements the Arch Wiki's [documented manual
 procedure](https://wiki.archlinux.org/title/Snapper#Restoring_/_to_its_previous_snapshot),
@@ -216,18 +229,25 @@ on a separate, secondary mount of the same volume. This approach was taken direc
 
 ## Rescue Media
 
-`base.json`'s disk layout reserves a dedicated, generously-sized ext4
-partition (recommended by default, opt-out for anyone tight on disk
+`base.json`'s disk layout reserves two dedicated partitions
+(recommended by default, opt-out together for anyone tight on disk
 space) so `scripts/snapshot-rollback.sh`'s rescue mode has a full Arch
 ISO available on local disk, with no separate USB device needed at all
-if a machine can't boot. `installer/archinstall/rescue-iso-setup.sh`
-(run alongside `nvidia-setup.sh`/`snapper-setup.sh`) fetches the
-current monthly release from an official mirror, verifies its
-checksum, formats the partition, writes the ISO to it, and adds a
-permanent GRUB boot entry that loads the ISO's own bundled
-`loopback.cfg`, the Arch Wiki's own [documented
-recipe](https://wiki.archlinux.org/title/Multiboot_USB_drive#Using_GRUB_and_loopback_devices)
-for booting an ISO file in place.
+if a machine can't boot: a generously-sized ext4 partition holding the
+fetched `.iso` as a plain file, and a small dedicated FAT32 partition
+holding just its extracted `vmlinuz-linux`/`initramfs-linux.img`. This
+split exists because Limine can't read ext4 and has no GRUB-style
+`loopback` command; putting the potentially-large `.iso` itself on
+FAT32 instead would run into that filesystem's real 4GB per-file cap
+(see decision #12). `installer/archinstall/rescue-iso-setup.sh` (run
+alongside `nvidia-setup.sh`/`snapper-setup.sh`) fetches the current
+monthly release from an official mirror, verifies its checksum, writes
+both partitions, and adds a permanent Limine boot entry pointing at the
+extracted kernel/initramfs with the same `img_dev=`/`img_loop=` kernel
+parameters the Arch installation medium's own boot process already
+uses to loop-mount an ISO file at boot -- a mechanism implemented in
+`archiso`'s own initramfs hook, independent of whichever bootloader
+got the kernel running in the first place.
 
 The stored ISO is refreshed manually only, never automatically: a
 background download on every boot or update would be surprising and

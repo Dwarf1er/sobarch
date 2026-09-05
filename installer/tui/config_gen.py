@@ -1,7 +1,7 @@
 """Turns a WizardState + HardwareInfo into the two real archinstall
 config files (base.json, credentials.json), by editing the installer's
 JSON templates as parsed JSON rather than by text substitution: several
-of the required edits (dropping the rescue partition, shifting the
+of the required edits (dropping the rescue partitions, shifting the
 BTRFS partition's start, computing its exact byte size, appending
 detected packages) are structural, not simple token replacement, so the
 whole pass is done the same way once we're already parsing the JSON
@@ -40,6 +40,7 @@ class GeneratedConfig:
     base: dict
     credentials: dict
     rescue_partition_number: int | None
+    rescue_boot_partition_number: int | None
 
 
 def _to_mib(size_or_start: dict) -> int:
@@ -74,19 +75,29 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
 
     boot = next(p for p in partitions if "boot" in p.get("flags", []))
     rescue = next((p for p in partitions if p.get("fs_type") == "ext4"), None)
+    # The small FAT32 partition holding the rescue entry's extracted
+    # vmlinuz/initramfs, distinguished from the ESP by *not* carrying the
+    # boot/esp flags (both are fs_type "fat32").
+    rescue_boot = next(
+        (p for p in partitions if p.get("fs_type") == "fat32" and "boot" not in p.get("flags", [])), None
+    )
     btrfs = next(p for p in partitions if p.get("fs_type") == "btrfs")
 
     boot_end_mib = _to_mib(boot["start"]) + _to_mib(boot["size"])
     rescue_partition_number = None
+    rescue_boot_partition_number = None
 
     if state.rescue_media:
-        if rescue is None:
+        if rescue is None or rescue_boot is None:
             raise ConfigGenError("rescue media was requested but base.json has no rescue partition template")
-        btrfs_start_mib = boot_end_mib + _to_mib(rescue["size"])
+        btrfs_start_mib = boot_end_mib + _to_mib(rescue_boot["size"]) + _to_mib(rescue["size"])
+        rescue_boot_partition_number = partitions.index(rescue_boot) + 1
         rescue_partition_number = partitions.index(rescue) + 1
     else:
         if rescue is not None:
             partitions.remove(rescue)
+        if rescue_boot is not None:
+            partitions.remove(rescue_boot)
         btrfs_start_mib = boot_end_mib
 
     btrfs["start"] = {
@@ -128,6 +139,7 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
         base=base,
         credentials=credentials,
         rescue_partition_number=rescue_partition_number,
+        rescue_boot_partition_number=rescue_boot_partition_number,
     )
 
 

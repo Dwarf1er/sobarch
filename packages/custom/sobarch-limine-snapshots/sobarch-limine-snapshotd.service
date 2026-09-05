@@ -1,0 +1,12 @@
+[Unit]
+Description=Sync Limine boot entries with Snapper snapshots
+After=local-fs.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/sobarch-limine-snapshotd /.snapshots
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

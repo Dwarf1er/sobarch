@@ -2,14 +2,37 @@
 # Rescue media population, run by the TUI as the same post-archinstall,
 # pre-reboot arch-chroot step as nvidia-setup.sh/snapper-setup.sh.
 #
-# base.json's disk_config reserves a dedicated ext4 partition
-# (unformatted by archinstall, no mountpoint) specifically so
+# base.json's disk_config reserves two dedicated partitions for this,
+# unformatted by archinstall (no mountpoint), specifically so
 # scripts/snapshot-rollback.sh's rescue mode has a full Arch ISO
-# available on local disk, no separate USB device needed at all. This
-# is opt-out: the TUI removes this partition entirely (shifting the
-# BTRFS partition's start back down to 1025 MiB) when the user
-# declines it for disk space reasons, in which case RESCUE_PARTITION
-# below is unset and this script is skipped.
+# available on local disk, no separate USB device needed at all. Both
+# are opt-out together: the TUI removes them entirely (shifting the
+# BTRFS partition's start back down) when the user declines rescue
+# media for disk space reasons, in which case RESCUE_PARTITION and
+# RESCUE_BOOT_PARTITION below are unset and this script is skipped.
+#
+# Split in two, Ventoy-style, because Limine can't read
+# ext4 and has no GRUB-style `loopback` command to read an ISO9660 file
+# as a virtual device:
+#   - RESCUE_PARTITION (ext4): holds the fetched .iso itself, as a
+#     plain file. This is the piece that must stay a plain,
+#     dd-free, overwrite-to-refresh file: FAT32's 4GB per-file cap
+#     (documented plainly by Ventoy, which keeps large ISO payloads off
+#     FAT32 for exactly this reason) is a real, live constraint an Arch
+#     ISO could plausibly outgrow over the life of this project, so the
+#     potentially-large payload deliberately stays off FAT32 entirely.
+#   - RESCUE_BOOT_PARTITION (fat32): holds only the small
+#     vmlinuz-linux/initramfs-linux.img extracted from inside that ISO
+#     (~100MB total), on a filesystem Limine can actually read to boot
+#     them. Refreshing later is still just re-extracting these two
+#     files plus overwriting the .iso -- no dd, no raw partition
+#     flashing, on either partition.
+# The archiso initramfs's own img_dev=/img_loop= mechanism (which finds
+# and loop-mounts the .iso at boot) is implemented in mkinitcpio-archiso's
+# own hook, running in early userspace under the kernel Limine already
+# booted, with no filesystem-type assumption -- so it works identically
+# regardless of which bootloader got the kernel running in the first
+# place.
 #
 # Populated by fetching a fresh ISO over the network rather than
 # copying the live boot medium's own ISO file: a copy would silently
@@ -19,14 +42,15 @@
 
 set -euo pipefail
 
-if [ -z "${RESCUE_PARTITION:-}" ]; then
-    echo "rescue-iso-setup.sh: RESCUE_PARTITION not set (rescue media opted out), nothing to do."
+if [ -z "${RESCUE_PARTITION:-}" ] || [ -z "${RESCUE_BOOT_PARTITION:-}" ]; then
+    echo "rescue-iso-setup.sh: RESCUE_PARTITION/RESCUE_BOOT_PARTITION not set (rescue media opted out), nothing to do."
     exit 0
 fi
 
 MIRROR_URL="https://geo.mirror.pkgbuild.com/iso/latest"
 WORK_DIR=$(mktemp -d)
-trap 'rm -rf "$WORK_DIR"' EXIT
+LOOP_MNT="$WORK_DIR/iso-mount"
+trap 'umount "$LOOP_MNT" 2>/dev/null || true; rm -rf "$WORK_DIR"' EXIT
 
 echo "rescue-iso-setup.sh: fetching current Arch ISO from $MIRROR_URL..."
 
@@ -37,6 +61,17 @@ echo "rescue-iso-setup.sh: verifying checksum..."
 
 ( cd "$WORK_DIR" && grep 'archlinux-x86_64\.iso$' sha256sums.txt | sha256sum -c - )
 
+echo "rescue-iso-setup.sh: extracting the ISO's own kernel/initramfs..."
+
+mkdir -p "$LOOP_MNT"
+mount -o loop,ro "$WORK_DIR/archlinux-x86_64.iso" "$LOOP_MNT"
+# Standard archiso layout (the same path the current Arch installation
+# medium itself boots from); worth re-confirming if a future Arch
+# release ever changes it.
+cp "$LOOP_MNT/arch/boot/x86_64/vmlinuz-linux" "$WORK_DIR/vmlinuz-linux"
+cp "$LOOP_MNT/arch/boot/x86_64/initramfs-linux.img" "$WORK_DIR/initramfs-linux.img"
+umount "$LOOP_MNT"
+
 echo "rescue-iso-setup.sh: formatting $RESCUE_PARTITION and writing the ISO..."
 
 mkfs.ext4 -F -L RESCUE "$RESCUE_PARTITION"
@@ -45,26 +80,42 @@ cp "$WORK_DIR/archlinux-x86_64.iso" /mnt/archlinux-x86_64.iso
 RESCUE_UUID=$(blkid -s UUID -o value "$RESCUE_PARTITION")
 umount /mnt
 
-echo "rescue-iso-setup.sh: adding the GRUB boot entry..."
+echo "rescue-iso-setup.sh: formatting $RESCUE_BOOT_PARTITION and writing the extracted kernel/initramfs..."
 
-# Every monthly Arch ISO carries its own /boot/grub/loopback.cfg, built and shipped for exactly this scenario
-mkdir -p /etc/grub.d
-cat > /etc/grub.d/41_rescue_iso <<EOF
-#!/bin/sh
-exec tail -n +3 \$0
-menuentry "Arch Linux rescue (local ISO)" {
-    insmod part_gpt
-    insmod ext2
-    set iso_path="/archlinux-x86_64.iso"
-    search --no-floppy --fs-uuid --set=isopart $RESCUE_UUID
-    loopback loop (\$isopart)\$iso_path
-    root=(loop)
-    configfile /boot/grub/loopback.cfg
-    loopback --delete loop
-}
-EOF
-chmod 755 /etc/grub.d/41_rescue_iso
+mkfs.fat -F32 -n RESCUEBOOT "$RESCUE_BOOT_PARTITION"
+mount "$RESCUE_BOOT_PARTITION" /mnt
+cp "$WORK_DIR/vmlinuz-linux" /mnt/vmlinuz-linux
+cp "$WORK_DIR/initramfs-linux.img" /mnt/initramfs-linux.img
+RESCUE_BOOT_UUID=$(blkid -s UUID -o value "$RESCUE_BOOT_PARTITION")
+umount /mnt
 
-grub-mkconfig -o /boot/grub/grub.cfg
+echo "rescue-iso-setup.sh: adding the Limine boot entry..."
+
+LIMINE_CONF="/boot/EFI/BOOT/limine.conf"
+START_MARKER="#### SOBARCH RESCUE ENTRY START (auto-generated by rescue-iso-setup.sh, do not edit by hand)"
+END_MARKER="#### SOBARCH RESCUE ENTRY END"
+
+# Own delimited block, distinct from sobarch-limine-snapshot-sync's own
+# "SOBARCH SNAPSHOTS" block, so the two never clobber each other or
+# archinstall's own base OS entry when either regenerates.
+block="$START_MARKER
+/Arch Linux rescue (local ISO)
+    protocol: linux
+    path: uuid(${RESCUE_BOOT_UUID}):/vmlinuz-linux
+    module_path: uuid(${RESCUE_BOOT_UUID}):/initramfs-linux.img
+    cmdline: archisobasedir=arch img_dev=UUID=${RESCUE_UUID} img_loop=/archlinux-x86_64.iso
+$END_MARKER"
+
+if grep -qF "$START_MARKER" "$LIMINE_CONF"; then
+    awk -v start="$START_MARKER" -v end="$END_MARKER" -v block="$block" '
+        $0 == start { print block; skipping = 1; next }
+        $0 == end && skipping { skipping = 0; next }
+        skipping { next }
+        { print }
+    ' "$LIMINE_CONF" > "${LIMINE_CONF}.sobarch-new"
+    mv "${LIMINE_CONF}.sobarch-new" "$LIMINE_CONF"
+else
+    printf '\n%s\n' "$block" >> "$LIMINE_CONF"
+fi
 
 echo "rescue-iso-setup.sh: done."

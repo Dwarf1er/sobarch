@@ -1,0 +1,24 @@
+# Maintainer: Dwarf1er
+pkgname=sobarch-limine-snapshots
+# No upstream release of its own; pkgver tracks the date these scripts
+# last changed in this monorepo, same convention as sobarch-skel.
+pkgver=20260905
+pkgrel=1
+pkgdesc="Bespoke Limine boot-entry sync for Snapper snapshots (Limine equivalent of grub-btrfs, decision #12)"
+arch=('any')
+url="https://github.com/Dwarf1er/sobarch"
+license=('MIT')
+depends=('bash' 'inotify-tools' 'snapper' 'btrfs-progs')
+# Pure source package (bash scripts + a unit file), nothing to strip or
+# generate debug info for; disabling debug avoids needing the
+# debugedit package on the build host (not present on a fresh
+# archinstall base), same as sobarch-skel/sobarch-via-udev.
+options=('!debug')
+source=()
+sha256sums=()
+
+package() {
+    install -Dm755 "$startdir/sobarch-limine-snapshot-sync" "$pkgdir/usr/bin/sobarch-limine-snapshot-sync"
+    install -Dm755 "$startdir/sobarch-limine-snapshotd" "$pkgdir/usr/bin/sobarch-limine-snapshotd"
+    install -Dm644 "$startdir/sobarch-limine-snapshotd.service" "$pkgdir/usr/lib/systemd/system/sobarch-limine-snapshotd.service"
+}

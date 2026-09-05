@@ -1,8 +1,9 @@
 """Runs the real install: archinstall itself, then the post-archinstall,
 pre-reboot arch-chroot step (deploying aur-sync.sh, building/installing
-sobarch-skel and the base-required AUR packages, deploying the
-first-boot units, nvidia-setup.sh, snapper-setup.sh,
-rescue-iso-setup.sh, in that order) against the still-mounted target.
+sobarch-skel, sobarch-limine-snapshots, and the base-required AUR
+packages, deploying the first-boot units, nvidia-setup.sh,
+snapper-setup.sh, rescue-iso-setup.sh, in that order) against the
+still-mounted target.
 Only meaningfully testable on a real Arch ISO with a real disk; kept in
 its own module, independent of the Screen that drives it, so at least
 its config-generation half stays covered by the same tests as the rest
@@ -160,16 +161,17 @@ def _deploy_aur_sync(log_file, on_output: OutputCallback) -> int:
 
 
 def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int:
-    """Local-builds sobarch-skel and the two base-required AUR packages
-    (localsend-bin, wlogout; decision 3) from this checkout and installs
-    them into the target, so /usr/share/sobarch/skel/ and both packages
-    exist by the time first boot runs. Goes through the real
-    aur-sync.sh (--local mode, against this already-fetched checkout,
-    no curl refetch needed) rather than a bespoke build routine, so
-    there's exactly one place that knows how to build a vendored
-    package; aur-sync.sh itself creates and builds as its own
-    unprivileged build user, so nothing here needs to run as (or chown
-    to) the newly created human account.
+    """Local-builds sobarch-skel, sobarch-limine-snapshots, and the two
+    base-required AUR packages (localsend-bin, wlogout; decision 3) from
+    this checkout and installs them into the target, so
+    /usr/share/sobarch/skel/ and every package exist by the time first
+    boot (and, for sobarch-limine-snapshots, snapper-setup.sh right
+    after this) runs. Goes through the real aur-sync.sh (--local mode,
+    against this already-fetched checkout, no curl refetch needed)
+    rather than a bespoke build routine, so there's exactly one place
+    that knows how to build a vendored package; aur-sync.sh itself
+    creates and builds as its own unprivileged build user, so nothing
+    here needs to run as (or chown to) the newly created human account.
 
     sobarch-skel's PKGBUILD reaches out to ../../../configs/skel via a
     relative path, so configs/skel/ must be staged alongside it here,
@@ -177,6 +179,10 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
     build_dir = MOUNTPOINT / SOBARCH_SKEL_BUILD_DIR_IN_TARGET.relative_to("/")
     shutil.rmtree(build_dir, ignore_errors=True)
     shutil.copytree(REPO_ROOT / "packages" / "custom" / "sobarch-skel", build_dir / "packages" / "custom" / "sobarch-skel")
+    shutil.copytree(
+        REPO_ROOT / "packages" / "custom" / "sobarch-limine-snapshots",
+        build_dir / "packages" / "custom" / "sobarch-limine-snapshots",
+    )
     shutil.copytree(REPO_ROOT / "configs" / "skel", build_dir / "configs" / "skel")
     for pkg in BASE_AUR_PACKAGES:
         shutil.copytree(REPO_ROOT / "packages" / "aur" / pkg, build_dir / "packages" / "aur" / pkg)
@@ -186,7 +192,7 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
             "arch-chroot", str(MOUNTPOINT),
             str(AUR_SYNC_SCRIPT_PATH_IN_TARGET),
             "--local", str(SOBARCH_SKEL_BUILD_DIR_IN_TARGET),
-            "sobarch-skel", *BASE_AUR_PACKAGES,
+            "sobarch-skel", "sobarch-limine-snapshots", *BASE_AUR_PACKAGES,
         ],
         log_file,
         on_output,
@@ -231,7 +237,7 @@ def run_install(
         if returncode != 0:
             raise InstallError("failed to deploy aur-sync.sh", log_path)
 
-        on_output("Building and installing sobarch-skel and base-required AUR packages...")
+        on_output("Building and installing sobarch-skel, sobarch-limine-snapshots, and base-required AUR packages...")
         returncode = _build_and_install_base_packages(log_file, on_output)
         if returncode != 0:
             raise InstallError("failed to build/install base packages", log_path)
@@ -284,6 +290,10 @@ def run_install(
         if generated.rescue_partition_number is not None:
             env_updates["RESCUE_PARTITION"] = partition_device_path(
                 state.disk_device, generated.rescue_partition_number
+            )
+        if generated.rescue_boot_partition_number is not None:
+            env_updates["RESCUE_BOOT_PARTITION"] = partition_device_path(
+                state.disk_device, generated.rescue_boot_partition_number
             )
 
         for script in CHROOT_SETUP_SCRIPTS:
