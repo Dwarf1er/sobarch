@@ -60,18 +60,23 @@ for snap_dir in "$SNAPSHOTS_DIR"/*/; do
     description="$(sed -n 's:.*<description>\(.*\)</description>.*:\1:p' "$info_xml" | head -n1)"
 
     entries+="
-/Snapshot ${id} - ${date:-unknown date} - ${description:-no description}
-    protocol: linux
-    path: boot():/vmlinuz-linux
-    module_path: boot():/initramfs-linux.img
-    cmdline: root=UUID=${root_uuid} rootflags=${mount_opts},subvol=${subvol_path} rw
+    /Snapshot ${id} - ${date:-unknown date} - ${description:-no description}
+        protocol: linux
+        path: boot():/vmlinuz-linux
+        module_path: boot():/initramfs-linux.img
+        cmdline: root=UUID=${root_uuid} rootflags=${mount_opts},subvol=${subvol_path} rw
 "
     count=$((count + 1))
 done
 
 block="$START_MARKER"
 if [ "$count" -gt 0 ]; then
-    block+="$entries"
+    # A top-level entry with no protocol: key but with further-indented
+    # /-prefixed entries nested under it becomes a submenu in Limine,
+    # rather than a directly-bootable entry -- keeps every snapshot off
+    # the first-level menu, tucked under one "Snapshots" item instead.
+    block+="
+/Snapshots$entries"
 else
     block+="
 # No snapshots found."
