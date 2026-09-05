@@ -186,16 +186,19 @@ import_pgp_keys() {
     done < <(awk -F' = ' '/^[[:space:]]*validpgpkeys = /{print $2}' "$src/.SRCINFO")
 }
 
-# makepkg's own default OPTIONS (debug packaging) needs the debugedit
-# binary; not part of the base install (sobarch-skel's own PKGBUILD
-# sets !debug specifically to avoid needing it), and most vendored
-# PKGBUILDs don't declare it since it's normally assumed to already be
-# present via base-devel. Installed once, up front, rather than
-# patching every vendored PKGBUILD's options to add !debug, which would
-# pollute Phase 11's future upstream-diff checks with a spurious,
-# permanent local difference.
+# base-devel (a single meta-package on recent Arch, not a group) is the
+# full set of tools any PKGBUILD is entitled to assume is already
+# present without declaring it in makedepends, per Arch's own
+# packaging convention (a compiler for a real build() step, e.g.
+# wlogout's meson build; debugedit for makepkg's own default
+# debug-package generation, which sobarch-skel's PKGBUILD works around
+# with !debug precisely because base-devel isn't part of this minimal
+# base install otherwise). Installed once, up front, rather than
+# patching every vendored PKGBUILD's makedepends/options to spell out
+# what it assumes, which would pollute Phase 11's future upstream-diff
+# checks with a spurious, permanent local difference.
 ensure_makepkg_prereqs() {
-    pacman -S --needed --noconfirm debugedit
+    pacman -S --needed --noconfirm base-devel
 }
 
 failures=()
