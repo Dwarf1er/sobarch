@@ -1,0 +1,15 @@
+# Grants the interactively logged-in user (via systemd-logind's seat
+# ACLs, TAG+="uaccess" -- no group to manage, no relogin needed beyond
+# the session already active) read/write access to every hidraw
+# device, needed for VIA (usevia.app) to configure a VIA-compatible
+# keyboard without running as root.
+#
+# Broader than "just VIA keyboards" is unavoidable here, not a
+# shortcut: there is no vendor/product ID or other kernel-visible
+# marker that identifies a device as VIA-compatible, so VIA's own
+# Linux setup instructions ask for exactly this same all-hidraw access
+# (see e.g. https://github.com/the-via/app/issues/292, where this
+# breadth is the documented, accepted tradeoff, not a bug). This is why
+# the package shipping this rule is opt-in (System Tuning profile),
+# never installed by default.
+ACTION!="remove", KERNEL=="hidraw*", SUBSYSTEM=="hidraw", MODE="0660", TAG+="uaccess"

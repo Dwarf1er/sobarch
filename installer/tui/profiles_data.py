@@ -8,6 +8,10 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Package:
     name: str
+    # True for anything aur-sync.sh must build locally -- packages/aur/
+    # (actually AUR-sourced) or packages/custom/ (this project's own,
+    # e.g. sobarch-via-udev) alike, both handled identically by that
+    # script. False only for a plain official-repo `pacman -S` package.
     aur: bool = False
 
 
@@ -59,7 +63,8 @@ PROFILES: tuple[Profile, ...] = (
     Profile(
         "System Tuning",
         "system-tuning",
-        _pkgs("ethtool", "lact", "nvtop", "smartmontools", "tlp", "tlp-rdw"),
+        _pkgs("ethtool", "lact", "nvtop", "smartmontools", "tlp", "tlp-rdw")
+        + _pkgs("sobarch-via-udev", aur=True),
     ),
 )
 
@@ -85,8 +90,8 @@ def resolve_selection(install_everything: bool, profile_packages: dict[str, list
 def split_by_source(package_names: set[str]) -> tuple[list[str], list[str]]:
     """Splits a flat set of selected package names into (official,
     aur), sorted: official packages are a plain `pacman -S` at first
-    boot, AUR ones need packages/aur/'s vendored PKGBUILDs and a local
-    build mechanism, not implemented yet."""
+    boot, the second bucket needs aur-sync.sh's local build mechanism
+    (packages/aur/ or packages/custom/, see Package.aur above)."""
     official = sorted(name for name in package_names if name not in _AUR_PACKAGE_NAMES)
     aur = sorted(name for name in package_names if name in _AUR_PACKAGE_NAMES)
     return official, aur

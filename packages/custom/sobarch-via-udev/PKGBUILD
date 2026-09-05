@@ -1,0 +1,28 @@
+# Maintainer: Dwarf1er
+pkgname=sobarch-via-udev
+# Pure-data package with no upstream release of its own; pkgver tracks
+# the date 61-via.rules last changed in this monorepo, same convention
+# as sobarch-skel.
+pkgver=20260905
+pkgrel=1
+pkgdesc="Opt-in udev rule granting hidraw access for VIA keyboard configuration (usevia.app)"
+arch=('any')
+url="https://github.com/Dwarf1er/sobarch"
+license=('MIT')
+# Pure-data package with no compiled binaries, so there's nothing to
+# strip or generate debug info for; disabling debug avoids needing the
+# debugedit package on the build host (not present on a fresh
+# archinstall base).
+options=('!debug')
+source=()
+sha256sums=()
+
+package() {
+    # Arch's own systemd package ships a pacman hook
+    # (35-systemd-udev-reload.hook, PostTransaction, Target =
+    # usr/lib/udev/rules.d/*) that reloads udev rules and retriggers
+    # already-connected devices automatically on install -- no .install
+    # scriptlet needed here, and no reconnect/reboot required for a
+    # keyboard that's already plugged in.
+    install -Dm644 "$startdir/61-via.rules" "$pkgdir/usr/lib/udev/rules.d/61-via.rules"
+}
