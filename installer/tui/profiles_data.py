@@ -54,7 +54,7 @@ PROFILES: tuple[Profile, ...] = (
     Profile(
         "Browsers & Chat",
         "browsers-chat",
-        _pkgs("signal-desktop") + _pkgs("brave-bin", "vesktop", aur=True),
+        _pkgs("signal-desktop") + _pkgs("brave-origin-bin", "vesktop", aur=True),
     ),
     Profile(
         "System Tuning",
