@@ -204,10 +204,22 @@ ensure_makepkg_prereqs() {
 failures=()
 first_install=true
 
+# Built once, as a full copy of $repo_dir (not just each package's own
+# directory): sobarch-skel's PKGBUILD reaches configs/skel via a
+# relative path outside its own package directory, so a package's
+# build must keep its real position in the repo tree, not be flattened
+# into an isolated per-package directory. Building in a copy, not
+# $repo_dir directly, keeps a fetched checkout's ownership/cleanup
+# independent of whatever the build user's own makepkg run leaves
+# behind (src/, pkg/, build artifacts).
+build_root_repo="$BUILD_ROOT/repo"
 if ((${#targets[@]})); then
     ensure_build_user
     ensure_makepkg_prereqs
+    rm -rf "$BUILD_ROOT"
     mkdir -p "$BUILD_ROOT"
+    cp -a "$repo_dir" "$build_root_repo"
+    chown -R "$BUILD_USER:$BUILD_USER" "$BUILD_ROOT"
 fi
 
 for name in $(printf '%s\n' "${targets[@]}" | sort); do
@@ -244,10 +256,7 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
         continue
     fi
 
-    build_dir="$BUILD_ROOT/$name"
-    rm -rf "$build_dir"
-    cp -a "$src" "$build_dir"
-    chown -R "$BUILD_USER:$BUILD_USER" "$build_dir"
+    build_dir="$build_root_repo/${src#"$repo_dir"/}"
 
     if ! runuser -u "$BUILD_USER" -- bash -c "cd '$build_dir' && makepkg --noconfirm --needed --clean"; then
         echo "aur-sync: $name failed to build" >&2
