@@ -30,19 +30,31 @@ MARKER="/var/lib/sobarch/profile-packages-installed"
 # right after boot before anyone's logged in) or notify-send isn't
 # installed.
 #
+# md-package_down (Nerd Fonts Material Design Icons, same family as
+# configs/skel's own menu scripts, e.g. system-menu.sh's md-volume-high/
+# md-wifi): a package with a download arrow, prefixed on every
+# notification title here for the same visual consistency those menus
+# already have.
+GLYPH=$'\U000F03D4'
+#
 # notify_user prints the notification's id (via -p) so a caller can
 # pass it back in as replace_id to update that same notification in
-# place, rather than piling up a new transient one per step.
+# place, rather than piling up a new transient one per step. An
+# optional 5th arg renders a real progress bar (mako/dunst both support
+# the standard int:value:NN hint, 0-100) instead of leaving "how far
+# along is this" to the body text alone.
 notify_user() {
-    local urgency="$1" title="$2" body="$3" replace_id="${4:-0}"
+    local urgency="$1" title="$2" body="$3" replace_id="${4:-0}" percent="${5:-}"
     command -v notify-send >/dev/null 2>&1 || { echo 0; return 0; }
     local session_user
     session_user="$(loginctl list-sessions --no-legend 2>/dev/null | awk '{print $3; exit}')"
     [[ -n "$session_user" ]] || { echo 0; return 0; }
     local uid
     uid="$(id -u "$session_user" 2>/dev/null)" || { echo 0; return 0; }
+    local hint_args=()
+    [[ -n "$percent" ]] && hint_args=(--hint="int:value:$percent")
     runuser -u "$session_user" -- env XDG_RUNTIME_DIR="/run/user/$uid" \
-        notify-send -p -r "$replace_id" -u "$urgency" "$title" "$body" 2>/dev/null || echo 0
+        notify-send -p -r "$replace_id" -u "$urgency" "${hint_args[@]}" "$GLYPH  $title" "$body" 2>/dev/null || echo 0
 }
 trap 'rc=$?; [[ $rc -eq 0 ]] || notify_user critical "sobarch: package install failed" \
     "Check: journalctl -u sobarch-firstboot-packages.service"; exit $rc' EXIT
@@ -53,14 +65,14 @@ if [[ -s "$OFFICIAL_LIST" ]]; then
     mapfile -t packages <"$OFFICIAL_LIST"
     total=${#packages[@]}
     echo "sobarch-firstboot: installing $total selected package(s): ${packages[*]}"
-    id=$(notify_user normal "sobarch: installing packages" "Installing $total selected package(s)...")
+    id=$(notify_user normal "sobarch: installing packages" "Installing $total selected package(s)..." 0 0)
     n=0
     for pkg in "${packages[@]}"; do
+        id=$(notify_user normal "sobarch: installing packages" "Installing ($((n + 1))/$total): $pkg" "$id" $((n * 100 / total)))
         n=$((n + 1))
-        id=$(notify_user normal "sobarch: installing packages" "Installing ($n/$total): $pkg" "$id")
         pacman -S --needed --noconfirm "$pkg"
     done
-    notify_user critical "sobarch: installing packages" "$total package(s) installed." "$id" >/dev/null
+    notify_user critical "sobarch: installing packages" "$total package(s) installed." "$id" 100 >/dev/null
 else
     echo "sobarch-firstboot: no optional official-repo packages were selected."
 fi
@@ -69,7 +81,10 @@ if [[ -s "$AUR_LIST" ]]; then
     mapfile -t aur_packages <"$AUR_LIST"
     echo "sobarch-firstboot: building/installing ${#aur_packages[@]} selected AUR package(s):" \
         "${aur_packages[*]}"
-    id=$(notify_user normal "sobarch: installing packages" "Building selected AUR package(s)..." "$id")
+    # No percent hint here: aur-sync.sh builds this whole list as one
+    # step with no incremental progress to report back, so a numeric
+    # value would be a fabricated signal, not a real one.
+    id=$(notify_user normal "sobarch: installing packages" "Building selected AUR package(s)..." "${id:-0}")
     /usr/local/lib/sobarch/aur-sync.sh "${aur_packages[@]}"
 fi
 

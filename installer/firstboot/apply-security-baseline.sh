@@ -23,6 +23,12 @@ SSH_FLAG="/etc/sobarch/ssh-enabled"
 # notify_user prints the notification's id (via -p) so a caller can
 # pass it back in as replace_id to update that same notification in
 # place, rather than piling up a new transient one per step.
+# md-shield_lock (Nerd Fonts Material Design Icons, same family as
+# configs/skel's own menu scripts): prefixed on every notification
+# title here, same as install-profile-packages.sh's own md-package_down
+# prefix, for consistent branding across both first-boot notification
+# sources.
+GLYPH=$'\U000F099D'
 notify_user() {
     local urgency="$1" title="$2" body="$3" replace_id="${4:-0}"
     command -v notify-send >/dev/null 2>&1 || { echo 0; return 0; }
@@ -32,7 +38,7 @@ notify_user() {
     local uid
     uid="$(id -u "$session_user" 2>/dev/null)" || { echo 0; return 0; }
     runuser -u "$session_user" -- env XDG_RUNTIME_DIR="/run/user/$uid" \
-        notify-send -p -r "$replace_id" -u "$urgency" "$title" "$body" 2>/dev/null || echo 0
+        notify-send -p -r "$replace_id" -u "$urgency" "$GLYPH  $title" "$body" 2>/dev/null || echo 0
 }
 trap 'rc=$?; [[ $rc -eq 0 ]] || notify_user critical "sobarch: security baseline failed" \
     "Check: journalctl -u sobarch-firstboot-security.service"; exit $rc' EXIT
