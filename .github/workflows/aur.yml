@@ -1,0 +1,162 @@
+name: AUR update check
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+env:
+  # ks-aur-scanner (https://github.com/KiefStudioMA/ks-aur-scanner) ships
+  # no prebuilt binaries on any release, so it's built from source here.
+  # Pinned to a tagged release, not main, same reasoning as everything
+  # else vendored in this repo: reproducible, and never silently pulls
+  # in whatever the tool's own next commit happens to do.
+  AUR_SCAN_REF: v2.0.0
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    container: archlinux:base
+    outputs:
+      packages: ${{ steps.check.outputs.packages }}
+    steps:
+      - name: Install check dependencies
+        run: pacman -Sy --needed --noconfirm curl jq git
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          scripts/aur-sync/check-aur-updates.sh > outdated.txt
+          json="$(cut -d' ' -f1 outdated.txt | jq -R -s -c 'split("\n") | map(select(length > 0))')"
+          echo "packages=$json" >> "$GITHUB_OUTPUT"
+
+  build-scanner:
+    needs: check
+    if: needs.check.outputs.packages != '[]'
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - name: Install build dependencies
+        run: pacman -Sy --needed --noconfirm rust clang openssl git
+      - name: Build aur-scan
+        run: |
+          git clone --depth 1 --branch "$AUR_SCAN_REF" \
+            https://github.com/KiefStudioMA/ks-aur-scanner.git /tmp/ks-aur-scanner
+          cd /tmp/ks-aur-scanner
+          cargo build --release --locked -p aur-scanner-cli
+          install -Dm755 target/release/aur-scan /tmp/aur-scan
+          /tmp/aur-scan --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aur-scan-binary
+          path: /tmp/aur-scan
+          retention-days: 1
+
+  update:
+    needs: [check, build-scanner]
+    if: needs.check.outputs.packages != '[]'
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJson(needs.check.outputs.packages) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install update dependencies
+        run: pacman -Sy --needed --noconfirm git jq curl namcap github-cli
+      - uses: actions/download-artifact@v4
+        with:
+          name: aur-scan-binary
+          path: /usr/local/bin
+      - run: chmod +x /usr/local/bin/aur-scan
+      - name: Create build user
+        run: |
+          useradd -m builder
+          chown -R builder:builder .
+      - name: Stage update
+        env:
+          PKG: ${{ matrix.package }}
+        run: runuser -u builder -- scripts/aur-sync/apply-aur-update.sh "$PKG"
+      - name: Check for actual changes
+        id: diff
+        env:
+          PKG: ${{ matrix.package }}
+        run: |
+          if git diff --quiet -- "packages/aur/$PKG"; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Run namcap
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          PKG: ${{ matrix.package }}
+        run: |
+          runuser -u builder -- namcap "packages/aur/$PKG/PKGBUILD" > namcap-output.txt 2>&1 || true
+      - name: Run ks-aur-scanner
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          PKG: ${{ matrix.package }}
+        run: |
+          runuser -u builder -- aur-scan scan "packages/aur/$PKG" --format text > aurscan-output.txt 2>&1 || true
+      - name: Build scan report
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          PKG: ${{ matrix.package }}
+        run: |
+          {
+            echo "Automated scan of the staged \`$PKG\` update."
+            echo
+            echo "### namcap PKGBUILD"
+            echo '```'
+            cat namcap-output.txt
+            echo '```'
+            echo
+            echo "### ks-aur-scanner ($AUR_SCAN_REF)"
+            echo '```'
+            cat aurscan-output.txt
+            echo '```'
+          } > scan-report.md
+      - name: Open pull request
+        if: steps.diff.outputs.changed == 'true'
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PKG: ${{ matrix.package }}
+        run: |
+          set -euo pipefail
+          newver="$(awk -F' = ' '/^\tpkgver = /{v=$2} /^\tpkgrel = /{r=$2} END{print v"-"r}' "packages/aur/$PKG/.SRCINFO")"
+          branch="aur-update/${PKG}-${newver//:/-}"
+
+          if [[ -n "$(gh pr list --state open --head "$branch" --json number --jq '.[0].number')" ]]; then
+            echo "PR for $branch already open, skipping"
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add "packages/aur/$PKG"
+          git commit -m "aur: update $PKG to $newver"
+          git push origin "$branch"
+
+          {
+            echo "Automated update of \`$PKG\` to \`$newver\`, fetched from its AUR git repo."
+            echo
+            echo "Requires human review before merge (no auto-merge configured); check the diff for anything beyond the version bump before approving. Scan report follows as a separate comment."
+          } > pr-body.txt
+          gh pr create --title "aur: update $PKG to $newver" --head "$branch" --base master --body-file pr-body.txt
+
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+      - name: Post scan report
+        if: steps.diff.outputs.changed == 'true' && steps.pr.outputs.created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr comment "${{ steps.pr.outputs.branch }}" --body-file scan-report.md
