@@ -10,14 +10,6 @@ permissions:
   pull-requests: write
   issues: write
 
-env:
-  # ks-aur-scanner (https://github.com/KiefStudioMA/ks-aur-scanner) ships
-  # no prebuilt binaries on any release, so it's built from source here.
-  # Pinned to a tagged release, not main, same reasoning as everything
-  # else vendored in this repo: reproducible, and never silently pulls
-  # in whatever the tool's own next commit happens to do.
-  AUR_SCAN_REF: v2.0.0
-
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -40,16 +32,11 @@ jobs:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
+      - uses: actions/checkout@v4
       - name: Install build dependencies
         run: pacman -Sy --needed --noconfirm rust clang openssl git
       - name: Build aur-scan
-        run: |
-          git clone --depth 1 --branch "$AUR_SCAN_REF" \
-            https://github.com/KiefStudioMA/ks-aur-scanner.git /tmp/ks-aur-scanner
-          cd /tmp/ks-aur-scanner
-          cargo build --release --locked -p aur-scanner-cli
-          install -Dm755 target/release/aur-scan /tmp/aur-scan
-          /tmp/aur-scan --version
+        run: scripts/ci/build-aur-scan.sh /tmp/aur-scan
       - uses: actions/upload-artifact@v4
         with:
           name: aur-scan-binary
@@ -109,6 +96,7 @@ jobs:
         env:
           PKG: ${{ matrix.package }}
         run: |
+          scanner_ref="$(cat scripts/ci/aur-scan.version)"
           {
             echo "Automated scan of the staged \`$PKG\` update."
             echo
@@ -117,7 +105,7 @@ jobs:
             cat namcap-output.txt
             echo '```'
             echo
-            echo "### ks-aur-scanner ($AUR_SCAN_REF)"
+            echo "### ks-aur-scanner ($scanner_ref)"
             echo '```'
             cat aurscan-output.txt
             echo '```'
