@@ -36,7 +36,7 @@ jobs:
       - name: Install build dependencies
         run: pacman -Sy --needed --noconfirm rust clang openssl git
       - name: Build aur-scan
-        run: scripts/ci/build-aur-scan.sh /tmp/aur-scan
+        run: .github/scripts/build-aur-scan.sh /tmp/aur-scan
       - uses: actions/upload-artifact@v4
         with:
           name: aur-scan-binary
@@ -96,7 +96,7 @@ jobs:
         env:
           PKG: ${{ matrix.package }}
         run: |
-          scanner_ref="$(cat scripts/ci/aur-scan.version)"
+          scanner_ref="$(cat .github/scripts/aur-scan.version)"
           {
             echo "Automated scan of the staged \`$PKG\` update."
             echo

@@ -23,7 +23,7 @@
 # chassis-type detection, an NVIDIA RTD3 power-management workaround)
 # is deliberately not included here: real value, but laptop-specific
 # scope beyond GPU-generation detection, and again, I do not own that kind
-# of hardware so I can't test it'.
+# of hardware so I can't test it.
 
 set -euo pipefail
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Validates every packages/aur/*/ and packages/custom/*/ directory:
+# Validates every packages/aur/*/ directory (AUR-sourced content only --
+# packages/custom/ is this project's own PKGBUILD, out of scope here):
 #
 #   - Regenerates .SRCINFO via makepkg and fails if it doesn't match
 #     what's committed. The concrete failure mode this guards against:
@@ -21,7 +22,7 @@ set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 mismatches=()
-for dir in packages/aur/*/ packages/custom/*/; do
+for dir in packages/aur/*/; do
     [[ -d "$dir" ]] || continue
     name="$(basename "$dir")"
     committed="$dir/.SRCINFO"

@@ -1,31 +1,13 @@
 name: Checks
 
-# Phase 12: general PR-time validation. Deliberately scoped to what's
-# not already covered elsewhere and not installer/ (that's shelved for
-# a possible rewrite, not this workflow's concern).
+# PR-time validation for AUR-sourced content specifically (packages/aur/)
 on:
   pull_request:
     paths:
-      - 'bootstrap.sh'
-      - 'scripts/**'
-      - 'packages/**'
-      - 'configs/skel/**'
+      - 'packages/aur/**'
   workflow_dispatch: {}
 
 jobs:
-  shellcheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: shellcheck
-        run: |
-          mapfile -t files < <(find bootstrap.sh scripts configs/skel -type f -name '*.sh')
-          # warning and up, not the full default (which includes
-          # style-level nits): a reasonable floor for a first pass
-          # against scripts that were never run through shellcheck in
-          # CI before this workflow existed.
-          shellcheck -S warning "${files[@]}"
-
   pkgbuild-validate:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
@@ -38,15 +20,9 @@ jobs:
           useradd -m builder
           chown -R builder:builder .
       - name: Validate vendored PKGBUILDs
-        run: runuser -u builder -- scripts/ci/validate-vendored-pkgbuilds.sh
+        run: runuser -u builder -- .github/scripts/validate-vendored-pkgbuilds.sh
 
   security-scan:
-    # No need to guard against re-scanning aur.yml's own bot-created
-    # update PRs here: GITHUB_TOKEN-created PRs never trigger a
-    # pull_request-triggered workflow at all (GitHub's own recursion
-    # guard), so this workflow never runs on them in the first place.
-    # They're already scanned, with the result posted as a PR comment,
-    # by aur.yml's own update job.
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
@@ -54,43 +30,13 @@ jobs:
       - name: Install build dependencies
         run: pacman -Sy --needed --noconfirm rust clang openssl git
       - name: Build aur-scan
-        run: scripts/ci/build-aur-scan.sh /usr/local/bin/aur-scan
+        run: .github/scripts/build-aur-scan.sh /usr/local/bin/aur-scan
       - name: Scan vendored packages
         run: |
-          for dir in packages/aur/*/ packages/custom/*/; do
+          for dir in packages/aur/*/; do
             [[ -d "$dir" ]] || continue
             echo "== $(basename "$dir") =="
             # Advisory only, same as namcap: findings need a human's
             # judgment, never block the check on their own.
             aur-scan scan "$dir" --format text || true
           done
-
-  config-validate:
-    runs-on: ubuntu-latest
-    container: archlinux:base
-    steps:
-      - name: Install validators
-        run: pacman -Sy --needed --noconfirm git jq lua python
-      - uses: actions/checkout@v4
-      - name: Validate JSON
-        run: |
-          status=0
-          while IFS= read -r -d '' f; do
-            jq empty "$f" || { echo "invalid JSON: $f" >&2; status=1; }
-          done < <(find configs/skel -type f -name '*.json' -print0)
-          exit $status
-      - name: Validate Lua
-        run: |
-          status=0
-          while IFS= read -r -d '' f; do
-            luac -p "$f" || { echo "invalid Lua: $f" >&2; status=1; }
-          done < <(find configs/skel -type f -name '*.lua' -print0)
-          exit $status
-      - name: Validate TOML
-        run: |
-          status=0
-          while IFS= read -r -d '' f; do
-            python3 -c "import sys, tomllib; tomllib.load(open(sys.argv[1], 'rb'))" "$f" \
-              || { echo "invalid TOML: $f" >&2; status=1; }
-          done < <(find configs/skel -type f -name '*.toml' -print0)
-          exit $status
