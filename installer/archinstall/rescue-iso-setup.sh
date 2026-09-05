@@ -82,6 +82,12 @@ umount /mnt
 
 echo "rescue-iso-setup.sh: formatting $RESCUE_BOOT_PARTITION and writing the extracted kernel/initramfs..."
 
+# mkfs.fat needs dosfstools in the target's own package list
+# (base.json): the live ISO always has it, but archinstall formats the
+# ESP itself before pacstrap even runs, using the live environment's
+# own tools, so the target was never otherwise required to carry it.
+# This script is the first thing that needs mkfs.fat inside the
+# already-installed target (arch-chroot, after pacstrap).
 mkfs.fat -F32 -n RESCUEBOOT "$RESCUE_BOOT_PARTITION"
 mount "$RESCUE_BOOT_PARTITION" /mnt
 cp "$WORK_DIR/vmlinuz-linux" /mnt/vmlinuz-linux

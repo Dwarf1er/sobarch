@@ -201,6 +201,7 @@
         "archlinux-xdg-menu",
         "bash-completion",
         "brightnessctl",
+        "dosfstools",
         "fakeroot",
         "fastfetch",
         "fcitx5",
