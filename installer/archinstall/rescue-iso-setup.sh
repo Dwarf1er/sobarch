@@ -92,7 +92,13 @@ mkfs.fat -F32 -n RESCUEBOOT "$RESCUE_BOOT_PARTITION"
 mount "$RESCUE_BOOT_PARTITION" /mnt
 cp "$WORK_DIR/vmlinuz-linux" /mnt/vmlinuz-linux
 cp "$WORK_DIR/initramfs-linux.img" /mnt/initramfs-linux.img
-RESCUE_BOOT_UUID=$(blkid -s UUID -o value "$RESCUE_BOOT_PARTITION")
+# Limine's guid()/uuid() path resolver matches a filesystem UUID or a
+# GPT partition GUID, both full 128-bit values -- never FAT32's own
+# "UUID" (blkid -s UUID here), which is really just its short 32-bit
+# volume serial number (e.g. 1B83-B836) and never matches. The
+# partition's own GPT PARTUUID is the one identifier FAT32 actually
+# has that fits.
+RESCUE_BOOT_PARTUUID=$(blkid -s PARTUUID -o value "$RESCUE_BOOT_PARTITION")
 umount /mnt
 
 echo "rescue-iso-setup.sh: adding the Limine boot entry..."
@@ -107,8 +113,8 @@ END_MARKER="#### SOBARCH RESCUE ENTRY END"
 block="$START_MARKER
 /Arch Linux rescue (local ISO)
     protocol: linux
-    path: uuid(${RESCUE_BOOT_UUID}):/vmlinuz-linux
-    module_path: uuid(${RESCUE_BOOT_UUID}):/initramfs-linux.img
+    path: uuid(${RESCUE_BOOT_PARTUUID}):/vmlinuz-linux
+    module_path: uuid(${RESCUE_BOOT_PARTUUID}):/initramfs-linux.img
     cmdline: archisobasedir=arch img_dev=UUID=${RESCUE_UUID} img_loop=/archlinux-x86_64.iso
 $END_MARKER"
 
