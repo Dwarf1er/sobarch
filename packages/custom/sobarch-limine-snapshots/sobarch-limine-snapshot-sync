@@ -60,7 +60,7 @@ for snap_dir in "$SNAPSHOTS_DIR"/*/; do
     description="$(sed -n 's:.*<description>\(.*\)</description>.*:\1:p' "$info_xml" | head -n1)"
 
     entries+="
-    /Snapshot ${id} - ${date:-unknown date} - ${description:-no description}
+    //Snapshot ${id} - ${date:-unknown date} - ${description:-no description}
         protocol: linux
         path: boot():/vmlinuz-linux
         module_path: boot():/initramfs-linux.img
@@ -71,10 +71,13 @@ done
 
 block="$START_MARKER"
 if [ "$count" -gt 0 ]; then
-    # A top-level entry with no protocol: key but with further-indented
-    # /-prefixed entries nested under it becomes a submenu in Limine,
-    # rather than a directly-bootable entry -- keeps every snapshot off
-    # the first-level menu, tucked under one "Snapshots" item instead.
+    # Limine's nesting depth comes from the *count* of leading slashes
+    # on an entry's title line, not from whitespace indentation -- a
+    # single "/" sibling would sit next to "/Snapshots" at the top
+    # level instead of inside it. "//Snapshot ..." (two slashes) is
+    # what actually nests each one a level deeper, turning "/Snapshots"
+    # into a directory entry and keeping every snapshot off the
+    # first-level menu.
     block+="
 /Snapshots$entries"
 else
