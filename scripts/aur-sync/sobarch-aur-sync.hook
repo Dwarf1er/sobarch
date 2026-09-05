@@ -1,0 +1,19 @@
+# The only ongoing trigger for keeping vetted AUR/custom packages
+# current (decision 3): no daily timer, no other polling. A
+# `pacman -Syu` that upgrades nothing at all runs no transaction and so
+# fires no hook, including this one; accepted as a rare, known gap on a
+# rolling-release system rather than adding a second, independent
+# trigger.
+#
+# PostTransaction: runs after pacman's own transaction (and its DB
+# lock) is fully done, so aur-sync's own pacman -U calls never race
+# pacman's own upgrade in progress.
+[Trigger]
+Operation = Upgrade
+Type = Package
+Target = *
+
+[Action]
+Description = sobarch: checking vetted AUR/custom packages for updates...
+When = PostTransaction
+Exec = /usr/local/lib/sobarch/aur-sync.sh

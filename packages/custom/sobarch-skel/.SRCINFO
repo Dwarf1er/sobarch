@@ -1,0 +1,10 @@
+pkgbase = sobarch-skel
+	pkgdesc = Sobarch distribution-owned default desktop configuration (skel)
+	pkgver = 20260904
+	pkgrel = 1
+	url = https://github.com/Dwarf1er/sobarch
+	arch = any
+	license = MIT
+	options = !debug
+
+pkgname = sobarch-skel

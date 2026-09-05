@@ -116,15 +116,26 @@ actually avoidable if any of it happened during install instead).
 The actual first-boot mechanism lives in `installer/firstboot/`:
 `install-profile-packages.sh` reads two flat package lists
 (`/etc/sobarch/profile-packages-{official,aur}.txt`, written by
-`config_gen.write_firstboot_package_lists`) and `pacman -S`s the
-official-repo ones. AUR packages are listed but not installed yet:
-that needs `packages/aur/`'s vendored PKGBUILDs and the local
-build/update mechanism, which don't exist yet.
-`sobarch-firstboot-packages.service`, a `ConditionPathExists`-guarded
-oneshot enabled by `install_runner.py` right after `archinstall`
-finishes, runs that script once on first boot and retries on the next
-boot if it fails (e.g. no network yet), rather than being silently
-skipped.
+`config_gen.write_firstboot_package_lists`), `pacman -S`s the
+official-repo ones, and builds/installs the AUR ones via `aur-sync.sh`
+(`scripts/aur-sync/`, decision 3's local vendored-package build
+mechanism). `sobarch-firstboot-packages.service`, a
+`ConditionPathExists`-guarded oneshot enabled by `install_runner.py`
+right after `archinstall` finishes, runs that script once on first boot
+and retries on the next boot if it fails (e.g. no network yet), rather
+than being silently skipped.
+
+The two AUR-only base-required packages (`localsend-bin`, `wlogout`;
+decision 3) aren't deferred like the optional profiles above: they're
+built and installed synchronously during the install session itself,
+the same way `sobarch-skel` already is, so both exist before first boot
+rather than waiting on the post-login network trigger the optional
+profiles use. Ongoing updates for anything already installed
+(`sobarch-skel`, the base AUR packages, or any installed profile AUR
+package) are handled by a pacman hook on `Operation = Upgrade`
+(`scripts/aur-sync/sobarch-aur-sync.hook`) that re-runs `aur-sync.sh`;
+there's no separate timer or independent polling, so a package only
+gets checked when some `pacman -Syu` actually upgrades something.
 
 ## Hardware Detection
 
@@ -243,10 +254,11 @@ Installer above) is one of three; the other two are new:
   a `<file>.sobarch-new` (never touching the real file) on a genuine
   conflict. With no baseline recorded yet, first boot resolves every
   file to "take new" trivially: this is the mechanism's first
-  invocation, not a separate copy path. `sobarch update-config`
-  (not built yet) later exposes this exact script,
-  unmodified, as a user-invoked command, adding only its own
-  interactive conflict walkthrough on top. Needs `-a`/`--text` on the
+  invocation, not a separate copy path. `update-config-menu.sh`
+  (not built yet, a fuzzel-driven script rather than a CLI command)
+  later exposes this exact script, unmodified, as a keybind-triggered
+  action, adding only its own interactive conflict walkthrough on top.
+  Needs `-a`/`--text` on the
   `diff3` call: without it, `diff3` hard-fails outright on any binary
   skel file (the default wallpaper) even in the trivial no-baseline
   case, a real bug caught before shipping, not a theoretical one. Runs

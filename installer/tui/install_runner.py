@@ -1,6 +1,7 @@
 """Runs the real install: archinstall itself, then the post-archinstall,
-pre-reboot arch-chroot step (building/installing sobarch-skel,
-deploying the first-boot units, nvidia-setup.sh, snapper-setup.sh,
+pre-reboot arch-chroot step (deploying aur-sync.sh, building/installing
+sobarch-skel and the base-required AUR packages, deploying the
+first-boot units, nvidia-setup.sh, snapper-setup.sh,
 rescue-iso-setup.sh, in that order) against the still-mounted target.
 Only meaningfully testable on a real Arch ISO with a real disk; kept in
 its own module, independent of the Screen that drives it, so at least
@@ -37,6 +38,18 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 # is still mode 1777, so it survives across calls with the same
 # build-as-non-root permissions.
 SOBARCH_SKEL_BUILD_DIR_IN_TARGET = Path("/var/tmp/sobarch-skel-build")
+
+# Base-required per decision 3 (no official package exists for
+# either): must be present before first boot, same urgency tier as
+# sobarch-skel itself, not deferred to the post-login dispatcher the
+# way optional profile AUR packages are (Phase 8's install-profile-
+# packages.sh). Built the same way as sobarch-skel below, via
+# aur-sync.sh's --local mode against this already-fetched checkout.
+BASE_AUR_PACKAGES = ["localsend-bin", "wlogout"]
+
+AUR_SYNC_DIR = Path(__file__).resolve().parent.parent.parent / "scripts" / "aur-sync"
+AUR_SYNC_SCRIPT_PATH_IN_TARGET = Path("/usr/local/lib/sobarch/aur-sync.sh")
+AUR_SYNC_HOOK_DIR_IN_TARGET = Path("/etc/pacman.d/hooks")
 
 # The first-boot units below all follow the same shape: a script under
 # installer/firstboot/, deployed to /usr/local/lib/sobarch/, run once
@@ -128,52 +141,53 @@ def _run_logged(cmd: list[str], log_file, on_output: OutputCallback, **kwargs) -
     return process.wait()
 
 
-def _build_and_install_sobarch_skel(state: WizardState, log_file, on_output: OutputCallback) -> int:
-    """Local-builds packages/custom/sobarch-skel from this checkout and
-    installs it into the target, so /usr/share/sobarch/skel/ (and a
-    real `pacman -Qi sobarch-skel`) exist by the time apply-skel.sh
-    runs on first boot. A minimal, one-off stand-in for a general
-    vendored-package build/sync mechanism that doesn't exist yet; that
-    mechanism will eventually supersede this for keeping sobarch-skel
-    current on an already-installed system, but something still needs
-    to get it installed the very first time.
+def _deploy_aur_sync(log_file, on_output: OutputCallback) -> int:
+    """Deploys aur-sync.sh and its pacman hook onto the target
+    permanently: needed right away by _build_and_install_base_packages
+    below, and afterwards for the ongoing Operation=Upgrade hook and
+    the first-boot profile-AUR install step (install-profile-
+    packages.sh), so it's deployed once here rather than separately by
+    each caller."""
+    script_path = MOUNTPOINT / AUR_SYNC_SCRIPT_PATH_IN_TARGET.relative_to("/")
+    script_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(AUR_SYNC_DIR / "aur-sync.sh", script_path)
+    script_path.chmod(0o755)
 
-    Built as the newly created user, not root: modern makepkg refuses
-    outright to run as root (no override flag), and the account
-    already exists at this point (created earlier in the same
-    archinstall run via credentials.json). Assumes that user's primary
-    group is named the same as the username, standard useradd behavior
-    (USERGROUPS_ENAB) on Arch; not yet verified against a real
-    archinstall run, same as the rest of this module."""
+    hook_dir = MOUNTPOINT / AUR_SYNC_HOOK_DIR_IN_TARGET.relative_to("/")
+    hook_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(AUR_SYNC_DIR / "sobarch-aur-sync.hook", hook_dir / "sobarch-aur-sync.hook")
+    return 0
+
+
+def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int:
+    """Local-builds sobarch-skel and the two base-required AUR packages
+    (localsend-bin, wlogout; decision 3) from this checkout and installs
+    them into the target, so /usr/share/sobarch/skel/ and both packages
+    exist by the time first boot runs. Goes through the real
+    aur-sync.sh (--local mode, against this already-fetched checkout,
+    no curl refetch needed) rather than a bespoke build routine, so
+    there's exactly one place that knows how to build a vendored
+    package; aur-sync.sh itself creates and builds as its own
+    unprivileged build user, so nothing here needs to run as (or chown
+    to) the newly created human account.
+
+    sobarch-skel's PKGBUILD reaches out to ../../../configs/skel via a
+    relative path, so configs/skel/ must be staged alongside it here,
+    not just the package directory in isolation."""
     build_dir = MOUNTPOINT / SOBARCH_SKEL_BUILD_DIR_IN_TARGET.relative_to("/")
     shutil.rmtree(build_dir, ignore_errors=True)
     shutil.copytree(REPO_ROOT / "packages" / "custom" / "sobarch-skel", build_dir / "packages" / "custom" / "sobarch-skel")
     shutil.copytree(REPO_ROOT / "configs" / "skel", build_dir / "configs" / "skel")
-
-    pkg_dir_in_target = SOBARCH_SKEL_BUILD_DIR_IN_TARGET / "packages" / "custom" / "sobarch-skel"
-
-    returncode = _run_logged(
-        ["arch-chroot", str(MOUNTPOINT), "chown", "-R", f"{state.username}:{state.username}", str(SOBARCH_SKEL_BUILD_DIR_IN_TARGET)],
-        log_file,
-        on_output,
-    )
-    if returncode != 0:
-        return returncode
+    for pkg in BASE_AUR_PACKAGES:
+        shutil.copytree(REPO_ROOT / "packages" / "aur" / pkg, build_dir / "packages" / "aur" / pkg)
 
     returncode = _run_logged(
         [
             "arch-chroot", str(MOUNTPOINT),
-            "runuser", "-u", state.username, "--",
-            "bash", "-c", f"cd {pkg_dir_in_target} && makepkg --noconfirm",
+            str(AUR_SYNC_SCRIPT_PATH_IN_TARGET),
+            "--local", str(SOBARCH_SKEL_BUILD_DIR_IN_TARGET),
+            "sobarch-skel", *BASE_AUR_PACKAGES,
         ],
-        log_file,
-        on_output,
-    )
-    if returncode != 0:
-        return returncode
-
-    returncode = _run_logged(
-        ["arch-chroot", str(MOUNTPOINT), "bash", "-c", f"pacman -U --noconfirm {pkg_dir_in_target}/*.pkg.tar.zst"],
         log_file,
         on_output,
     )
@@ -212,10 +226,15 @@ def run_install(
 
         on_output("archinstall finished. Running post-install configuration...")
 
-        on_output("Building and installing sobarch-skel...")
-        returncode = _build_and_install_sobarch_skel(state, log_file, on_output)
+        on_output("Deploying the AUR sync mechanism...")
+        returncode = _deploy_aur_sync(log_file, on_output)
         if returncode != 0:
-            raise InstallError("failed to build/install sobarch-skel", log_path)
+            raise InstallError("failed to deploy aur-sync.sh", log_path)
+
+        on_output("Building and installing sobarch-skel and base-required AUR packages...")
+        returncode = _build_and_install_base_packages(log_file, on_output)
+        if returncode != 0:
+            raise InstallError("failed to build/install base packages", log_path)
 
         write_firstboot_package_lists(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
         write_security_flags(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))

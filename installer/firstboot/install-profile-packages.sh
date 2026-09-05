@@ -11,10 +11,10 @@
 # network yet) leaves MARKER unwritten, so it retries automatically on
 # the next boot rather than being silently skipped forever.
 #
-# AUR packages aren't installed here yet: that needs packages/aur/'s
-# vendored PKGBUILDs and a local build/update mechanism, which doesn't
-# exist yet. They're left listed in AUR_LIST, unattended, for whenever
-# that mechanism lands.
+# Selected AUR profile packages are built/installed the same way as
+# any other vendored package (Phase 10's aur-sync.sh, deployed
+# alongside this script): explicit-package mode, so only the packages
+# actually selected get installed, never the full vendored set.
 
 set -euo pipefail
 
@@ -66,9 +66,11 @@ else
 fi
 
 if [[ -s "$AUR_LIST" ]]; then
-    echo "sobarch-firstboot: the following selected AUR package(s) were NOT installed" \
-        "(packages/aur/ vendoring isn't implemented yet):"
-    cat "$AUR_LIST"
+    mapfile -t aur_packages <"$AUR_LIST"
+    echo "sobarch-firstboot: building/installing ${#aur_packages[@]} selected AUR package(s):" \
+        "${aur_packages[*]}"
+    id=$(notify_user normal "sobarch: installing packages" "Building selected AUR package(s)..." "$id")
+    /usr/local/lib/sobarch/aur-sync.sh "${aur_packages[@]}"
 fi
 
 touch "$MARKER"
