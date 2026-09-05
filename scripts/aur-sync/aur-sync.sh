@@ -162,11 +162,34 @@ installed_version() {
     pacman -Q "$1" 2>/dev/null | awk '{print $2}' || true
 }
 
+# depends/makedepends declared in .SRCINFO, stripped of version
+# constraints (e.g. "fuse2>=2.9.9" -> "fuse2") so they're plain names
+# pacman -S accepts. No arch-specific depends_x86_64-style variants are
+# handled: none of the currently vendored packages use them, and this
+# is meant to stay a thin reader of what's actually there, not a full
+# .SRCINFO parser.
+build_deps() {
+    awk -F' = ' '/^[[:space:]]*(depends|makedepends) = /{print $2}' "$1/.SRCINFO" | sed -E 's/[<>=].*//'
+}
+
+# makepkg's own default OPTIONS (debug packaging) needs the debugedit
+# binary; not part of the base install (sobarch-skel's own PKGBUILD
+# sets !debug specifically to avoid needing it), and most vendored
+# PKGBUILDs don't declare it since it's normally assumed to already be
+# present via base-devel. Installed once, up front, rather than
+# patching every vendored PKGBUILD's options to add !debug, which would
+# pollute Phase 11's future upstream-diff checks with a spurious,
+# permanent local difference.
+ensure_makepkg_prereqs() {
+    pacman -S --needed --noconfirm debugedit
+}
+
 failures=()
 first_install=true
 
 if ((${#targets[@]})); then
     ensure_build_user
+    ensure_makepkg_prereqs
     mkdir -p "$BUILD_ROOT"
 fi
 
@@ -184,6 +207,20 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
     fi
 
     echo "aur-sync: building $name (${installed:-not installed} -> $pinned)..."
+
+    # Resolved as root, here, rather than via `makepkg --syncdeps`:
+    # that flag has makepkg itself invoke pacman, which would mean
+    # granting the unprivileged build user passwordless pacman/sudo
+    # rights just to build a package - a real privilege-escalation
+    # surface this project has no reason to open, since decision 3
+    # already rejects an AUR helper for the same class of concern.
+    mapfile -t deps < <(build_deps "$src")
+    if ((${#deps[@]})) && ! pacman -S --needed --noconfirm "${deps[@]}"; then
+        echo "aur-sync: $name failed to install dependencies (${deps[*]})" >&2
+        failures+=("$name (dependency install failed)")
+        continue
+    fi
+
     build_dir="$BUILD_ROOT/$name"
     rm -rf "$build_dir"
     cp -a "$src" "$build_dir"
