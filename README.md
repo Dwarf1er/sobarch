@@ -363,14 +363,13 @@ logic `install-profile-packages.sh` already runs at first boot.
 Each row's leading icon is real, not a nerd-font glyph: fuzzel's dmenu
 mode speaks Rofi's extended dmenu protocol (a `\0icon\x1f`-delimited,
 comma-separated fallback list of icon names/paths, tried in order until
-one resolves), and fuzzel has no per-row text styling of its own to
-dim an already-installed entry with. An installed package's own icon
-already exists on disk and wins the lookup; one not yet installed falls
-through to a plain generic icon, and a not-yet-installed vendored AUR/
-custom package falls through to `/usr/share/sobarch/sobarch.svg` (a
-placeholder mark) instead, distinguishing "vetted and built by
-sobarch" from an official package's `package-x-generic` fallback
-without a text tag cluttering the row.
+one resolves), falling back to a plain generic icon for anything the
+configured icon theme doesn't ship a match for. Already-installed
+packages are filtered out of the list entirely rather than shown
+dimmed: fuzzel's dmenu mode has no per-row text styling of its own
+(only global list colors), and an icon theme like Papirus ships icons
+for most popular apps regardless of whether that package is actually
+installed, so icon presence never tracked install state either.
 
 ## Documentation
 

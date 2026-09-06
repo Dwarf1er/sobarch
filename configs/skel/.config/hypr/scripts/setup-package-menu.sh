@@ -17,27 +17,22 @@
 #
 # Each row's leading glyph is a real icon, not a nerd-font character:
 # fuzzel's dmenu mode speaks rofi's extended dmenu protocol (\0icon\x1f
-# after the display text, comma-separated fallback list, tried in
-# order until one resolves). This is used for two things at once, both
-# emergent from the fallback chain rather than any bespoke styling
-# fuzzel's dmenu mode has no support for at all (only global colors, no
-# per-row dimming/markup):
-#   - an already-installed package's own real icon exists on disk and
-#     wins the lookup, so it renders in full; one not yet installed
-#     falls through to a plain generic icon, which reads as visually
-#     muted in practice without this script tracking install state
-#     for display purposes at all (pacman -Q is only consulted for the
-#     install action itself, further down).
-#   - a vendored AUR/custom package that isn't installed yet falls
-#     through past its own (not-yet-existing) icon to sobarch's own
-#     mark, distinguishing "this is vetted and built by sobarch" from
-#     an official-repo package's plain package-x-generic fallback,
-#     without a text tag like "(AUR)" cluttering the row.
+# after the display text, comma-separated fallback list, tried in order
+# until one resolves), which is enough for a real app icon (falling back
+# to a plain generic one for anything the configured icon theme doesn't
+# ship a match for), but not for indicating install state: fuzzel's
+# dmenu mode has no per-row styling at all (only global colors, no
+# dimming/markup), and an icon theme like Papirus ships icons for most
+# popular apps as static theme files regardless of whether that
+# package is actually installed, so icon presence/absence never
+# tracked install state either (confirmed directly: every row rendered
+# identically regardless of install status). Already-installed
+# packages are filtered out of the list entirely instead, the one
+# distinction fuzzel's flat dmenu list can actually make.
 set -euo pipefail
 
 DATA_FILE="/usr/share/sobarch/profiles.txt"
 AUR_SYNC="/usr/local/lib/sobarch/aur-sync.sh"
-SOBARCH_ICON="/usr/share/sobarch/sobarch.svg"
 
 if [[ ! -r "$DATA_FILE" ]]; then
     notify-send -u critical "sobarch: install package" "$DATA_FILE not found; is sobarch-skel installed?"
@@ -57,16 +52,21 @@ while IFS='|' read -r _ _ pkgs; do
     done
 done < "$DATA_FILE"
 
-mapfile -t names < <(printf '%s\n' "${!pkg_is_aur[@]}" | sort)
+mapfile -t names < <(
+    for name in "${!pkg_is_aur[@]}"; do
+        pacman -Q "$name" >/dev/null 2>&1 && continue
+        printf '%s\n' "$name"
+    done | sort
+)
+
+if ((${#names[@]} == 0)); then
+    notify-send "sobarch: install package" "Every known package is already installed."
+    exit 0
+fi
 
 choice=$(
     for name in "${names[@]}"; do
-        if [[ "${pkg_is_aur[$name]}" == 1 ]]; then
-            icons="$name,$SOBARCH_ICON,package-x-generic"
-        else
-            icons="$name,package-x-generic"
-        fi
-        printf '%s\0icon\x1f%s\n' "$name" "$icons"
+        printf '%s\0icon\x1f%s,package-x-generic\n' "$name" "$name"
     done | fuzzel --dmenu --prompt "install package: "
 )
 [[ -n "${choice:-}" && -n "${pkg_is_aur[$choice]:-}" ]] || exit 0
