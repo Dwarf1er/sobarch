@@ -3,7 +3,7 @@ pkgname=sobarch-skel
 # Pure-data meta-package with no upstream releases of its own; pkgver
 # tracks the date configs/skel/ last changed in this monorepo.
 pkgver=20260906
-pkgrel=2
+pkgrel=3
 pkgdesc="Sobarch distribution-owned default desktop configuration (skel)"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
@@ -29,11 +29,19 @@ package() {
     chmod 755 "$pkgdir"/usr/share/sobarch/skel/.config/hypr/scripts/*.sh
     chmod 755 "$pkgdir"/usr/share/sobarch/skel/.config/waybar/scripts/*.sh
 
-    # Profile/package data for setup-profile-menu.sh, a plain-text mirror
+    # Profile/package data for setup-package-menu.sh, a plain-text mirror
     # of installer/tui/profiles_data.py (see generate_profile_data.py).
     # Installed outside the skel/ tree above, not under it: it's
     # distro-owned data the user never edits, not a personalizable
     # config file, so it must never go through apply-skel.sh's diff3
     # reconciliation the way everything under skel/ does.
     install -Dm644 "$startdir/data/profiles.txt" "$pkgdir/usr/share/sobarch/profiles.txt"
+
+    # Fallback icon setup-package-menu.sh shows (absolute path, fuzzel's
+    # own rofi-extended-dmenu icon field accepts one directly, no
+    # icon-theme/cache install needed) for a vendored AUR/custom package
+    # whose own app icon isn't resolvable yet (not installed, so its own
+    # icon file doesn't exist on disk): a placeholder mark, swap this
+    # file for a real logo whenever one exists.
+    install -Dm644 "$startdir/data/sobarch.svg" "$pkgdir/usr/share/sobarch/sobarch.svg"
 }

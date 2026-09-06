@@ -335,8 +335,7 @@ rather than tucked away.
   waybar's own status module.
 - **Sobarch** dispatches to `~/.config/hypr/scripts/setup-menu.sh`, which
   offers Update Config and Review Conflicts (`update-config-menu.sh`,
-  see First Boot above) and Install Profile (`setup-profile-menu.sh`,
-  below).
+  see First Boot above) and Install (`setup-package-menu.sh`, below).
 - **Power** opens a second, inline `fuzzel --dmenu` submenu (Lock,
   Logout, Suspend, Reboot, Shutdown), each running one plain command
   (`hyprlock`, `hyprctl dispatch exit`, `systemctl suspend`/`reboot`/
@@ -348,16 +347,30 @@ rather than tucked away.
 - **Apps** runs plain `fuzzel`, its own real application list, as a
   separate, second invocation, one level in.
 
-`setup-profile-menu.sh` is `install-profile-packages.sh`'s
-after-first-boot counterpart, for a profile skipped during install or
+`setup-package-menu.sh` is `install-profile-packages.sh`'s
+after-first-boot counterpart, for a package skipped during install or
 wanted later. It reads `/usr/share/sobarch/profiles.txt`, a plain-text
 mirror of `installer/tui/profiles_data.py`'s package lists, regenerated
 by hand via `installer/tui/generate_profile_data.py` whenever that data
 changes (there is no Python on an installed system to read the
-original directly, and no CI check keeping the two in sync). It
-installs the official-repo packages via `pacman` and the AUR/custom
-ones via `aur-sync.sh`'s explicit-package mode, the same combined logic
-`install-profile-packages.sh` already runs at first boot.
+original directly, and no CI check keeping the two in sync), flattens
+every profile's packages into one deduped, individually-installable
+list (no profile-bundle install step in this menu at all), and installs
+whichever single package is picked: official-repo via `pacman`, AUR/
+custom via `aur-sync.sh`'s explicit-package mode, the same combined
+logic `install-profile-packages.sh` already runs at first boot.
+
+Each row's leading icon is real, not a nerd-font glyph: fuzzel's dmenu
+mode speaks Rofi's extended dmenu protocol (a `\0icon\x1f`-delimited,
+comma-separated fallback list of icon names/paths, tried in order until
+one resolves), and fuzzel has no per-row text styling of its own to
+dim an already-installed entry with. An installed package's own icon
+already exists on disk and wins the lookup; one not yet installed falls
+through to a plain generic icon, and a not-yet-installed vendored AUR/
+custom package falls through to `/usr/share/sobarch/sobarch.svg` (a
+placeholder mark) instead, distinguishing "vetted and built by
+sobarch" from an official package's `package-x-generic` fallback
+without a text tag cluttering the row.
 
 ## Documentation
 
