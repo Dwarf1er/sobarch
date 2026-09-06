@@ -24,7 +24,7 @@ pcall(dofile, os.getenv("HOME") .. "/.config/hypr/nvidia.lua")
 
 local terminal = "kitty"
 local fileManager = "pcmanfm"
-local menu = "fuzzel"
+local menu = "bash " .. os.getenv("HOME") .. "/.config/hypr/scripts/main-menu.sh"
 local browser = "librewolf"
 local screenshot = "hyprshot"
 local lockScreen = "hyprlock"

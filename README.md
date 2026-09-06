@@ -319,14 +319,15 @@ step only needed *something* to get it installed the very first time.
 
 ## Desktop
 
-`configs/skel/.local/share/applications/` ships three synthetic
-`.desktop` entries alongside real installed applications. Fuzzel's own
-default (non-`--dmenu`) launcher mode, already bound to the bare
-`Super` key with no separate keybind added for this, doubles as a
-command center this way: typing fuzzy-matches either a real app or one
-of these entries in the same search box, using fuzzel's own existing
-icon rendering and search logic rather than a bespoke merged-list
-script.
+Bare `Super` runs `~/.config/hypr/scripts/main-menu.sh`, a
+`fuzzel --dmenu` picker (`hyprland.lua`'s `menu` variable), rather than
+launching fuzzel's own application list directly. An earlier version
+of this instead added three synthetic `.desktop` entries to fuzzel's
+default launcher mode; reverted once a real install showed fuzzel has
+no way to fold a subset of entries behind another (its
+`hide-before-typing` option is a global on/off, not per-entry), so the
+three entries just appeared flatly alongside every real application
+rather than tucked away.
 
 - **System** dispatches to `~/.config/hypr/scripts/system-menu.sh`
   (the audio/network/Bluetooth submenu, unchanged), also reachable via
@@ -338,6 +339,8 @@ script.
   below).
 - **Power** runs `wlogout` directly. It used to be a dedicated waybar
   module; that module was removed once this entry existed.
+- **Apps** runs plain `fuzzel`, its own real application list, as a
+  separate, second invocation, one level in.
 
 `setup-profile-menu.sh` is `install-profile-packages.sh`'s
 after-first-boot counterpart, for a profile skipped during install or

@@ -3,7 +3,7 @@ pkgname=sobarch-skel
 # Pure-data meta-package with no upstream releases of its own; pkgver
 # tracks the date configs/skel/ last changed in this monorepo.
 pkgver=20260905
-pkgrel=1
+pkgrel=2
 pkgdesc="Sobarch distribution-owned default desktop configuration (skel)"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
