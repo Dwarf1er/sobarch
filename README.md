@@ -277,8 +277,8 @@ Installer above) is one of three; the other two are new:
   invocation, not a separate copy path.
   `~/.config/hypr/scripts/update-config-menu.sh` (a fuzzel-driven
   script, no CLI command) later exposes this exact script, unmodified,
-  reached through the "Setup" entry in fuzzel's own application list
-  (see Desktop below) rather than a dedicated keybind, adding only its
+  reached through the "Sobarch" entry in `main-menu.sh` (see Desktop
+  below) rather than a dedicated keybind, adding only its
   own interactive `[K]eep/[U]se new/[D]iff/[E]dit/[S]kip` conflict
   walkthrough on top; a second entry, "Review Conflicts"
   (`update-config-menu.sh --review`), re-runs just that walkthrough
@@ -333,7 +333,7 @@ rather than tucked away.
   (the audio/network/Bluetooth submenu, unchanged), also reachable via
   its own direct keybinds (`Super+A`, `Super+N`, `Super+Shift+B`) and
   waybar's own status module.
-- **Setup** dispatches to `~/.config/hypr/scripts/setup-menu.sh`, which
+- **Sobarch** dispatches to `~/.config/hypr/scripts/setup-menu.sh`, which
   offers Update Config and Review Conflicts (`update-config-menu.sh`,
   see First Boot above) and Install Profile (`setup-profile-menu.sh`,
   below).

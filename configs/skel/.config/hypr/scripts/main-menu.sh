@@ -9,14 +9,14 @@
 
 choice=$(printf "%s\n" \
     "󰘮  System" \
-    "󰢻  Setup" \
+    "󰢻  Sobarch" \
     "󰐦  Power" \
     "󰀻  Apps" \
     | fuzzel --dmenu --prompt "sobarch: ")
 
 case "$choice" in
     "󰘮  System") exec bash "$HOME/.config/hypr/scripts/system-menu.sh" ;;
-    "󰢻  Setup") exec bash "$HOME/.config/hypr/scripts/setup-menu.sh" ;;
+    "󰢻  Sobarch") exec bash "$HOME/.config/hypr/scripts/setup-menu.sh" ;;
     "󰐦  Power") exec wlogout ;;
     "󰀻  Apps") exec fuzzel ;;
 esac
