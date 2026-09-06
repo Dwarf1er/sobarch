@@ -1,0 +1,15 @@
+pkgbase = tinty-bin
+	pkgdesc = A base16, base24 and tinted8 color scheme manager
+	pkgver = 0.34.1
+	pkgrel = 1
+	url = https://github.com/tinted-theming/tinty
+	arch = x86_64
+	license = GPL3
+	provides = tinty
+	conflicts = tinty
+	options = !strip
+	options = !debug
+	source = tinty-0.34.1-x86_64.tar.gz::https://github.com/tinted-theming/tinty/releases/download/v0.34.1/tinty-x86_64-unknown-linux-gnu.tar.gz
+	sha256sums = 311985e4b25c463c09db00e7fd8c9e50a055e07d764c7c0916b7e7e31add0fc3
+
+pkgname = tinty-bin

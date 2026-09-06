@@ -1,5 +1,5 @@
-# Base16 OneDark
-# Author: Lalit Magant (http://github.com/tilal6991)
+# Base16 {{scheme-name}}
+# Author: {{scheme-author}}
 #
 # starship.toml has no include directive, so this template renders the
 # whole file, static settings included, rather than just a color snippet.
@@ -19,21 +19,21 @@ add_newline = true
 symbol = " "
 
 [directory]
-style = "bold fg:#61afef"
+style = "bold fg:#{{base0D-hex}}"
 truncation_length = 3
 truncate_to_repo = true
 
 [git_branch]
-style = "fg:#56b6c2"
+style = "fg:#{{base0C-hex}}"
 symbol = " "
 
 [git_status]
-style = "fg:#e06c75"
+style = "fg:#{{base08-hex}}"
 
 [cmd_duration]
 min_time = 2000
-style = "fg:#e5c07b"
+style = "fg:#{{base0A-hex}}"
 
 [character]
-success_symbol = "[❯](bold fg:#98c379)"
-error_symbol = "[❯](bold fg:#e06c75)"
+success_symbol = "[❯](bold fg:#{{base0B-hex}})"
+error_symbol = "[❯](bold fg:#{{base08-hex}})"

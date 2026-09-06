@@ -66,6 +66,7 @@ PROFILES: tuple[Profile, ...] = (
         _pkgs("ethtool", "lact", "nvtop", "smartmontools", "tlp", "tlp-rdw")
         + _pkgs("sobarch-via-udev", aur=True),
     ),
+    Profile("Theming", "theming", _pkgs("tinty-bin", aur=True)),
 )
 
 _AUR_PACKAGE_NAMES: frozenset[str] = frozenset(

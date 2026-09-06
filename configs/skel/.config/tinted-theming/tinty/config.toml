@@ -1,0 +1,82 @@
+# Configuration for Tinty (https://github.com/tinted-theming/tinty)
+#
+# One [[items]] block per themed app. Reused upstream templates for
+# kitty/waybar/hyprland/mako; everything else is authored locally under
+# ~/.config/sobarch/tinty-templates/ (no upstream template exists for
+# them), each pre-built for every scheme via tinted-builder-rust so
+# `tinty apply <any-scheme>` works immediately, not just for the
+# default below.
+
+default-scheme = "base16-onedark"
+
+[[items]]
+path = "https://github.com/tinted-theming/tinted-terminal"
+name = "tinted-terminal-kitty"
+themes-dir = "themes/kitty"
+write-to-file = ["~/.config/kitty/onedark.conf"]
+supported-systems = ["base16"]
+
+[[items]]
+path = "https://github.com/tinted-theming/base16-waybar"
+name = "base16-waybar"
+themes-dir = "colors"
+hook = "cp -r %f ~/.config/waybar/colors.css"
+supported-systems = ["base16"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/waybar-jsonc"
+name = "sobarch-waybar-jsonc"
+themes-dir = "colors"
+write-to-file = ["~/.config/waybar/config.jsonc"]
+supported-systems = ["base16"]
+
+[[items]]
+path = "https://github.com/janfreeman/base16-hyprland-lua"
+name = "base16-hyprland-lua"
+themes-dir = "colors"
+write-to-file = ["~/.config/hypr/colors.lua"]
+hook = "hyprctl reload"
+supported-systems = ["base16"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/mako"
+name = "sobarch-mako"
+themes-dir = "colors"
+write-to-file = ["~/.config/mako/colors"]
+hook = "makoctl reload"
+supported-systems = ["base16"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/fuzzel"
+name = "sobarch-fuzzel"
+themes-dir = "colors"
+write-to-file = ["~/.config/fuzzel/colors.ini"]
+supported-systems = ["base16"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/hyprlock"
+name = "sobarch-hyprlock"
+themes-dir = "colors"
+write-to-file = ["~/.config/hypr/hyprlock.conf"]
+supported-systems = ["base16"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/qt6ct"
+name = "sobarch-qt6ct"
+themes-dir = "colors"
+write-to-file = ["~/.config/qt6ct/colors/sobarch.conf"]
+supported-systems = ["base16"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/starship"
+name = "sobarch-starship"
+themes-dir = "colors"
+write-to-file = ["~/.config/starship.toml"]
+supported-systems = ["base16"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/fastfetch"
+name = "sobarch-fastfetch"
+themes-dir = "colors"
+write-to-file = ["~/.config/fastfetch/config.jsonc"]
+supported-systems = ["base16"]

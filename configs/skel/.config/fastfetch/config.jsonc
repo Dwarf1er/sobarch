@@ -1,0 +1,79 @@
+// Base16 OneDark
+// Author: Lalit Magant (http://github.com/tilal6991)
+//
+// fastfetch.jsonc has no include directive, so this template renders
+// the whole file, module list included, rather than just a color
+// snippet. Structure loosely follows Nukecraft5419/fastfetch's themes
+// (github.com/Nukecraft5419/fastfetch), simplified: no custom logo
+// asset, fastfetch's own distro-logo auto-detection is left as-is.
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "display": {
+    "separator": " ",
+  },
+  "modules": [
+    "title",
+    "separator",
+    {
+      "type": "os",
+      "keyColor": "#61afef",
+    },
+    {
+      "type": "host",
+      "keyColor": "#61afef",
+    },
+    {
+      "type": "kernel",
+      "keyColor": "#61afef",
+    },
+    {
+      "type": "uptime",
+      "keyColor": "#61afef",
+    },
+    {
+      "type": "packages",
+      "keyColor": "#61afef",
+    },
+    {
+      "type": "shell",
+      "keyColor": "#61afef",
+    },
+    {
+      "type": "display",
+      "keyColor": "#61afef",
+    },
+    {
+      "type": "de",
+      "keyColor": "#61afef",
+    },
+    {
+      "type": "wm",
+      "keyColor": "#61afef",
+    },
+    {
+      "type": "terminal",
+      "keyColor": "#61afef",
+    },
+    {
+      "type": "cpu",
+      "keyColor": "#61afef",
+    },
+    {
+      "type": "gpu",
+      "keyColor": "#61afef",
+    },
+    {
+      "type": "memory",
+      "keyColor": "#61afef",
+    },
+    {
+      "type": "disk",
+      "keyColor": "#61afef",
+    },
+    "break",
+    {
+      "type": "colors",
+      "symbol": "circle",
+    },
+  ],
+}

@@ -1,0 +1,23 @@
+## Base16 OneDark
+# Author: Lalit Magant (http://github.com/tilal6991)
+#
+# You can use these variables anywhere in the mako configuration file.
+#
+# Same mapping as stacyharper/base16-mako, authored locally instead of
+# reused from that repo: it only pre-builds 140 of the 338 schemes in
+# the org's schemes repo, so switching to an uncovered scheme silently
+# left mako's colors stale (found and verified directly this session).
+
+background-color=#282c34
+text-color=#abb2bf
+border-color=#61afef
+
+[urgency=low]
+background-color=#282c34
+text-color=#e5c07b
+border-color=#61afef
+
+[urgency=high]
+background-color=#282c34
+text-color=#e06c75
+border-color=#61afef

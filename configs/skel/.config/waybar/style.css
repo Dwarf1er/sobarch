@@ -1,19 +1,4 @@
-@define-color nord0 #2e3440;
-@define-color nord1 #3b4252;
-@define-color nord2 #434c5e;
-@define-color nord3 #4c566a;
-@define-color nord4 #d8dee9;
-@define-color nord5 #e5e9f0;
-@define-color nord6 #eceff4;
-@define-color nord7 #8fbcbb;
-@define-color nord8 #88c0d0;
-@define-color nord9 #81a1c1;
-@define-color nord10 #5e81ac;
-@define-color nord11 #bf616a;
-@define-color nord12 #d08770;
-@define-color nord13 #ebcb8b;
-@define-color nord14 #a3be8c;
-@define-color nord15 #b48ead;
+@import url("colors.css");
 
 * {
     font-family: "D2CodingLigature Nerd Font Mono", monospace;
@@ -23,9 +8,9 @@
 }
 
 window#waybar {
-    background-color: @nord0;
-    color: @nord4;
-    border: 2px solid @nord8;
+    background-color: @base00;
+    color: @base05;
+    border: 2px solid @base0D;
 }
 
 /* Workspaces */
@@ -36,7 +21,7 @@ window#waybar {
 
 #workspaces button {
     background: transparent;
-    color: @nord4;
+    color: @base05;
     border: none;
     border-radius: 8px;
     padding: 4px 8px;
@@ -45,30 +30,30 @@ window#waybar {
 }
 
 #workspaces button:hover {
-    background-color: rgba(136, 192, 208, 0.2);
-    color: @nord8;
+    background-color: alpha(@base0D, 0.2);
+    color: @base0D;
 }
 
 #workspaces button.active {
-    background-color: @nord8;
-    color: @nord0;
+    background-color: @base0D;
+    color: @base00;
 }
 
 #workspaces button.urgent {
-    background-color: @nord11;
-    color: @nord0;
+    background-color: @base08;
+    color: @base00;
 }
 
 /* Window title */
 #window {
-    color: @nord4;
+    color: @base05;
     font-style: italic;
     margin: 4px 8px;
 }
 
 /* Clock */
 #clock {
-    color: @nord8;
+    color: @base0D;
     background: transparent;
     padding: 4px 12px;
     border-radius: 8px;
@@ -77,7 +62,7 @@ window#waybar {
 }
 
 #clock:hover {
-    border: 1px solid @nord8;
+    border: 1px solid @base0D;
 }
 
 /* System tray */
@@ -99,7 +84,7 @@ window#waybar {
 #custom-system,
 #language {
     background: transparent;
-    color: @nord4;
+    color: @base05;
     padding: 4px 8px;
     margin: 4px 2px;
     border-radius: 8px;
@@ -109,7 +94,7 @@ window#waybar {
 
 /* Do Not Disturb (collapses to zero width when inactive) */
 #custom-dnd {
-    color: @nord11;
+    color: @base08;
     background: transparent;
     padding: 0;
     margin: 0;
@@ -124,48 +109,48 @@ window#waybar {
 }
 
 #custom-dnd:hover {
-    border: 1px solid @nord11;
+    border: 1px solid @base08;
 }
 
 /* Individual module colors and hover effects */
 #battery {
-    color: @nord14;
+    color: @base0B;
 }
 
 #battery:hover {
-    border: 1px solid @nord14;
+    border: 1px solid @base0B;
 }
 
 #battery.warning {
-    color: @nord13;
+    color: @base0A;
 }
 
 #battery.critical {
-    color: @nord11;
+    color: @base08;
     animation: blink 1s linear infinite alternate;
 }
 
 #custom-system {
-    color: @nord8;
+    color: @base0D;
 }
 
 #custom-system:hover {
-    border: 1px solid @nord8;
+    border: 1px solid @base0D;
 }
 
 /* Language/Keyboard layout */
 #custom-fcitx5{
-    color: @nord7;
+    color: @base0C;
 }
 
 #custom-fcitx5:hover {
-    border: 1px solid @nord7;
+    border: 1px solid @base0C;
 }
 
 /* Animations */
 @keyframes blink {
     to {
-        background-color: @nord11;
-        color: @nord0;
+        background-color: @base08;
+        color: @base00;
     }
 }

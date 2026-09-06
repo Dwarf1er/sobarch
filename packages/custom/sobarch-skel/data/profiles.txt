@@ -6,3 +6,4 @@ virtualization|Virtualization|quickemu-git:aur,quickgui-bin:aur
 office|Office|homebank,libreoffice-fresh
 browsers-chat|Browsers & Chat|signal-desktop,brave-origin-bin:aur,vesktop:aur
 system-tuning|System Tuning|ethtool,lact,nvtop,smartmontools,tlp,tlp-rdw,sobarch-via-udev:aur
+theming|Theming|tinty-bin:aur

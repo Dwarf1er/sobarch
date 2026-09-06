@@ -1,5 +1,5 @@
-# Base16 OneDark
-# Author: Lalit Magant (http://github.com/tilal6991)
+# Base16 {{scheme-name}}
+# Author: {{scheme-author}}
 #
 # hyprlock has no config-splitting directive (unlike hyprland.conf's
 # `source=`), so this template renders the whole file, static settings
@@ -8,7 +8,7 @@
 background {
     monitor =
     path = screenshot
-    color = rgba(282c34ff)
+    color = rgba({{base00-hex}}ff)
     blur_passes = 2
 }
 
@@ -18,11 +18,11 @@ input-field {
     outline_thickness = 3
     inner_color = rgba(00000000)
 
-    outer_color = rgba(61afefee) rgba(56b6c2ee) 45deg
-    check_color = rgba(98c379ee) rgba(56b6c2ee) 120deg
-    fail_color = rgba(e06c75ee) rgba(be5046ee) 40deg
+    outer_color = rgba({{base0D-hex}}ee) rgba({{base0C-hex}}ee) 45deg
+    check_color = rgba({{base0B-hex}}ee) rgba({{base0C-hex}}ee) 120deg
+    fail_color = rgba({{base08-hex}}ee) rgba({{base0F-hex}}ee) 40deg
 
-    font_color = rgb(abb2bf)
+    font_color = rgb({{base05-hex}})
     fade_on_empty = false
     rounding = 15
 }
