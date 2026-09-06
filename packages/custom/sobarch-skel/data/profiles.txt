@@ -1,0 +1,8 @@
+developer|Developer|mise,neovim,presenterm
+gaming|Gaming|gamescope,lutris,mangohud,prismlauncher,protontricks,steam,protonup-qt-bin:aur
+creative|Creative|audacity,calf,easyeffects,gimp,inkscape,lsp-plugins,obs-studio,shotcut
+maker|Maker / 3D Printing|blender,freecad,orca-slicer-bin:aur
+virtualization|Virtualization|quickemu-git:aur,quickgui-bin:aur
+office|Office|homebank,libreoffice-fresh
+browsers-chat|Browsers & Chat|signal-desktop,brave-origin-bin:aur,vesktop:aur
+system-tuning|System Tuning|ethtool,lact,nvtop,smartmontools,tlp,tlp-rdw,sobarch-via-udev:aur

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=System
+Comment=Audio, network, and Bluetooth quick controls
+Exec=bash -c "\\$HOME/.config/hypr/scripts/system-menu.sh"
+Icon=configure
+Terminal=false
+NoDisplay=false
+Categories=Settings;
+Keywords=audio;volume;mute;output;input;network;wifi;bluetooth;sound;mic;microphone;

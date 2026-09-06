@@ -97,8 +97,7 @@ window#waybar {
 /* Module styling */
 #battery,
 #custom-system,
-#language,
-#custom-power {
+#language {
     background: transparent;
     color: @nord4;
     padding: 4px 8px;
@@ -161,18 +160,6 @@ window#waybar {
 
 #custom-fcitx5:hover {
     border: 1px solid @nord7;
-}
-
-/* Power button */
-#custom-power {
-    color: @nord11;
-    font-size: 16px;
-    padding: 4px 10px;
-}
-
-#custom-power:hover {
-    border: 1px solid @nord11;
-    background-color: rgba(191, 97, 106, 0.1);
 }
 
 /* Animations */

@@ -274,11 +274,16 @@ Installer above) is one of three; the other two are new:
   a `<file>.sobarch-new` (never touching the real file) on a genuine
   conflict. With no baseline recorded yet, first boot resolves every
   file to "take new" trivially: this is the mechanism's first
-  invocation, not a separate copy path. `update-config-menu.sh`
-  (not built yet, a fuzzel-driven script rather than a CLI command)
-  later exposes this exact script, unmodified, as a keybind-triggered
-  action, adding only its own interactive conflict walkthrough on top.
-  Needs `-a`/`--text` on the
+  invocation, not a separate copy path.
+  `~/.config/hypr/scripts/update-config-menu.sh` (a fuzzel-driven
+  script, no CLI command) later exposes this exact script, unmodified,
+  reached through the "Setup" entry in fuzzel's own application list
+  (see Desktop below) rather than a dedicated keybind, adding only its
+  own interactive `[K]eep/[U]se new/[D]iff/[E]dit/[S]kip` conflict
+  walkthrough on top; a second entry, "Review Conflicts"
+  (`update-config-menu.sh --review`), re-runs just that walkthrough
+  over whatever `.sobarch-new` files are still on disk. Needs
+  `-a`/`--text` on the
   `diff3` call: without it, `diff3` hard-fails outright on any binary
   skel file (the default wallpaper) even in the trivial no-baseline
   case, a real bug caught before shipping, not a theoretical one. Runs
@@ -311,6 +316,39 @@ sobarch-skel` both exist by the time `apply-skel.sh` needs them. This
 is a minimal, one-off stand-in a future vendored-package mechanism
 will supersede for keeping `sobarch-skel` current after install; this
 step only needed *something* to get it installed the very first time.
+
+## Desktop
+
+`configs/skel/.local/share/applications/` ships three synthetic
+`.desktop` entries alongside real installed applications. Fuzzel's own
+default (non-`--dmenu`) launcher mode, already bound to the bare
+`Super` key with no separate keybind added for this, doubles as a
+command center this way: typing fuzzy-matches either a real app or one
+of these entries in the same search box, using fuzzel's own existing
+icon rendering and search logic rather than a bespoke merged-list
+script.
+
+- **System** dispatches to `~/.config/hypr/scripts/system-menu.sh`
+  (the audio/network/Bluetooth submenu, unchanged), also reachable via
+  its own direct keybinds (`Super+A`, `Super+N`, `Super+Shift+B`) and
+  waybar's own status module.
+- **Setup** dispatches to `~/.config/hypr/scripts/setup-menu.sh`, which
+  offers Update Config and Review Conflicts (`update-config-menu.sh`,
+  see First Boot above) and Install Profile (`setup-profile-menu.sh`,
+  below).
+- **Power** runs `wlogout` directly. It used to be a dedicated waybar
+  module; that module was removed once this entry existed.
+
+`setup-profile-menu.sh` is `install-profile-packages.sh`'s
+after-first-boot counterpart, for a profile skipped during install or
+wanted later. It reads `/usr/share/sobarch/profiles.txt`, a plain-text
+mirror of `installer/tui/profiles_data.py`'s package lists, regenerated
+by hand via `installer/tui/generate_profile_data.py` whenever that data
+changes (there is no Python on an installed system to read the
+original directly, and no CI check keeping the two in sync). It
+installs the official-repo packages via `pacman` and the AUR/custom
+ones via `aur-sync.sh`'s explicit-package mode, the same combined logic
+`install-profile-packages.sh` already runs at first boot.
 
 ## Documentation
 

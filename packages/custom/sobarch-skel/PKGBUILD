@@ -2,7 +2,7 @@
 pkgname=sobarch-skel
 # Pure-data meta-package with no upstream releases of its own; pkgver
 # tracks the date configs/skel/ last changed in this monorepo.
-pkgver=20260904
+pkgver=20260905
 pkgrel=1
 pkgdesc="Sobarch distribution-owned default desktop configuration (skel)"
 arch=('any')
@@ -28,4 +28,12 @@ package() {
     find "$pkgdir/usr/share/sobarch/skel" -type f -exec chmod 644 {} +
     chmod 755 "$pkgdir"/usr/share/sobarch/skel/.config/hypr/scripts/*.sh
     chmod 755 "$pkgdir"/usr/share/sobarch/skel/.config/waybar/scripts/*.sh
+
+    # Profile/package data for setup-profile-menu.sh, a plain-text mirror
+    # of installer/tui/profiles_data.py (see generate_profile_data.py).
+    # Installed outside the skel/ tree above, not under it: it's
+    # distro-owned data the user never edits, not a personalizable
+    # config file, so it must never go through apply-skel.sh's diff3
+    # reconciliation the way everything under skel/ does.
+    install -Dm644 "$startdir/data/profiles.txt" "$pkgdir/usr/share/sobarch/profiles.txt"
 }
