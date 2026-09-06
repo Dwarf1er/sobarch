@@ -61,8 +61,17 @@ hl.on("hyprland.start", function()
 	hl.exec_cmd("xdg-user-dirs-update")
 	-- No-op if the "Theming" profile (tinty-bin) wasn't installed:
 	-- just a shell command that fails harmlessly, same as any other
-	-- exec_cmd here for an app that isn't present.
-	hl.exec_cmd("command -v tinty >/dev/null 2>&1 && tinty init")
+	-- exec_cmd here for an app that isn't present. `tinty list` is
+	-- empty until `tinty install` has cloned/built the scheme and
+	-- template repos declared in config.toml; nothing else in sobarch
+	-- ever runs that (there is no separate "Theming" profile
+	-- post-install step), so it's done here, once, self-healing on
+	-- every login rather than gated behind a marker file: cheap to
+	-- re-check (`tinty list` is local, no network) and correct even if
+	-- a prior attempt was interrupted (e.g. no network yet at login).
+	-- `tinty init` (re-applies the last-applied or default scheme)
+	-- still runs every login same as before.
+	hl.exec_cmd("command -v tinty >/dev/null 2>&1 && { tinty list | grep -q . || tinty install; tinty init; }")
 end)
 
 hl.exec_cmd('gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"')

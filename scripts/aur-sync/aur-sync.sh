@@ -305,9 +305,23 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
     # rights just to build a package - a real privilege-escalation
     # surface this project has no reason to open, since decision 3
     # already rejects an AUR helper for the same class of concern.
+    #
+    # Filtered through `pacman -T` (deptest) rather than handed to
+    # `pacman -S` as-is: a dep can be satisfied locally by another
+    # vendored package's `provides` (quickgui-bin depends on
+    # `quickemu`, satisfied once quickemu-git, which provides it, is
+    # installed) without that name ever existing in any sync repo --
+    # `pacman -S quickemu` then fails outright with "target not
+    # found", since -S resolves targets against the sync repos, not
+    # what's already installed. `-T` reports only what's genuinely
+    # still unsatisfied, by either measure.
     mapfile -t deps < <(build_deps "$src")
-    if ((${#deps[@]})) && ! pacman_locked -S --needed --noconfirm "${deps[@]}"; then
-        echo "aur-sync: $name failed to install dependencies (${deps[*]})" >&2
+    missing_deps=()
+    if ((${#deps[@]})); then
+        mapfile -t missing_deps < <(pacman -T "${deps[@]}")
+    fi
+    if ((${#missing_deps[@]})) && ! pacman_locked -S --needed --noconfirm "${missing_deps[@]}"; then
+        echo "aur-sync: $name failed to install dependencies (${missing_deps[*]})" >&2
         failures+=("$name (dependency install failed)")
         continue
     fi

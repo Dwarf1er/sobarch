@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Lists every base16/base24/tinted8 scheme tinty knows about (populated
-# by `tinty install`, run once from the "Theming" profile's own
-# post-install, or from hyprland.lua's autostart hook on every login)
-# and applies the chosen one. Each tinty config.toml item's own `hook`
-# (see ~/.config/tinted-theming/tinty/config.toml) handles reloading the app it
-# themes; nothing extra to do here beyond the apply itself.
+# by `tinty install`, run self-healingly from hyprland.lua's autostart
+# hook on every login -- there is no separate "Theming" profile
+# post-install step) and applies the chosen one. Each tinty
+# config.toml item's own `hook` (see
+# ~/.config/tinted-theming/tinty/config.toml) handles reloading the app
+# it themes; nothing extra to do here beyond the apply itself.
 set -euo pipefail
 
 if ! command -v tinty >/dev/null 2>&1; then
