@@ -47,7 +47,41 @@ review_only=false
 [[ "${1:-}" == "--review" ]] && review_only=true
 
 if ! $review_only; then
-    if ! pkexec "$AUR_SYNC" sobarch-skel; then
+    # aur-sync.sh's own version check (pinned .SRCINFO vs installed)
+    # needs no root at all -- only the rebuild/install it performs
+    # once one is actually pending does. pkexec always prompts for
+    # authentication before the command even runs, though, regardless
+    # of whether it then finds nothing to do -- the overwhelmingly
+    # common case here, since sobarch-skel changes far less often than
+    # "Update Config" gets clicked. Checked here, unprivileged, first,
+    # so a no-op run never has to ask for a password just to discover
+    # that. Same GitHub master branch aur-sync.sh's own fetch reads
+    # from, just one small file instead of the whole repo tarball.
+    skel_update_pending=true
+    installed="$(pacman -Q sobarch-skel 2>/dev/null | awk '{print $2}' || true)"
+    if [[ -n "$installed" ]]; then
+        skel_update_pending=false
+        srcinfo_url="https://raw.githubusercontent.com/Dwarf1er/sobarch/master/packages/custom/sobarch-skel/.SRCINFO"
+        if srcinfo="$(curl -fsSL "$srcinfo_url" 2>/dev/null)"; then
+            epoch="$(awk -F' = ' '/^[[:space:]]*epoch = /{print $2; exit}' <<<"$srcinfo")"
+            pkgver="$(awk -F' = ' '/^[[:space:]]*pkgver = /{print $2; exit}' <<<"$srcinfo")"
+            pkgrel="$(awk -F' = ' '/^[[:space:]]*pkgrel = /{print $2; exit}' <<<"$srcinfo")"
+            if [[ -n "$pkgver" && -n "$pkgrel" ]]; then
+                if [[ -n "$epoch" ]]; then
+                    pinned="${epoch}:${pkgver}-${pkgrel}"
+                else
+                    pinned="${pkgver}-${pkgrel}"
+                fi
+                (( $(vercmp "$pinned" "$installed") > 0 )) && skel_update_pending=true
+            fi
+        fi
+        # else: couldn't tell (offline, GitHub hiccup, etc.) -- pkexec
+        # would only hit the same wall this curl call just did, so
+        # leave skel_update_pending false rather than demand a
+        # password for a call that's this likely to fail anyway.
+    fi
+
+    if $skel_update_pending && ! pkexec "$AUR_SYNC" sobarch-skel; then
         notify-send "sobarch: update config" \
             "Refreshing sobarch-skel failed (offline?); continuing with the currently installed version."
     fi
