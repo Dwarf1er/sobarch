@@ -172,9 +172,9 @@ build_deps() {
     awk -F' = ' '/^[[:space:]]*(depends|makedepends) = /{print $2}' "$1/.SRCINFO" | sed -E 's/[<>=].*//'
 }
 
-# makepkg verifies a source's PGP signature (when validpgpkeys is set,
-# e.g. wlogout) against gpg's own keyring, never fetching a missing key
-# itself; imported here, into the build user's own keyring, before
+# makepkg verifies a source's PGP signature (when validpgpkeys is set)
+# against gpg's own keyring, never fetching a missing key itself;
+# imported here, into the build user's own keyring, before
 # makepkg runs, rather than relying on it happening implicitly (a fresh
 # account's keyring starts empty, and gpg has no keyserver configured
 # by default to fall back on).
@@ -189,8 +189,8 @@ import_pgp_keys() {
 # base-devel (a single meta-package on recent Arch, not a group) is the
 # full set of tools any PKGBUILD is entitled to assume is already
 # present without declaring it in makedepends, per Arch's own
-# packaging convention (a compiler for a real build() step, e.g.
-# wlogout's meson build; debugedit for makepkg's own default
+# packaging convention (a compiler/toolchain for a real build() step,
+# e.g. vesktop's; debugedit for makepkg's own default
 # debug-package generation, which sobarch-skel's PKGBUILD works around
 # with !debug precisely because base-devel isn't part of this minimal
 # base install otherwise). Installed once, up front, rather than

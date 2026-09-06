@@ -126,13 +126,13 @@ right after `archinstall` finishes, runs that script once on first boot
 and retries on the next boot if it fails (e.g. no network yet), rather
 than being silently skipped.
 
-The two AUR-only base-required packages (`localsend-bin`, `wlogout`;
-decision 3) aren't deferred like the optional profiles above: they're
-built and installed synchronously during the install session itself,
-the same way `sobarch-skel` already is, so both exist before first boot
-rather than waiting on the post-login network trigger the optional
-profiles use. Ongoing updates for anything already installed
-(`sobarch-skel`, the base AUR packages, or any installed profile AUR
+The one AUR-only base-required package (`localsend-bin`; decision 3)
+isn't deferred like the optional profiles above: it's built and
+installed synchronously during the install session itself, the same
+way `sobarch-skel` already is, so it exists before first boot rather
+than waiting on the post-login network trigger the optional profiles
+use. Ongoing updates for anything already installed (`sobarch-skel`,
+the base AUR package, or any installed profile AUR
 package) are handled by a pacman hook on `Operation = Upgrade`
 (`scripts/aur-sync/sobarch-aur-sync.hook`) that re-runs `aur-sync.sh`;
 there's no separate timer or independent polling, so a package only
@@ -337,8 +337,14 @@ rather than tucked away.
   offers Update Config and Review Conflicts (`update-config-menu.sh`,
   see First Boot above) and Install Profile (`setup-profile-menu.sh`,
   below).
-- **Power** runs `wlogout` directly. It used to be a dedicated waybar
-  module; that module was removed once this entry existed.
+- **Power** opens a second, inline `fuzzel --dmenu` submenu (Lock,
+  Logout, Suspend, Reboot, Shutdown), each running one plain command
+  (`hyprlock`, `hyprctl dispatch exit`, `systemctl suspend`/`reboot`/
+  `poweroff`) directly. It used to shell out to `wlogout`, a themed GUI
+  around those same five commands with no CLI mode of its own; dropped
+  entirely (the AUR package, its `configs/skel/.config/wlogout/` theme,
+  and its dedicated waybar module, all removed) once it was clear the
+  GUI added no capability over calling the commands straight.
 - **Apps** runs plain `fuzzel`, its own real application list, as a
   separate, second invocation, one level in.
 
