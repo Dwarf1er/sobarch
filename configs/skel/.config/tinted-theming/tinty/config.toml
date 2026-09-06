@@ -28,6 +28,14 @@ path = "~/.config/sobarch/tinty-templates/waybar-jsonc"
 name = "sobarch-waybar-jsonc"
 themes-dir = "colors"
 write-to-file = ["~/.config/waybar/config.jsonc"]
+# Unlike hyprland's `hyprctl reload`/mako's `makoctl reload`, waybar has
+# no live file-watcher for colors.css or config.jsonc -- SIGUSR2's
+# default action is a full reload (config + style), so this is the
+# equivalent for waybar. Placed on this item, not base16-waybar's
+# (colors.css), since this one runs last and both files (colors.css,
+# just written by that earlier item, and config.jsonc, written here)
+# need to already be on disk before the reload fires.
+hook = "pkill -SIGUSR2 waybar"
 supported-systems = ["base16"]
 
 [[items]]
