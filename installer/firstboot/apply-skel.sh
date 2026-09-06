@@ -4,11 +4,12 @@
 # reconciliation implemented below.
 #
 # Authored once, here, for the first-boot hook's initial skel
-# deployment. `sobarch update-config` later
-# exposes this exact script, unmodified, as a user-invoked command,
-# with its own interactive [K]eep/[U]se-new/[E]dit/[S]kip walkthrough
-# for any `.sobarch-new` files layered on top; prompting is not this
-# script's concern. With no baseline recorded yet, every file below has
+# deployment. `update-config-menu.sh` (Sobarch -> Update Config in
+# fuzzel) later exposes this exact script, unmodified, as a
+# user-invoked action, with its own interactive
+# [K]eep/[U]se-new/[D]iff/[E]dit/[S]kip walkthrough for any
+# `.sobarch-new` files layered on top; prompting is not this script's
+# concern. With no baseline recorded yet, every file below has
 # nothing to compare against, so the merge trivially resolves to "take
 # new": first boot is just this mechanism's first invocation, not a
 # separate copy path.
@@ -18,6 +19,8 @@
 # via systemd's User=, which populates $HOME/$USER itself.
 
 set -euo pipefail
+
+source "$(dirname "${BASH_SOURCE[0]}")/durable-replace.sh"
 
 SKEL_SRC="/usr/share/sobarch/skel"
 STATE_DIR="$HOME/.local/state/sobarch"
@@ -68,8 +71,8 @@ while IFS= read -r -d '' new_file; do
         0)
             # Clean merge: apply it, and advance this file's baseline to
             # the version just applied.
-            install -Dm"$mode" "$merge_tmp" "$current_file"
-            install -Dm"$mode" "$new_file" "$baseline_file"
+            durable_replace "$mode" "$merge_tmp" "$current_file"
+            durable_replace "$mode" "$new_file" "$baseline_file"
             ;;
         1)
             # Genuine conflict (both sides changed since the last
@@ -80,7 +83,7 @@ while IFS= read -r -d '' new_file; do
             # unresolved on every future run until it actually is
             # (interactive resolution is `update-config`'s job, not
             # this script).
-            install -Dm"$mode" "$merge_tmp" "$current_file.sobarch-new"
+            durable_replace "$mode" "$merge_tmp" "$current_file.sobarch-new"
             conflicts+=("$rel")
             ;;
         *)
@@ -92,11 +95,14 @@ while IFS= read -r -d '' new_file; do
     esac
 done < <(find "$SKEL_SRC" -type f -print0)
 
-printf '%s\n' "$new_version" > "$VERSION_FILE"
+version_tmp="$(mktemp)"
+printf '%s\n' "$new_version" > "$version_tmp"
+durable_replace 644 "$version_tmp" "$VERSION_FILE"
+rm -f "$version_tmp"
 
 if ((${#conflicts[@]})); then
     echo "apply-skel: ${#conflicts[@]} file(s) have local changes that conflict with the new defaults;" \
-        "new versions were written alongside as .sobarch-new (run 'sobarch update-config --review' to resolve):"
+        "new versions were written alongside as .sobarch-new (Sobarch -> Review Conflicts to resolve):"
     printf '  %s\n' "${conflicts[@]}"
 fi
 

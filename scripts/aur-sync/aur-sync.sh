@@ -88,6 +88,28 @@ elif [[ ! -d "$repo_dir" ]]; then
     exit 1
 fi
 
+# Refresh /usr/local/lib/sobarch/*.sh from the current checkout on
+# every run (sync or explicit, fetched or --local): these first-boot
+# scripts (apply-skel.sh, durable-replace.sh, etc.) are deployed once
+# by the installer and otherwise have no update mechanism of their own,
+# unlike sobarch-skel's $HOME-facing content (kept current by this same
+# script, via the pacman hook, already). A real run hit this gap
+# directly: a crash-safety fix to apply-skel.sh had no way to reach an
+# already-installed system at all. Plain `install`, not durable_replace
+# (which durable-replace.sh itself provides): the very first time this
+# runs on a system, that file doesn't exist at this path yet, so
+# sourcing it here to redeploy itself would fail. *.service unit files
+# are deliberately excluded: sobarch-firstboot-skel.service already has
+# `__USERNAME__` substituted in for this specific machine by the
+# installer, and re-copying the raw template would reintroduce the
+# unsubstituted placeholder.
+echo "aur-sync: refreshing /usr/local/lib/sobarch/ scripts from current checkout..."
+mkdir -p /usr/local/lib/sobarch
+for script in "$repo_dir"/installer/firstboot/*.sh "$repo_dir"/scripts/aur-sync/aur-sync.sh; do
+    [[ -f "$script" ]] || continue
+    install -Dm755 "$script" "/usr/local/lib/sobarch/$(basename "$script")"
+done
+
 # The full set this script is ever allowed to touch: package name ->
 # its vendored source directory. Built once, up front, so the
 # scope-limit check below is a simple lookup rather than a filesystem

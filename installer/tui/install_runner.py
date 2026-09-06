@@ -84,6 +84,10 @@ FIRSTBOOT_UNITS = [
     ("apply-skel.sh", "sobarch-firstboot-skel.service"),
     ("apply-security-baseline.sh", "sobarch-firstboot-security.service"),
 ]
+# Sourced by apply-skel.sh (and, from sobarch-skel, update-config-menu.sh)
+# rather than deployed alongside its own unit: no service of its own,
+# just a shared function library, so it isn't in FIRSTBOOT_UNITS above.
+FIRSTBOOT_LIBRARY_SCRIPTS = ["durable-replace.sh"]
 # Subset of FIRSTBOOT_UNITS above that actually has an [Install] section
 # and should be started at boot. install-profile-packages.sh and
 # apply-security-baseline.sh are deliberately left out: `systemctl
@@ -249,6 +253,11 @@ def run_install(
         firstboot_script_dir.mkdir(parents=True, exist_ok=True)
         firstboot_service_dir = MOUNTPOINT / FIRSTBOOT_SERVICE_DIR_IN_TARGET.relative_to("/")
         firstboot_service_dir.mkdir(parents=True, exist_ok=True)
+
+        for script_name in FIRSTBOOT_LIBRARY_SCRIPTS:
+            library_path = firstboot_script_dir / script_name
+            shutil.copy2(FIRSTBOOT_DIR / script_name, library_path)
+            library_path.chmod(0o644)
 
         service_names = []
         for script_name, service_name in FIRSTBOOT_UNITS:

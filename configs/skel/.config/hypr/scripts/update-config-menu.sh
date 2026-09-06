@@ -17,6 +17,27 @@
 
 set -euo pipefail
 
+# `install` (used throughout apply-skel.sh and the walkthrough below)
+# replaces a file via a fresh inode, not an in-place write (confirmed:
+# its destination's inode number changes across a run). Hyprland's own
+# config auto-reload is documented to break on exactly that replace
+# pattern (hyprwm/Hyprland discussion #11848: a rename-style replace
+# can desync its inotify watch), which is what produced the transient
+# "cannot open .../hyprland.lua" error a real run of this script hit.
+# `hyprctl reload` doesn't depend on that watch at all, so it's run
+# unconditionally on every exit path here rather than only when
+# hyprland.lua specifically was touched: cheap, idempotent, and safe to
+# run even when nothing changed or this session isn't Hyprland (a
+# missing `hyprctl` or no running compositor both just no-op below).
+trap 'hyprctl reload >/dev/null 2>&1 || true' EXIT
+
+# Shared with apply-skel.sh (installer/firstboot/durable-replace.sh):
+# a crash-safe replacement for `install -Dm"$mode" src dest`. A real
+# run hit the gap the plain `install` calls below used to have: the
+# desktop froze mid-update, was force shut down, and every file the
+# walkthrough had touched so far came back zero-length on reboot.
+source /usr/local/lib/sobarch/durable-replace.sh
+
 APPLY_SKEL="/usr/local/lib/sobarch/apply-skel.sh"
 AUR_SYNC="/usr/local/lib/sobarch/aur-sync.sh"
 SKEL_SRC="/usr/share/sobarch/skel"
@@ -64,8 +85,8 @@ for f in "${conflicts[@]}"; do
     mode="$(stat -c%a "$new")"
 
     if $use_new_for_rest; then
-        install -Dm"$mode" "$new" "$original"
-        install -Dm"$mode" "$new" "$baseline"
+        durable_replace "$mode" "$new" "$original"
+        durable_replace "$mode" "$new" "$baseline"
         rm -f "$f"
         resolved=$((resolved + 1))
         continue
@@ -83,14 +104,14 @@ for f in "${conflicts[@]}"; do
 
         case "$choice" in
             "[K] Keep mine")
-                install -Dm"$mode" "$new" "$baseline"
+                durable_replace "$mode" "$new" "$baseline"
                 rm -f "$f"
                 resolved=$((resolved + 1))
                 break
                 ;;
             "[U] Use new")
-                install -Dm"$mode" "$new" "$original"
-                install -Dm"$mode" "$new" "$baseline"
+                durable_replace "$mode" "$new" "$original"
+                durable_replace "$mode" "$new" "$baseline"
                 rm -f "$f"
                 resolved=$((resolved + 1))
                 break
@@ -113,16 +134,16 @@ for f in "${conflicts[@]}"; do
                 # same content pacdiff-style tools show for a .pacnew),
                 # not a blank slate: both sides are already visible in it.
                 kitty -e "${EDITOR:-nano}" "$f"
-                install -Dm"$mode" "$f" "$original"
-                install -Dm"$mode" "$new" "$baseline"
+                durable_replace "$mode" "$f" "$original"
+                durable_replace "$mode" "$new" "$baseline"
                 rm -f "$f"
                 resolved=$((resolved + 1))
                 break
                 ;;
             "[A] Use new for all remaining")
                 use_new_for_rest=true
-                install -Dm"$mode" "$new" "$original"
-                install -Dm"$mode" "$new" "$baseline"
+                durable_replace "$mode" "$new" "$original"
+                durable_replace "$mode" "$new" "$baseline"
                 rm -f "$f"
                 resolved=$((resolved + 1))
                 break
@@ -136,4 +157,4 @@ for f in "${conflicts[@]}"; do
 done
 
 notify-send "sobarch: update config" \
-    "$resolved conflict(s) resolved, $skipped left for review (Setup -> Review Conflicts)."
+    "$resolved conflict(s) resolved, $skipped left for review (Sobarch -> Review Conflicts)."
