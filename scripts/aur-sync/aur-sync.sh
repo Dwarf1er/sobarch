@@ -35,11 +35,26 @@ BRANCH="master"
 ARCHIVE_URL="https://github.com/${REPO}/archive/refs/heads/${BRANCH}.tar.gz"
 
 BUILD_USER="sobarch-build"
-BUILD_ROOT="/var/tmp/sobarch-aur-sync-build"
 LOG_FILE="/var/log/sobarch/aur-sync.log"
 
 mkdir -p "$(dirname "$LOG_FILE")"
 exec > >(tee -a "$LOG_FILE") 2>&1
+
+# Every pacman -S/-U this script runs below is itself an
+# Operation=Upgrade transaction, which re-fires sobarch-aur-sync.hook
+# (Target = * is deliberate there: a plain dependency, not just a
+# vendored package, must also retrigger a check). Left unhandled, that
+# nested run would redundantly redo this whole sync-mode pass (and
+# contend with this run's own in-flight pacman transaction) for no
+# reason. The nested pacman call inherits this process's exported
+# environment, so it always sees the marker and exits immediately
+# instead of racing the run that spawned it.
+if [[ -n "${SOBARCH_AUR_SYNC_RUNNING:-}" ]]; then
+    echo "aur-sync: nested run (own pacman transaction retriggered the hook), skipping"
+    exit 0
+fi
+export SOBARCH_AUR_SYNC_RUNNING=1
+
 echo "aur-sync: run started $(date -Iseconds)"
 
 repo_dir=""
@@ -49,7 +64,7 @@ if [[ "${1:-}" == "--local" ]]; then
 fi
 explicit_packages=("$@")
 
-cleanup_paths=("$BUILD_ROOT")
+cleanup_paths=()
 # makepkg refuses outright to run as root (no override flag), and this
 # script itself needs to run as root (pacman -U, useradd); a dedicated,
 # no-login system account isolates the actual build step instead of
@@ -208,6 +223,27 @@ import_pgp_keys() {
     done < <(awk -F' = ' '/^[[:space:]]*validpgpkeys = /{print $2}' "$src/.SRCINFO")
 }
 
+# pacman's own transaction lock (db.lck) has no built-in retry: a
+# second, unrelated aur-sync process (e.g. two picks in quick
+# succession from setup-package-menu.sh, or the pacman hook's own
+# nested re-trigger slipping in before it can see the guard above) that
+# calls -S/-U at the same moment gets a hard "unable to lock database"
+# instead of simply waiting its turn. Retried here with a short
+# backoff instead of failing the whole package outright for what's
+# normally a sub-second window; only retried while db.lck is actually
+# present, so a real pacman failure (bad dependency, etc.) still fails
+# immediately rather than looping for no reason.
+pacman_locked() {
+    local attempt
+    for attempt in {1..10}; do
+        pacman "$@" && return 0
+        [[ -f /var/lib/pacman/db.lck ]] || return 1
+        echo "aur-sync: pacman database locked, retrying ($attempt/10)..." >&2
+        sleep 3
+    done
+    return 1
+}
+
 # base-devel (a single meta-package on recent Arch, not a group) is the
 # full set of tools any PKGBUILD is entitled to assume is already
 # present without declaring it in makedepends, per Arch's own
@@ -220,7 +256,7 @@ import_pgp_keys() {
 # what it assumes, which would pollute Phase 11's future upstream-diff
 # checks with a spurious, permanent local difference.
 ensure_makepkg_prereqs() {
-    pacman -S --needed --noconfirm base-devel
+    pacman_locked -S --needed --noconfirm base-devel
 }
 
 failures=()
@@ -230,16 +266,20 @@ first_install=true
 # directory): sobarch-skel's PKGBUILD reaches configs/skel via a
 # relative path outside its own package directory, so a package's
 # build must keep its real position in the repo tree, not be flattened
-# into an isolated per-package directory. Building in a copy, not
-# $repo_dir directly, keeps a fetched checkout's ownership/cleanup
-# independent of whatever the build user's own makepkg run leaves
-# behind (src/, pkg/, build artifacts).
-build_root_repo="$BUILD_ROOT/repo"
+# into an isolated per-package directory. A fresh mktemp -d per run,
+# not a fixed shared path: a separate concurrent aur-sync process (the
+# reentrancy guard above only catches the nested-hook case, not a
+# second, unrelated invocation) must never share, and so never race,
+# this run's build tree the way a fixed BUILD_ROOT once did (a
+# concurrent run's rm -rf wiping out an in-progress build/prepare()
+# step it had no business touching).
+build_root_repo=""
 if ((${#targets[@]})); then
     ensure_build_user
     ensure_makepkg_prereqs
-    rm -rf "$BUILD_ROOT"
-    mkdir -p "$BUILD_ROOT"
+    BUILD_ROOT="$(mktemp -d /var/tmp/sobarch-aur-sync-build.XXXXXX)"
+    cleanup_paths+=("$BUILD_ROOT")
+    build_root_repo="$BUILD_ROOT/repo"
     cp -a "$repo_dir" "$build_root_repo"
     chown -R "$BUILD_USER:$BUILD_USER" "$BUILD_ROOT"
 fi
@@ -266,7 +306,7 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
     # surface this project has no reason to open, since decision 3
     # already rejects an AUR helper for the same class of concern.
     mapfile -t deps < <(build_deps "$src")
-    if ((${#deps[@]})) && ! pacman -S --needed --noconfirm "${deps[@]}"; then
+    if ((${#deps[@]})) && ! pacman_locked -S --needed --noconfirm "${deps[@]}"; then
         echo "aur-sync: $name failed to install dependencies (${deps[*]})" >&2
         failures+=("$name (dependency install failed)")
         continue
@@ -294,10 +334,10 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
     # aur-sync pass touching several packages back to back.
     if $first_install; then
         install_result=0
-        pacman -U --noconfirm "${pkgfiles[@]}" || install_result=$?
+        pacman_locked -U --noconfirm "${pkgfiles[@]}" || install_result=$?
     else
         install_result=0
-        SNAP_PAC_SKIP=1 pacman -U --noconfirm "${pkgfiles[@]}" || install_result=$?
+        SNAP_PAC_SKIP=1 pacman_locked -U --noconfirm "${pkgfiles[@]}" || install_result=$?
     fi
 
     rm -rf "$build_dir"
