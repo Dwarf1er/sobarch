@@ -16,6 +16,7 @@
 choice=$(printf "%s\n" \
     "󰘮  System" \
     "󰢻  Sobarch" \
+    "󰌌  Keybinds" \
     "󰐦  Power" \
     "󰀻  Apps" \
     | fuzzel --dmenu --prompt "sobarch: ")
@@ -23,6 +24,7 @@ choice=$(printf "%s\n" \
 case "$choice" in
     "󰘮  System") exec bash "$HOME/.config/hypr/scripts/system-menu.sh" ;;
     "󰢻  Sobarch") exec bash "$HOME/.config/hypr/scripts/setup-menu.sh" ;;
+    "󰌌  Keybinds") exec bash "$HOME/.config/hypr/scripts/keybinds-menu.sh" ;;
     "󰀻  Apps") exec fuzzel ;;
     "󰐦  Power")
         power_choice=$(printf "%s\n" \
