@@ -1,0 +1,32 @@
+name: Custom PKGBUILDs
+
+# PR-time validation for this project's own packages/custom/ PKGBUILDs.
+# Deliberately no path filter: a package's real payload can live
+# outside its own directory (e.g. sobarch-skel packages configs/skel/),
+# so a hardcoded path allowlist here would have the same "forgot to
+# update it" failure mode this check exists to catch in the first
+# place. The job itself is cheap (git diff + grep + a .SRCINFO regen,
+# no downloads), so running it on every PR costs little.
+on:
+  pull_request: {}
+  workflow_dispatch: {}
+
+jobs:
+  pkgbuild-validate:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install validate dependencies
+        run: pacman -Sy --needed --noconfirm namcap git
+      - name: Create build user
+        run: |
+          useradd -m builder
+          chown -R builder:builder .
+      - name: Validate custom PKGBUILDs
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.sha }}
+          HEAD_REF: ${{ github.event.pull_request.head.sha }}
+        run: runuser -u builder -- env BASE_REF="$BASE_REF" HEAD_REF="$HEAD_REF" .github/scripts/validate-custom-pkgbuilds.sh
