@@ -29,13 +29,22 @@ name = "sobarch-waybar-jsonc"
 themes-dir = "colors"
 write-to-file = ["~/.config/waybar/config.jsonc"]
 # Unlike hyprland's `hyprctl reload`/mako's `makoctl reload`, waybar has
-# no live file-watcher for colors.css or config.jsonc -- SIGUSR2's
-# default action is a full reload (config + style), so this is the
-# equivalent for waybar. Placed on this item, not base16-waybar's
-# (colors.css), since this one runs last and both files (colors.css,
-# just written by that earlier item, and config.jsonc, written here)
-# need to already be on disk before the reload fires.
-hook = "pkill -SIGUSR2 waybar"
+# no live file-watcher for colors.css or config.jsonc. A prior version
+# of this hook sent SIGUSR2, on the assumption that's a full reload;
+# it isn't -- per waybar(5), SIGUSR2 only reloads style.css, config.jsonc
+# changes need the process actually restarted, and even the style-only
+# reload has a known bug where it doesn't apply fully
+# (Alexays/Waybar#3986). Since this item's own template renders the
+# whole config.jsonc, not just CSS vars (see waybar-jsonc/templates/
+# default.mustache's own comment on why), a real restart is required,
+# not optional. Waits for the old process to actually exit (bounded to
+# 1s) before relaunching, rather than racing a `waybar &` against a
+# not-yet-dead old instance for the same layer-shell surface. Placed on
+# this item, not base16-waybar's (colors.css), since this one runs
+# last and both files (colors.css, just written by that earlier item,
+# and config.jsonc, written here) need to already be on disk before the
+# restart happens.
+hook = "pkill -x waybar; i=0; while pgrep -x waybar >/dev/null 2>&1 && [ $i -lt 20 ]; do sleep 0.05; i=$((i+1)); done; waybar &"
 supported-systems = ["base16"]
 
 [[items]]

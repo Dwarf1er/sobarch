@@ -131,9 +131,14 @@ isn't deferred like the optional profiles above: it's built and
 installed synchronously during the install session itself, the same
 way `sobarch-skel` already is, so it exists before first boot rather
 than waiting on the post-login network trigger the optional profiles
-use. Ongoing updates for anything already installed (`sobarch-skel`,
-the base AUR package, or any installed profile AUR
-package) are handled by a pacman hook on `Operation = Upgrade`
+use. `apply-skel.sh`, `durable-replace.sh`, and `aur-sync.sh` itself
+are likewise built and installed during the install session, as their
+own package (`sobarch-scripts`), rather than copied onto the target as
+raw files: real pacman version tracking for these first-boot/sync
+scripts, the same as `sobarch-skel` already had. Ongoing updates for
+anything already installed (`sobarch-skel`, `sobarch-scripts`, the
+base AUR package, or any installed profile AUR package) are handled by
+a pacman hook on `Operation = Upgrade`
 (`scripts/aur-sync/sobarch-aur-sync.hook`) that re-runs `aur-sync.sh`;
 there's no separate timer or independent polling, so a package only
 gets checked when some `pacman -Syu` actually upgrades something.
@@ -256,11 +261,14 @@ none at all.
 
 ## First Boot
 
-`installer/firstboot/` holds every first-boot unit; `install_runner.py`
-deploys and enables all of them (`/usr/local/lib/sobarch/<script>` +
-`/etc/systemd/system/<service>`) as its last step before unmounting the
-target, each as its own `ConditionPathExists`-guarded oneshot that
-retries on the next boot if it fails rather than being silently
+`installer/firstboot/` holds every first-boot unit; its scripts ship as
+the `sobarch-scripts` package (`/usr/local/lib/sobarch/<script>`,
+built/installed during the install session alongside `sobarch-skel`),
+and `install_runner.py` templates and deploys the per-install
+`.service` units (`/etc/systemd/system/<service>`) as its last step
+before unmounting the target, each as its own
+`ConditionPathExists`-guarded oneshot that retries on the next boot if
+it fails rather than being silently
 skipped. `install-profile-packages.sh` (optional packages, see
 Installer above) is one of three; the other two are new:
 

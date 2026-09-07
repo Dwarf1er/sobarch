@@ -6,9 +6,9 @@
 #
 # Runs as the logged-in user throughout (apply-skel.sh must, since it
 # writes into $HOME); the one privileged step (refreshing the
-# sobarch-skel package itself) goes through pkexec, the same
-# PolicyKit path hyprpolkitagent already provides for every other
-# GUI-triggered privileged action on this desktop.
+# sobarch-skel and sobarch-scripts packages themselves) goes through
+# pkexec, the same PolicyKit path hyprpolkitagent already provides for
+# every other GUI-triggered privileged action on this desktop.
 #
 # --review re-enters the same conflict walkthrough below for whatever
 # .sobarch-new files are still on disk (skipped earlier, or the
@@ -52,16 +52,30 @@ if ! $review_only; then
     # once one is actually pending does. pkexec always prompts for
     # authentication before the command even runs, though, regardless
     # of whether it then finds nothing to do -- the overwhelmingly
-    # common case here, since sobarch-skel changes far less often than
+    # common case here, since these packages change far less often than
     # "Update Config" gets clicked. Checked here, unprivileged, first,
     # so a no-op run never has to ask for a password just to discover
     # that. Same GitHub master branch aur-sync.sh's own fetch reads
-    # from, just one small file instead of the whole repo tarball.
-    skel_update_pending=true
-    installed="$(pacman -Q sobarch-skel 2>/dev/null | awk '{print $2}' || true)"
-    if [[ -n "$installed" ]]; then
-        skel_update_pending=false
-        srcinfo_url="https://raw.githubusercontent.com/Dwarf1er/sobarch/master/packages/custom/sobarch-skel/.SRCINFO"
+    # from, just one small file per package instead of the whole repo
+    # tarball.
+    #
+    # sobarch-scripts (apply-skel.sh, durable-replace.sh, aur-sync.sh
+    # itself, etc.) is checked here alongside sobarch-skel, not just
+    # skel alone: it used to be refreshed unconditionally on every
+    # aur-sync.sh run regardless of pkexec even firing, but now that
+    # it's a real pacman-tracked package it only gets refreshed when
+    # actually named as an explicit target below, so it has to be
+    # checked the same way skel is or a pending fix to it would go
+    # unnoticed whenever skel itself happened to be up to date.
+    update_pending=false
+    to_refresh=()
+    for pkg in sobarch-skel sobarch-scripts; do
+        installed="$(pacman -Q "$pkg" 2>/dev/null | awk '{print $2}' || true)"
+        if [[ -z "$installed" ]]; then
+            continue
+        fi
+        pkg_pending=false
+        srcinfo_url="https://raw.githubusercontent.com/Dwarf1er/sobarch/master/packages/custom/$pkg/.SRCINFO"
         if srcinfo="$(curl -fsSL "$srcinfo_url" 2>/dev/null)"; then
             epoch="$(awk -F' = ' '/^[[:space:]]*epoch = /{print $2; exit}' <<<"$srcinfo")"
             pkgver="$(awk -F' = ' '/^[[:space:]]*pkgver = /{print $2; exit}' <<<"$srcinfo")"
@@ -72,18 +86,22 @@ if ! $review_only; then
                 else
                     pinned="${pkgver}-${pkgrel}"
                 fi
-                (( $(vercmp "$pinned" "$installed") > 0 )) && skel_update_pending=true
+                (( $(vercmp "$pinned" "$installed") > 0 )) && pkg_pending=true
             fi
         fi
         # else: couldn't tell (offline, GitHub hiccup, etc.) -- pkexec
         # would only hit the same wall this curl call just did, so
-        # leave skel_update_pending false rather than demand a
-        # password for a call that's this likely to fail anyway.
-    fi
+        # leave pkg_pending false rather than demand a password for a
+        # call that's this likely to fail anyway.
+        if $pkg_pending; then
+            update_pending=true
+            to_refresh+=("$pkg")
+        fi
+    done
 
-    if $skel_update_pending && ! pkexec "$AUR_SYNC" sobarch-skel; then
+    if $update_pending && ! pkexec "$AUR_SYNC" "${to_refresh[@]}"; then
         notify-send "sobarch: update config" \
-            "Refreshing sobarch-skel failed (offline?); continuing with the currently installed version."
+            "Refreshing ${to_refresh[*]} failed (offline?); continuing with the currently installed version(s)."
     fi
     if ! "$APPLY_SKEL"; then
         notify-send -u critical "sobarch: update config" "apply-skel.sh failed; check its output for details."

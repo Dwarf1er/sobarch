@@ -1,0 +1,10 @@
+pkgbase = sobarch-scripts
+	pkgdesc = Sobarch first-boot reconciliation scripts and the local AUR/custom package sync mechanism
+	pkgver = 20260906
+	pkgrel = 2
+	url = https://github.com/Dwarf1er/sobarch
+	arch = any
+	license = MIT
+	options = !debug
+
+pkgname = sobarch-scripts

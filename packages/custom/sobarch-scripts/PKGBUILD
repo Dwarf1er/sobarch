@@ -1,0 +1,46 @@
+# Maintainer: Dwarf1er
+pkgname=sobarch-scripts
+# Pure-data-adjacent meta-package (plain bash, no build() step) with no
+# upstream releases of its own; pkgver tracks the date
+# installer/firstboot/*.sh or scripts/aur-sync/aur-sync.sh last changed
+# in this monorepo. Gives these scripts the same real pacman version
+# tracking sobarch-skel already has, instead of aur-sync.sh
+# unconditionally re-`install`ing them from a fresh checkout on every
+# run regardless of whether anything actually changed.
+#
+# *.service unit files under installer/firstboot/ are the one thing
+# deliberately NOT packaged here: sobarch-firstboot-skel.service needs
+# __USERNAME__ substituted in per install, something a package's
+# payload (identical across installs) can't do; install_runner.py
+# keeps deploying those directly. The NetworkManager dispatcher script
+# and the pacman hook have no such per-install variation, so both are
+# packaged below.
+pkgver=20260906
+pkgrel=2
+pkgdesc="Sobarch first-boot reconciliation scripts and the local AUR/custom package sync mechanism"
+arch=('any')
+url="https://github.com/Dwarf1er/sobarch"
+license=('MIT')
+options=('!debug')
+source=()
+sha256sums=()
+
+package() {
+    install -dm755 "$pkgdir/usr/local/lib/sobarch"
+
+    for script in apply-skel.sh apply-security-baseline.sh install-profile-packages.sh unblock-rfkill.sh; do
+        install -Dm755 "$startdir/../../../installer/firstboot/$script" "$pkgdir/usr/local/lib/sobarch/$script"
+    done
+
+    # Sourced by apply-skel.sh and update-config-menu.sh, never run
+    # directly.
+    install -Dm644 "$startdir/../../../installer/firstboot/durable-replace.sh" "$pkgdir/usr/local/lib/sobarch/durable-replace.sh"
+
+    install -Dm755 "$startdir/../../../scripts/aur-sync/aur-sync.sh" "$pkgdir/usr/local/lib/sobarch/aur-sync.sh"
+
+    install -Dm644 "$startdir/../../../scripts/aur-sync/sobarch-aur-sync.hook" "$pkgdir/etc/pacman.d/hooks/sobarch-aur-sync.hook"
+
+    # Must be executable: NetworkManager only runs dispatcher.d scripts
+    # it itself considers executable.
+    install -Dm755 "$startdir/../../../installer/firstboot/90-sobarch-firstboot" "$pkgdir/etc/NetworkManager/dispatcher.d/90-sobarch-firstboot"
+}
