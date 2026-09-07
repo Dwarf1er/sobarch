@@ -14,4 +14,4 @@ kb_file="$HOME/.config/hypr/keybinds.lua"
     printf "%-26s %s\n" "Ctrl+J / Ctrl+K" "fuzzel: next / previous entry"
     printf "%-26s %s\n" "Ctrl+H / Ctrl+L" "fuzzel: cursor left / right"
     printf "%-26s %s\n" "Ctrl+D / Ctrl+U" "fuzzel: next / previous page"
-} | fuzzel --dmenu --prompt "keybinds: " --lines 25 --width 55 >/dev/null
+} | fuzzel --dmenu --prompt "keybinds: " --lines 15 --width 55 >/dev/null
