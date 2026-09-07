@@ -99,6 +99,29 @@ if ! $review_only; then
         fi
     done
 
+    # Base-required AUR packages (decision 3) added to
+    # base-required-packages.txt after this system's own install ran
+    # are never picked up by aur-sync.sh's own hook: its sync mode (no
+    # args) only updates packages already `pacman -Q`-installed, the
+    # same guarantee that stops it from force-installing an unselected
+    # profile package. So a name added after the fact would otherwise
+    # stay missing here forever. Checked the same unprivileged-first
+    # way as above, but on presence, not version: a missing package has
+    # no installed version to compare against.
+    base_pkgs_url="https://raw.githubusercontent.com/Dwarf1er/sobarch/master/scripts/aur-sync/base-required-packages.txt"
+    if base_pkgs_list="$(curl -fsSL "$base_pkgs_url" 2>/dev/null)"; then
+        mapfile -t base_pkgs < <(sed 's/#.*//' <<<"$base_pkgs_list" | awk 'NF{$1=$1;print}')
+        for pkg in "${base_pkgs[@]}"; do
+            if ! pacman -Q "$pkg" &>/dev/null; then
+                update_pending=true
+                to_refresh+=("$pkg")
+            fi
+        done
+    fi
+    # else: couldn't tell (offline, GitHub hiccup, etc.) -- same
+    # reasoning as the per-package curl above, leave it for next time
+    # rather than demand a password for a call this likely to fail too.
+
     if $update_pending && ! pkexec "$AUR_SYNC" "${to_refresh[@]}"; then
         notify-send "sobarch: update config" \
             "Refreshing ${to_refresh[*]} failed (offline?); continuing with the currently installed version(s)."

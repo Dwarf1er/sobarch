@@ -1,0 +1,10 @@
+# AUR packages required on every install regardless of profile
+# (decision 3). One name per line, `#` comments allowed.
+#
+# This is the single source of truth for that list: read directly by
+# installer/tui/install_runner.py during a fresh install, and fetched
+# from GitHub by configs/skel/.config/hypr/scripts/update-config-menu.sh
+# on an already-installed system, so both stay in sync from one file
+# instead of two hand-maintained lists that can drift.
+localsend-bin
+blesh-git

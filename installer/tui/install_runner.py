@@ -40,19 +40,27 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 # build-as-non-root permissions.
 SOBARCH_SKEL_BUILD_DIR_IN_TARGET = Path("/var/tmp/sobarch-skel-build")
 
+AUR_SYNC_DIR = Path(__file__).resolve().parent.parent.parent / "scripts" / "aur-sync"
+AUR_SYNC_SCRIPT_PATH_IN_TARGET = Path("/usr/local/lib/sobarch/aur-sync.sh")
+
 # Base-required per decision 3 (no official package exists for
 # either): must be present before first boot, same urgency tier as
 # sobarch-skel itself, not deferred to the post-login dispatcher the
 # way optional profile AUR packages are (Phase 8's install-profile-
 # packages.sh). Built the same way as sobarch-skel below, via
 # aur-sync.sh's --local mode against this already-fetched checkout.
-# blesh-git: sobarch-skel's .bashrc sources it unconditionally (guarded
-# by -f), and starship's native ble.sh hook needs >=0.4.0, which only
-# the AUR -git package tracks (the stable "blesh" release is 0.3.4).
-BASE_AUR_PACKAGES = ["localsend-bin", "blesh-git"]
+#
+# Read from base-required-packages.txt rather than hardcoded here: an
+# already-installed system's update-config-menu.sh fetches that same
+# file from GitHub to install any base-required package it's still
+# missing (added to the list after that system's own install ran), so
+# one file, not two hand-maintained lists that can drift.
+def _read_base_aur_packages() -> list[str]:
+    lines = (AUR_SYNC_DIR / "base-required-packages.txt").read_text().splitlines()
+    return [stripped for line in lines if (stripped := line.split("#", 1)[0].strip())]
 
-AUR_SYNC_DIR = Path(__file__).resolve().parent.parent.parent / "scripts" / "aur-sync"
-AUR_SYNC_SCRIPT_PATH_IN_TARGET = Path("/usr/local/lib/sobarch/aur-sync.sh")
+
+BASE_AUR_PACKAGES = _read_base_aur_packages()
 
 # The first-boot units below all follow the same shape: a script under
 # installer/firstboot/, deployed to /usr/local/lib/sobarch/ as part of
