@@ -7,9 +7,13 @@ require("config.commands")
 
 -- Plugins
 require("plugins.mason-nvim")
-require("plugins.lualine-nvim")
 require("plugins.nvim-treesitter")
+-- Registered before lualine: lualine re-runs its own setup() on every
+-- ColorScheme event too, so tinted-nvim's globals-sync autocmd (see
+-- plugins/tinted-nvim.lua) must be registered first to avoid lualine
+-- reading one-scheme-stale globals on every live theme switch.
 require("plugins.tinted-nvim")
+require("plugins.lualine-nvim")
 require("plugins.telescope-nvim")
 require("plugins.nvim-dap")
 require("plugins.conform-nvim")
