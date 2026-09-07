@@ -65,10 +65,10 @@ if [[ -s "$OFFICIAL_LIST" ]]; then
     mapfile -t packages <"$OFFICIAL_LIST"
     total=${#packages[@]}
     echo "sobarch-firstboot: installing $total selected package(s): ${packages[*]}"
-    id=$(notify_user normal "sobarch: installing packages" "Installing $total selected package(s)..." 0 0)
+    id=$(notify_user critical "sobarch: installing packages" "Installing $total selected package(s)..." 0 0)
     n=0
     for pkg in "${packages[@]}"; do
-        id=$(notify_user normal "sobarch: installing packages" "Installing ($((n + 1))/$total): $pkg" "$id" $((n * 100 / total)))
+        id=$(notify_user critical "sobarch: installing packages" "Installing ($((n + 1))/$total): $pkg" "$id" $((n * 100 / total)))
         n=$((n + 1))
         pacman -S --needed --noconfirm "$pkg"
     done
@@ -84,7 +84,7 @@ if [[ -s "$AUR_LIST" ]]; then
     # No percent hint here: aur-sync.sh builds this whole list as one
     # step with no incremental progress to report back, so a numeric
     # value would be a fabricated signal, not a real one.
-    id=$(notify_user normal "sobarch: installing packages" "Building selected AUR package(s)..." "${id:-0}")
+    id=$(notify_user critical "sobarch: installing packages" "Building selected AUR package(s)..." "${id:-0}")
     /usr/local/lib/sobarch/aur-sync.sh "${aur_packages[@]}"
 fi
 
