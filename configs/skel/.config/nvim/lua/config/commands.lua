@@ -1,0 +1,5 @@
+vim.api.nvim_create_user_command("PackUpdate", function()
+	vim.pack.update()
+	vim.cmd("write")
+	vim.cmd("restart")
+end, { desc = "Update all vim.pack plugins and restart Neovim" })
