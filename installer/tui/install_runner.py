@@ -46,7 +46,10 @@ SOBARCH_SKEL_BUILD_DIR_IN_TARGET = Path("/var/tmp/sobarch-skel-build")
 # way optional profile AUR packages are (Phase 8's install-profile-
 # packages.sh). Built the same way as sobarch-skel below, via
 # aur-sync.sh's --local mode against this already-fetched checkout.
-BASE_AUR_PACKAGES = ["localsend-bin"]
+# blesh-git: sobarch-skel's .bashrc sources it unconditionally (guarded
+# by -f), and starship's native ble.sh hook needs >=0.4.0, which only
+# the AUR -git package tracks (the stable "blesh" release is 0.3.4).
+BASE_AUR_PACKAGES = ["localsend-bin", "blesh-git"]
 
 AUR_SYNC_DIR = Path(__file__).resolve().parent.parent.parent / "scripts" / "aur-sync"
 AUR_SYNC_SCRIPT_PATH_IN_TARGET = Path("/usr/local/lib/sobarch/aur-sync.sh")
@@ -167,7 +170,7 @@ def _deploy_aur_sync(log_file, on_output: OutputCallback) -> int:
 
 def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int:
     """Local-builds sobarch-skel, sobarch-scripts, sobarch-limine-snapshots,
-    and the one base-required AUR package (localsend-bin; decision 3)
+    and the base-required AUR packages (localsend-bin, blesh-git; decision 3)
     from this checkout and installs them into the target, so
     /usr/share/sobarch/skel/, /usr/local/lib/sobarch/, and every
     package exist by the time first boot (and, for

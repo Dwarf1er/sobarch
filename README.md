@@ -126,10 +126,10 @@ right after `archinstall` finishes, runs that script once on first boot
 and retries on the next boot if it fails (e.g. no network yet), rather
 than being silently skipped.
 
-The one AUR-only base-required package (`localsend-bin`; decision 3)
-isn't deferred like the optional profiles above: it's built and
+The AUR-only base-required packages (`localsend-bin`, `blesh-git`; decision 3)
+aren't deferred like the optional profiles above: they're built and
 installed synchronously during the install session itself, the same
-way `sobarch-skel` already is, so it exists before first boot rather
+way `sobarch-skel` already is, so they exist before first boot rather
 than waiting on the post-login network trigger the optional profiles
 use. `apply-skel.sh`, `durable-replace.sh`, and `aur-sync.sh` itself
 are likewise built and installed during the install session, as their
