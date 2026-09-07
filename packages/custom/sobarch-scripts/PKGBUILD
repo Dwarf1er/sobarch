@@ -16,11 +16,16 @@ pkgname=sobarch-scripts
 # and the pacman hook have no such per-install variation, so both are
 # packaged below.
 pkgver=20260906
-pkgrel=2
+pkgrel=3
 pkgdesc="Sobarch first-boot reconciliation scripts and the local AUR/custom package sync mechanism"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
 license=('MIT')
+# diffutils: apply-skel.sh's diff3 three-way merge and
+# update-config-menu.sh's diff conflict view. Not part of base or
+# base-devel (checked against both directly), so it must be declared
+# here rather than assumed.
+depends=('diffutils')
 options=('!debug')
 source=()
 sha256sums=()

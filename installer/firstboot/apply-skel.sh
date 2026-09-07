@@ -95,11 +95,6 @@ while IFS= read -r -d '' new_file; do
     esac
 done < <(find "$SKEL_SRC" -type f -print0)
 
-version_tmp="$(mktemp)"
-printf '%s\n' "$new_version" > "$version_tmp"
-durable_replace 644 "$version_tmp" "$VERSION_FILE"
-rm -f "$version_tmp"
-
 if ((${#conflicts[@]})); then
     echo "apply-skel: ${#conflicts[@]} file(s) have local changes that conflict with the new defaults;" \
         "new versions were written alongside as .sobarch-new (Sobarch -> Review Conflicts to resolve):"
@@ -107,9 +102,20 @@ if ((${#conflicts[@]})); then
 fi
 
 if ((${#failures[@]})); then
+    # Never advance VERSION_FILE here: it's what gates
+    # sobarch-firstboot-skel.service's ConditionPathExists, so
+    # stamping it on a run that failed to reconcile every file (e.g.
+    # first boot, before anything has been written to $HOME) would
+    # mark the initial deployment done when it never happened, and
+    # silently no-op the service on every future boot.
     echo "apply-skel: ${#failures[@]} file(s) failed to reconcile and were left untouched:" >&2
     printf '  %s\n' "${failures[@]}" >&2
     exit 1
 fi
+
+version_tmp="$(mktemp)"
+printf '%s\n' "$new_version" > "$version_tmp"
+durable_replace 644 "$version_tmp" "$VERSION_FILE"
+rm -f "$version_tmp"
 
 echo "apply-skel: done (sobarch-skel $new_version applied to $HOME)."
