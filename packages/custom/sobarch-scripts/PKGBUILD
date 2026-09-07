@@ -15,8 +15,8 @@ pkgname=sobarch-scripts
 # keeps deploying those directly. The NetworkManager dispatcher script
 # and the pacman hook have no such per-install variation, so both are
 # packaged below.
-pkgver=20260906
-pkgrel=3
+pkgver=20260907
+pkgrel=1
 pkgdesc="Sobarch first-boot reconciliation scripts and the local AUR/custom package sync mechanism"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
@@ -33,13 +33,15 @@ sha256sums=()
 package() {
     install -dm755 "$pkgdir/usr/local/lib/sobarch"
 
-    for script in apply-skel.sh apply-security-baseline.sh install-profile-packages.sh unblock-rfkill.sh; do
+    for script in apply-skel.sh apply-security-baseline.sh install-profile-packages.sh unblock-rfkill.sh refresh-rescue-iso.sh; do
         install -Dm755 "$startdir/../../../installer/firstboot/$script" "$pkgdir/usr/local/lib/sobarch/$script"
     done
 
-    # Sourced by apply-skel.sh and update-config-menu.sh, never run
+    # Sourced by apply-skel.sh/update-config-menu.sh and
+    # rescue-iso-setup.sh/refresh-rescue-iso.sh respectively, never run
     # directly.
     install -Dm644 "$startdir/../../../installer/firstboot/durable-replace.sh" "$pkgdir/usr/local/lib/sobarch/durable-replace.sh"
+    install -Dm644 "$startdir/../../../installer/firstboot/rescue-iso-fetch.sh" "$pkgdir/usr/local/lib/sobarch/rescue-iso-fetch.sh"
 
     install -Dm755 "$startdir/../../../scripts/aur-sync/aur-sync.sh" "$pkgdir/usr/local/lib/sobarch/aur-sync.sh"
 

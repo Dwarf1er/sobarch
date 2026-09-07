@@ -47,30 +47,21 @@ if [ -z "${RESCUE_PARTITION:-}" ] || [ -z "${RESCUE_BOOT_PARTITION:-}" ]; then
     exit 0
 fi
 
-MIRROR_URL="https://geo.mirror.pkgbuild.com/iso/latest"
+# Shared with refresh-rescue-iso.sh (installer/firstboot/
+# rescue-iso-fetch.sh): fetch/verify/extract is the same logic either
+# way, only what's done with the result differs. Already installed by
+# the time this script runs: install_runner.py builds and installs
+# sobarch-scripts before running any CHROOT_SETUP_SCRIPTS.
+source /usr/local/lib/sobarch/rescue-iso-fetch.sh
+
 WORK_DIR=$(mktemp -d)
-LOOP_MNT="$WORK_DIR/iso-mount"
-trap 'umount "$LOOP_MNT" 2>/dev/null || true; rm -rf "$WORK_DIR"' EXIT
+trap 'umount "$WORK_DIR/iso-mount" 2>/dev/null || true; rm -rf "$WORK_DIR"' EXIT
 
 echo "rescue-iso-setup.sh: fetching current Arch ISO from $MIRROR_URL..."
-
-curl -fL -o "$WORK_DIR/archlinux-x86_64.iso" "$MIRROR_URL/archlinux-x86_64.iso"
-curl -fL -o "$WORK_DIR/sha256sums.txt" "$MIRROR_URL/sha256sums.txt"
-
-echo "rescue-iso-setup.sh: verifying checksum..."
-
-( cd "$WORK_DIR" && grep 'archlinux-x86_64\.iso$' sha256sums.txt | sha256sum -c - )
+fetch_rescue_iso "$WORK_DIR"
 
 echo "rescue-iso-setup.sh: extracting the ISO's own kernel/initramfs..."
-
-mkdir -p "$LOOP_MNT"
-mount -o loop,ro "$WORK_DIR/archlinux-x86_64.iso" "$LOOP_MNT"
-# Standard archiso layout (the same path the current Arch installation
-# medium itself boots from); worth re-confirming if a future Arch
-# release ever changes it.
-cp "$LOOP_MNT/arch/boot/x86_64/vmlinuz-linux" "$WORK_DIR/vmlinuz-linux"
-cp "$LOOP_MNT/arch/boot/x86_64/initramfs-linux.img" "$WORK_DIR/initramfs-linux.img"
-umount "$LOOP_MNT"
+extract_rescue_kernel "$WORK_DIR"
 
 echo "rescue-iso-setup.sh: formatting $RESCUE_PARTITION and writing the ISO..."
 
