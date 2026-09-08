@@ -31,7 +31,7 @@ MARKER="/var/lib/sobarch/profile-packages-installed"
 # installed.
 #
 # md-package_down (Nerd Fonts Material Design Icons, same family as
-# configs/skel's own menu scripts, e.g. system-menu.sh's md-volume-high/
+# skel's own menu scripts, e.g. system-menu.sh's md-volume-high/
 # md-wifi): a package with a download arrow, prefixed on every
 # notification title here for the same visual consistency those menus
 # already have.

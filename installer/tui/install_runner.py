@@ -197,7 +197,7 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
     at /usr/local/lib/sobarch/, so the loop below no longer needs to
     copy those scripts in by hand.
 
-    sobarch-skel's PKGBUILD reaches out to ../../../configs/skel, and
+    sobarch-skel's PKGBUILD reaches out to ../../../skel, and
     sobarch-scripts' to ../../../installer/firstboot and
     ../../../scripts/aur-sync, both via a relative path, so those
     directories must be staged alongside their package directories
@@ -213,7 +213,7 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
         REPO_ROOT / "packages" / "custom" / "sobarch-scripts",
         build_dir / "packages" / "custom" / "sobarch-scripts",
     )
-    shutil.copytree(REPO_ROOT / "configs" / "skel", build_dir / "configs" / "skel")
+    shutil.copytree(REPO_ROOT / "skel", build_dir / "skel")
     shutil.copytree(REPO_ROOT / "installer" / "firstboot", build_dir / "installer" / "firstboot")
     shutil.copytree(REPO_ROOT / "scripts" / "aur-sync", build_dir / "scripts" / "aur-sync")
     for pkg in BASE_AUR_PACKAGES:

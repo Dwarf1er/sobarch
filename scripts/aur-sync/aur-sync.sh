@@ -241,7 +241,7 @@ failures=()
 first_install=true
 
 # Built once, as a full copy of $repo_dir (not just each package's own
-# directory): sobarch-skel's PKGBUILD reaches configs/skel via a
+# directory): sobarch-skel's PKGBUILD reaches skel via a
 # relative path outside its own package directory, so a package's
 # build must keep its real position in the repo tree, not be flattened
 # into an isolated per-package directory. A fresh mktemp -d per run,

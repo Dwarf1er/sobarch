@@ -24,7 +24,7 @@ SSH_FLAG="/etc/sobarch/ssh-enabled"
 # pass it back in as replace_id to update that same notification in
 # place, rather than piling up a new transient one per step.
 # md-shield_lock (Nerd Fonts Material Design Icons, same family as
-# configs/skel's own menu scripts): prefixed on every notification
+# skel's own menu scripts): prefixed on every notification
 # title here, same as install-profile-packages.sh's own md-package_down
 # prefix, for consistent branding across both first-boot notification
 # sources.
@@ -82,7 +82,7 @@ cat > /etc/nftables.conf <<EOF
 #!/usr/sbin/nft -f
 # Managed by sobarch-firstboot-security.service; re-run
 # apply-security-baseline.sh (or edit directly, this file is not
-# reconciled like configs/skel) to change it.
+# reconciled like skel) to change it.
 
 flush ruleset
 

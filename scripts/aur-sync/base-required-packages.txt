@@ -3,7 +3,7 @@
 #
 # This is the single source of truth for that list: read directly by
 # installer/tui/install_runner.py during a fresh install, and fetched
-# from GitHub by configs/skel/.config/hypr/scripts/update-config-menu.sh
+# from GitHub by skel/.config/hypr/scripts/update-config-menu.sh
 # on an already-installed system, so both stay in sync from one file
 # instead of two hand-maintained lists that can drift.
 localsend-bin

@@ -5,7 +5,7 @@
 # no other setup, no custom ISO.
 #
 # Fetches the whole repository, not only installer/: install_runner.py
-# also needs packages/custom/sobarch-skel and configs/skel from the
+# also needs packages/custom/sobarch-skel and skel/ from the
 # same checkout to build/deploy sobarch-skel during install (see its
 # REPO_ROOT). A plain curl+tar pull of GitHub's own archive endpoint
 # gets all three in one step with no server of our own and no new
@@ -25,7 +25,7 @@ ARCHIVE_URL="https://github.com/${REPO}/archive/refs/heads/${BRANCH}.tar.gz"
 WORKDIR="$(mktemp -d /tmp/sobarch-installer.XXXXXX)"
 # Not `exec`'d below: install_runner.py needs this checkout to still be
 # on disk for the whole TUI session (it reads packages/custom/ and
-# configs/ from it during a real install), so it can only be removed
+# skel/ from it during a real install), so it can only be removed
 # once the TUI itself has actually exited.
 trap 'rm -rf "$WORKDIR"' EXIT
 

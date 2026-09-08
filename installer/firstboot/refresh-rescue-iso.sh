@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Privileged worker behind Sobarch -> Refresh Rescue ISO
-# (configs/skel/.config/hypr/scripts/refresh-rescue-menu.sh), run via
+# (skel/.config/hypr/scripts/refresh-rescue-menu.sh), run via
 # pkexec. Re-fetches a current Arch ISO and re-extracts its
 # kernel/initramfs onto the two rescue partitions
 # installer/archinstall/rescue-iso-setup.sh laid out at install time

@@ -1,6 +1,6 @@
 -- NVIDIA-specific Hyprland environment variables.
 --
--- This file is NOT part of configs/skel/ and is never copied to every
+-- This file is NOT part of skel/ and is never copied to every
 -- install. It is deployed to ~/.config/hypr/nvidia.lua only by the
 -- first-boot hook, only when the installer's hardware
 -- detection (installer/archinstall/hardware-detect.sh) finds an

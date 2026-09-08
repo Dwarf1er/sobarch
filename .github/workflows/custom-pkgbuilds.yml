@@ -2,7 +2,7 @@ name: Custom PKGBUILDs
 
 # PR-time validation for this project's own packages/custom/ PKGBUILDs.
 # Deliberately no path filter: a package's real payload can live
-# outside its own directory (e.g. sobarch-skel packages configs/skel/),
+# outside its own directory (e.g. sobarch-skel packages skel/),
 # so a hardcoded path allowlist here would have the same "forgot to
 # update it" failure mode this check exists to catch in the first
 # place. The job itself is cheap (git diff + grep + a .SRCINFO regen,

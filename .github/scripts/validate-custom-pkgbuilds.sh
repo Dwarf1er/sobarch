@@ -9,7 +9,7 @@
 #     pinned version.
 #   - Payload-without-a-version-bump check: several of these packages
 #     package content from outside their own directory (e.g.
-#     sobarch-skel's package() copies configs/skel/), so editing that
+#     sobarch-skel's package() copies skel/), so editing that
 #     content is easy to do without remembering to also bump the
 #     package's pkgver/pkgrel. Each package's real payload paths are
 #     derived directly from its own PKGBUILD (grepping for
@@ -95,7 +95,7 @@ for dir in packages/custom/*/; do
         # only treated as a directory when the reference is genuinely
         # directory-shaped: a trailing shell variable (a for-loop's
         # .../firstboot/$script, whatever it expands to) or the
-        # trailing-/. copy-contents idiom (cp -a .../configs/skel/.).
+        # trailing-/. copy-contents idiom (cp -a .../skel/.).
         # One extra trailing character is captured past the matched
         # path so a '$' right after it can be detected.
         extra_paths=()

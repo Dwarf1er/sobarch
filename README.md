@@ -349,7 +349,7 @@ rather than tucked away.
   (`hyprlock`, `hyprctl dispatch exit`, `systemctl suspend`/`reboot`/
   `poweroff`) directly. It used to shell out to `wlogout`, a themed GUI
   around those same five commands with no CLI mode of its own; dropped
-  entirely (the AUR package, its `configs/skel/.config/wlogout/` theme,
+  entirely (the AUR package, its `skel/.config/wlogout/` theme,
   and its dedicated waybar module, all removed) once it was clear the
   GUI added no capability over calling the commands straight.
 - **Apps** runs plain `fuzzel`, its own real application list, as a
