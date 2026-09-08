@@ -50,9 +50,27 @@ case "$choice" in
         else
             payload="WIFI:T:nopass;S:${ssid};;"
         fi
-        qr=$(mktemp --suffix=.png)
-        qrencode -o "$qr" "$payload"
-        imv "$qr"
-        rm -f "$qr"
+        # Rendered as ASCII directly in a fuzzel pane instead of imv/PNG,
+        # to match the small centered floating look fuzzel gets for free
+        # (a wlroots layer-shell surface, unlike a real window, which
+        # would need its own float+size+center window rule and would
+        # still tile/fullscreen by default). --width is fuzzel's own
+        # *estimate* of character count (fuzzel.ini(5)), not a measurement
+        # of the actual rendered line, so it doesn't land exactly on the
+        # real column count for this font; "cols-2" is a fudge factor
+        # found by testing against one real SSID/password pair, not
+        # derived from a formula, and only confirmed for that QR size --
+        # if a much longer/shorter SSID+password (different QR version)
+        # ever looks off-center again, this is the first thing to
+        # re-check. horizontal-pad also only pads one side (a fuzzel
+        # quirk, not configurable), hence the single leading space
+        # prepended to every line instead of using the pad itself.
+        qr_text=$(qrencode -t UTF8 "$payload" | sed 's/^/ /')
+        cols=$(head -1 <<<"$qr_text" | wc -L)
+        rows=$(wc -l <<<"$qr_text")
+        fuzzel --dmenu --hide-prompt \
+            --horizontal-pad=0 --vertical-pad=3 \
+            --line-height=18 --letter-spacing=0 \
+            --width=$((cols - 2)) --lines="$rows" <<<"$qr_text"
         ;;
 esac
