@@ -8,3 +8,4 @@
 # instead of two hand-maintained lists that can drift.
 localsend-bin
 blesh-git
+tinty-git

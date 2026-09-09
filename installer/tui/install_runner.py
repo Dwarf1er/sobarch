@@ -178,7 +178,7 @@ def _deploy_aur_sync(log_file, on_output: OutputCallback) -> int:
 
 def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int:
     """Local-builds sobarch-skel, sobarch-scripts, sobarch-limine-snapshots,
-    and the base-required AUR packages (localsend-bin, blesh-git; decision 3)
+    and the base-required AUR packages (localsend-bin, blesh-git, tinty-git; decision 3)
     from this checkout and installs them into the target, so
     /usr/share/sobarch/skel/, /usr/local/lib/sobarch/, and every
     package exist by the time first boot (and, for
