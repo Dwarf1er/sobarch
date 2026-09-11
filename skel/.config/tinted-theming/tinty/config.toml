@@ -3,11 +3,23 @@
 # One [[items]] block per themed app. Reused upstream templates for
 # kitty/waybar/hyprland/mako; everything else is authored locally under
 # ~/.config/sobarch/tinty-templates/ (no upstream template exists for
-# them), each pre-built for every scheme via tinted-builder-rust so
-# `tinty apply <any-scheme>` works immediately, not just for the
-# default below.
+# them). `tinty apply`/`install`/`sync` never render a template on
+# their own (confirmed by reading tinty's own source: `apply` only
+# copies an already-rendered file out of each item's `themes-dir`), so
+# every scheme for these local items has to be built explicitly via
+# `tinty build <item-dir>` before `apply` can find it -- done by
+# build-tinty-templates.sh, not committed to the repo as static output
+# (see docs/DECISIONS.md).
+#
+# `revision` below pins the schemes repo tinty renders these local
+# items against, independently of whatever revision is compiled into
+# whichever tinty binary is installed, so the rendered output stays
+# reproducible across installs/updates.
 
 default-scheme = "base16-onedark"
+
+[schemes]
+revision = "spec-0.11"
 
 [[items]]
 path = "https://github.com/tinted-theming/tinted-terminal"

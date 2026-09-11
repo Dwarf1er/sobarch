@@ -2,7 +2,7 @@
 pkgname=sobarch-skel
 # Pure-data meta-package with no upstream releases of its own; pkgver
 # tracks the date skel/ last changed in this monorepo.
-pkgver=20260908
+pkgver=20260911
 pkgrel=1
 pkgdesc="Sobarch distribution-owned default desktop configuration (skel)"
 arch=('any')

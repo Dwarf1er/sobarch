@@ -15,7 +15,7 @@ pkgname=sobarch-scripts
 # keeps deploying those directly. The NetworkManager dispatcher script
 # and the pacman hook have no such per-install variation, so both are
 # packaged below.
-pkgver=20260907
+pkgver=20260911
 pkgrel=1
 pkgdesc="Sobarch first-boot reconciliation scripts and the local AUR/custom package sync mechanism"
 arch=('any')
@@ -33,7 +33,7 @@ sha256sums=()
 package() {
     install -dm755 "$pkgdir/usr/local/lib/sobarch"
 
-    for script in apply-skel.sh apply-security-baseline.sh install-profile-packages.sh unblock-rfkill.sh refresh-rescue-iso.sh; do
+    for script in apply-skel.sh apply-security-baseline.sh install-profile-packages.sh unblock-rfkill.sh refresh-rescue-iso.sh build-tinty-templates.sh; do
         install -Dm755 "$startdir/../../../installer/firstboot/$script" "$pkgdir/usr/local/lib/sobarch/$script"
     done
 

@@ -9,3 +9,8 @@ __pycache__/
 
 # Installer test output
 sobarch-install-output/*
+
+# tinty-rendered theme output for sobarch's own local template items
+# (skel/.config/sobarch/tinty-templates/*/), rebuilt locally via
+# build-tinty-templates.sh instead of being committed
+skel/.config/sobarch/tinty-templates/*/colors/

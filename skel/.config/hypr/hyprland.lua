@@ -59,8 +59,13 @@ hl.on("hyprland.start", function()
 	-- network) and correct even if a prior attempt was interrupted (e.g.
 	-- no network yet at login).
 	-- `tinty init` (re-applies the last-applied or default scheme)
-	-- still runs every login same as before.
-	hl.exec_cmd("command -v tinty >/dev/null 2>&1 && { tinty list | grep -q . || tinty install; tinty init; }")
+	-- still runs every login same as before. build-tinty-templates.sh
+	-- renders every scheme for sobarch's own local tinty items (never
+	-- done by `install` itself, see that script) -- only right after a
+	-- successful `install`, so a failed one (no network yet) is
+	-- retried whole, install-then-build, on the next login instead of
+	-- leaving `init` to find half-built templates.
+	hl.exec_cmd("command -v tinty >/dev/null 2>&1 && { tinty list | grep -q . || { tinty install && /usr/local/lib/sobarch/build-tinty-templates.sh; }; tinty init; }")
 end)
 
 hl.exec_cmd('gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"')

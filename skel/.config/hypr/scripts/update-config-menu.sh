@@ -39,6 +39,7 @@ trap 'hyprctl reload >/dev/null 2>&1 || true' EXIT
 source /usr/local/lib/sobarch/durable-replace.sh
 
 APPLY_SKEL="/usr/local/lib/sobarch/apply-skel.sh"
+BUILD_TINTY_TEMPLATES="/usr/local/lib/sobarch/build-tinty-templates.sh"
 AUR_SYNC="/usr/local/lib/sobarch/aur-sync.sh"
 SKEL_SRC="/usr/share/sobarch/skel"
 BASELINE_DIR="$HOME/.local/state/sobarch/skel-baseline"
@@ -129,6 +130,17 @@ if ! $review_only; then
     if ! "$APPLY_SKEL"; then
         notify-send -u critical "sobarch: update config" "apply-skel.sh failed; check its output for details."
         exit 1
+    fi
+
+    # A skel update can change sobarch's own local tinty templates
+    # (~/.config/sobarch/tinty-templates/); apply-skel.sh only writes
+    # the templates themselves, never re-renders them (tinty's own
+    # apply/install/sync never do that either, see config.toml), so
+    # every scheme has to be rebuilt here or theme switching keeps
+    # using the stale, previously-built output.
+    if ! "$BUILD_TINTY_TEMPLATES"; then
+        notify-send -u critical "sobarch: update config" \
+            "Rebuilding tinty theme templates failed; run 'tinty build' on ~/.config/sobarch/tinty-templates/* manually to retry."
     fi
 fi
 
