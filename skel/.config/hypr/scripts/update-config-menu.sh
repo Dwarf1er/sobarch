@@ -44,6 +44,10 @@ AUR_SYNC="/usr/local/lib/sobarch/aur-sync.sh"
 SKEL_SRC="/usr/share/sobarch/skel"
 BASELINE_DIR="$HOME/.local/state/sobarch/skel-baseline"
 
+# md-refresh: same icon setup-menu.sh's own "Update Config" entry uses
+# (also, pre-existing in setup-menu.sh, "Refresh Rescue ISO"'s).
+TITLE=$'\U000F0450'"  sobarch: update config"
+
 review_only=false
 [[ "${1:-}" == "--review" ]] && review_only=true
 
@@ -123,12 +127,20 @@ if ! $review_only; then
     # reasoning as the per-package curl above, leave it for next time
     # rather than demand a password for a call this likely to fail too.
 
-    if $update_pending && ! pkexec "$AUR_SYNC" "${to_refresh[@]}"; then
-        notify-send "sobarch: update config" \
-            "Refreshing ${to_refresh[*]} failed (offline?); continuing with the currently installed version(s)."
+    if $update_pending; then
+        # sobarch-scripts/sobarch-skel are pacman packages, so a pending
+        # refresh can mean a real from-source AUR rebuild
+        # (aur-sync.sh), not just a fast repo-package bump: worth a
+        # notification before pkexec even starts, since otherwise this
+        # is silent the whole time it runs.
+        notify-send "$TITLE" "Refreshing ${to_refresh[*]}..."
+        if ! pkexec "$AUR_SYNC" "${to_refresh[@]}"; then
+            notify-send "$TITLE" \
+                "Refreshing ${to_refresh[*]} failed (offline?); continuing with the currently installed version(s)."
+        fi
     fi
     if ! "$APPLY_SKEL"; then
-        notify-send -u critical "sobarch: update config" "apply-skel.sh failed; check its output for details."
+        notify-send -u critical "$TITLE" "apply-skel.sh failed; check its output for details."
         exit 1
     fi
 
@@ -139,7 +151,7 @@ if ! $review_only; then
     # every scheme has to be rebuilt here or theme switching keeps
     # using the stale, previously-built output.
     if ! "$BUILD_TINTY_TEMPLATES"; then
-        notify-send -u critical "sobarch: update config" \
+        notify-send -u critical "$TITLE" \
             "Rebuilding tinty theme templates failed; run 'tinty build' on ~/.config/sobarch/tinty-templates/* manually to retry."
     fi
 fi
@@ -147,7 +159,11 @@ fi
 mapfile -t conflicts < <(find "$HOME" -name '*.sobarch-new' 2>/dev/null | sort)
 
 if ((${#conflicts[@]} == 0)); then
-    $review_only && notify-send "sobarch: update config" "No pending conflicts."
+    if $review_only; then
+        notify-send "$TITLE" "No pending conflicts."
+    else
+        notify-send "$TITLE" "Config synced; no conflicts."
+    fi
     exit 0
 fi
 
@@ -243,5 +259,5 @@ for f in "${conflicts[@]}"; do
     done
 done
 
-notify-send "sobarch: update config" \
+notify-send "$TITLE" \
     "$resolved conflict(s) resolved, $skipped left for review (Sobarch -> Review Conflicts)."

@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# md-wifi_strength_4: same icon system-menu.sh's own "Network" entry uses.
+TITLE=$'\U000F0928'"  sobarch: network"
+
+# notify_on_fail runs an nmcli action and, only if it fails, surfaces
+# its own stderr as a critical notification (nmcli puts error text on
+# stderr with a matching exit code).
+notify_on_fail() {
+    local err
+    err=$("$@" 2>&1 >/dev/null)
+    [ -n "$err" ] && notify-send -u critical "$TITLE" "$err"
+}
+
 choice=$(printf "%s\n" \
     "󰤨  Wi-Fi Networks" \
     "⏻  Toggle Wi-Fi" \
@@ -14,27 +26,26 @@ case "$choice" in
         ssid=$(nmcli -e no -t -f SSID dev wifi list --rescan yes | awk 'NF && !seen[$0]++' | fuzzel --dmenu --prompt "wifi: ")
         [ -n "$ssid" ] || exit 0
         if nmcli -e no -t -f NAME connection show | grep -qxF "$ssid"; then
-            err=$(nmcli connection up "$ssid" 2>&1 >/dev/null)
+            notify_on_fail nmcli connection up "$ssid"
         else
             pass=$(fuzzel --dmenu --password --prompt "password: ")
-            err=$(nmcli dev wifi connect "$ssid" password "$pass" 2>&1 >/dev/null)
+            notify_on_fail nmcli dev wifi connect "$ssid" password "$pass"
         fi
-        [ -n "$err" ] && notify-send "Network" "$err"
         ;;
     "⏻  Toggle Wi-Fi")
         if [ "$(nmcli radio wifi)" = "enabled" ]; then
-            nmcli radio wifi off
+            notify_on_fail nmcli radio wifi off
         else
-            nmcli radio wifi on
+            notify_on_fail nmcli radio wifi on
         fi
         ;;
     "󰖪  Disconnect")
         dev=$(nmcli -t -f DEVICE,TYPE dev status | awk -F: '$2=="wifi"{print $1; exit}')
-        [ -n "$dev" ] && nmcli dev disconnect "$dev"
+        [ -n "$dev" ] && notify_on_fail nmcli dev disconnect "$dev"
         ;;
     "󰅙  Forget Network")
         name=$(nmcli -e no -t -f NAME connection show | fuzzel --dmenu --prompt "forget: ")
-        [ -n "$name" ] && nmcli connection delete "$name"
+        [ -n "$name" ] && notify_on_fail nmcli connection delete "$name"
         ;;
     "󰆏  Copy IP Address")
         dev=$(nmcli -t -f DEVICE,STATE dev status | awk -F: '$2=="connected"{print $1; exit}')

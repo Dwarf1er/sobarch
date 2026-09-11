@@ -34,8 +34,13 @@ set -euo pipefail
 DATA_FILE="/usr/share/sobarch/profiles.txt"
 AUR_SYNC="/usr/local/lib/sobarch/aur-sync.sh"
 
+# md-package_down: same icon setup-menu.sh's own "Install" entry uses,
+# and the same one install-profile-packages.sh's first-boot
+# notifications use for the same "installing a package" concept.
+TITLE=$'\U000F03D4'"  sobarch: install package"
+
 if [[ ! -r "$DATA_FILE" ]]; then
-    notify-send -u critical "sobarch: install package" "$DATA_FILE not found; is sobarch-skel installed?"
+    notify-send -u critical "$TITLE" "$DATA_FILE not found; is sobarch-skel installed?"
     exit 1
 fi
 
@@ -60,7 +65,7 @@ mapfile -t names < <(
 )
 
 if ((${#names[@]} == 0)); then
-    notify-send "sobarch: install package" "Every known package is already installed."
+    notify-send "$TITLE" "Every known package is already installed."
     exit 0
 fi
 
@@ -71,7 +76,7 @@ choice=$(
 )
 [[ -n "${choice:-}" && -n "${pkg_is_aur[$choice]:-}" ]] || exit 0
 
-notify-send "sobarch: install package" "Installing $choice..."
+notify-send "$TITLE" "Installing $choice..."
 
 if [[ "${pkg_is_aur[$choice]}" == 1 ]]; then
     result=0
@@ -82,8 +87,8 @@ else
 fi
 
 if ((result != 0)); then
-    notify-send -u critical "sobarch: install package" \
+    notify-send -u critical "$TITLE" \
         "$choice failed to install; check /var/log/sobarch/aur-sync.log and pacman's own log."
 else
-    notify-send "sobarch: install package" "$choice installed."
+    notify-send "$TITLE" "$choice installed."
 fi

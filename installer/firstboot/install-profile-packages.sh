@@ -23,41 +23,17 @@ OFFICIAL_LIST="$SOBARCH_DIR/profile-packages-official.txt"
 AUR_LIST="$SOBARCH_DIR/profile-packages-aur.txt"
 MARKER="/var/lib/sobarch/profile-packages-installed"
 
-# Best-effort desktop notification into the logged-in user's session:
-# this runs as root with no controlling terminal, so a failure is
-# otherwise invisible until someone thinks to check journalctl. A
-# no-op if no graphical session is active yet (e.g. a network blip
-# right after boot before anyone's logged in) or notify-send isn't
-# installed.
-#
 # md-package_down (Nerd Fonts Material Design Icons, same family as
 # skel's own menu scripts, e.g. system-menu.sh's md-volume-high/
 # md-wifi): a package with a download arrow, prefixed on every
 # notification title here for the same visual consistency those menus
 # already have.
 GLYPH=$'\U000F03D4'
-#
-# notify_user prints the notification's id (via -p) so a caller can
-# pass it back in as replace_id to update that same notification in
-# place, rather than piling up a new transient one per step. An
-# optional 5th arg renders a real progress bar (mako/dunst both support
-# the standard int:value:NN hint, 0-100) instead of leaving "how far
-# along is this" to the body text alone.
-notify_user() {
-    local urgency="$1" title="$2" body="$3" replace_id="${4:-0}" percent="${5:-}"
-    command -v notify-send >/dev/null 2>&1 || { echo 0; return 0; }
-    local session_user
-    session_user="$(loginctl list-sessions --no-legend 2>/dev/null | awk '{print $3; exit}')"
-    [[ -n "$session_user" ]] || { echo 0; return 0; }
-    local uid
-    uid="$(id -u "$session_user" 2>/dev/null)" || { echo 0; return 0; }
-    local hint_args=()
-    [[ -n "$percent" ]] && hint_args=(--hint="int:value:$percent")
-    runuser -u "$session_user" -- env XDG_RUNTIME_DIR="/run/user/$uid" \
-        notify-send -p -r "$replace_id" -u "$urgency" "${hint_args[@]}" "$GLYPH  $title" "$body" 2>/dev/null || echo 0
-}
+source /usr/local/lib/sobarch/notify-user.sh
+
+id=0
 trap 'rc=$?; [[ $rc -eq 0 ]] || notify_user critical "sobarch: package install failed" \
-    "Check: journalctl -u sobarch-firstboot-packages.service"; exit $rc' EXIT
+    "Check: journalctl -u sobarch-firstboot-packages.service" "$id"; exit $rc' EXIT
 
 mkdir -p "$(dirname "$MARKER")"
 
@@ -84,7 +60,7 @@ if [[ -s "$AUR_LIST" ]]; then
     # No percent hint here: aur-sync.sh builds this whole list as one
     # step with no incremental progress to report back, so a numeric
     # value would be a fabricated signal, not a real one.
-    id=$(notify_user critical "sobarch: installing packages" "Building selected AUR package(s)..." "${id:-0}")
+    id=$(notify_user critical "sobarch: installing packages" "Building selected AUR package(s)..." "$id")
     /usr/local/lib/sobarch/aur-sync.sh "${aur_packages[@]}"
 fi
 

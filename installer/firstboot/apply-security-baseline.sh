@@ -13,35 +13,17 @@ set -euo pipefail
 MARKER="/var/lib/sobarch/security-baseline-applied"
 SSH_FLAG="/etc/sobarch/ssh-enabled"
 
-# Best-effort desktop notification into the logged-in user's session:
-# this runs as root with no controlling terminal, so a failure is
-# otherwise invisible until someone thinks to check journalctl. A
-# no-op if no graphical session is active yet (e.g. a network blip
-# right after boot before anyone's logged in) or notify-send isn't
-# installed.
-#
-# notify_user prints the notification's id (via -p) so a caller can
-# pass it back in as replace_id to update that same notification in
-# place, rather than piling up a new transient one per step.
 # md-shield_lock (Nerd Fonts Material Design Icons, same family as
 # skel's own menu scripts): prefixed on every notification
 # title here, same as install-profile-packages.sh's own md-package_down
 # prefix, for consistent branding across both first-boot notification
 # sources.
 GLYPH=$'\U000F099D'
-notify_user() {
-    local urgency="$1" title="$2" body="$3" replace_id="${4:-0}"
-    command -v notify-send >/dev/null 2>&1 || { echo 0; return 0; }
-    local session_user
-    session_user="$(loginctl list-sessions --no-legend 2>/dev/null | awk '{print $3; exit}')"
-    [[ -n "$session_user" ]] || { echo 0; return 0; }
-    local uid
-    uid="$(id -u "$session_user" 2>/dev/null)" || { echo 0; return 0; }
-    runuser -u "$session_user" -- env XDG_RUNTIME_DIR="/run/user/$uid" \
-        notify-send -p -r "$replace_id" -u "$urgency" "$GLYPH  $title" "$body" 2>/dev/null || echo 0
-}
+source /usr/local/lib/sobarch/notify-user.sh
+
+id=0
 trap 'rc=$?; [[ $rc -eq 0 ]] || notify_user critical "sobarch: security baseline failed" \
-    "Check: journalctl -u sobarch-firstboot-security.service"; exit $rc' EXIT
+    "Check: journalctl -u sobarch-firstboot-security.service" "$id"; exit $rc' EXIT
 
 mkdir -p "$(dirname "$MARKER")"
 id=$(notify_user normal "sobarch: security baseline" "Applying the security baseline...")

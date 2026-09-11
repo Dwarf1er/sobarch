@@ -37,11 +37,13 @@ package() {
         install -Dm755 "$startdir/../../../installer/firstboot/$script" "$pkgdir/usr/local/lib/sobarch/$script"
     done
 
-    # Sourced by apply-skel.sh/update-config-menu.sh and
-    # rescue-iso-setup.sh/refresh-rescue-iso.sh respectively, never run
-    # directly.
+    # Sourced by apply-skel.sh/update-config-menu.sh,
+    # rescue-iso-setup.sh/refresh-rescue-iso.sh, and
+    # apply-security-baseline.sh/install-profile-packages.sh
+    # respectively, never run directly.
     install -Dm644 "$startdir/../../../installer/firstboot/durable-replace.sh" "$pkgdir/usr/local/lib/sobarch/durable-replace.sh"
     install -Dm644 "$startdir/../../../installer/firstboot/rescue-iso-fetch.sh" "$pkgdir/usr/local/lib/sobarch/rescue-iso-fetch.sh"
+    install -Dm644 "$startdir/../../../installer/firstboot/notify-user.sh" "$pkgdir/usr/local/lib/sobarch/notify-user.sh"
 
     install -Dm755 "$startdir/../../../scripts/aur-sync/aur-sync.sh" "$pkgdir/usr/local/lib/sobarch/aur-sync.sh"
 

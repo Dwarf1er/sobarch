@@ -17,14 +17,19 @@ set -euo pipefail
 
 REFRESH_RESCUE_ISO="/usr/local/lib/sobarch/refresh-rescue-iso.sh"
 
-notify-send "sobarch: refresh rescue iso" "Fetching a current Arch ISO; this can take a while..."
+# md-refresh: same icon setup-menu.sh's own "Refresh Rescue ISO" entry
+# uses, and the same one refresh-rescue-iso.sh's own root-side progress
+# notifications use for its in-progress steps.
+TITLE=$'\U000F0450'"  sobarch: refresh rescue iso"
+
+notify-send "$TITLE" "Fetching a current Arch ISO; this can take a while..."
 
 result=0
 pkexec "$REFRESH_RESCUE_ISO" || result=$?
 
 if ((result != 0)); then
-    notify-send -u critical "sobarch: refresh rescue iso" \
+    notify-send -u critical "$TITLE" \
         "Refresh failed partway through; the rescue media may be in a mixed state. Check journalctl for pkexec's output."
 else
-    notify-send "sobarch: refresh rescue iso" "Rescue ISO refreshed."
+    notify-send "$TITLE" "Rescue ISO refreshed."
 fi

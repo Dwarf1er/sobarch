@@ -23,6 +23,18 @@ set -euo pipefail
 source /usr/local/lib/sobarch/rescue-iso-fetch.sh
 source /usr/local/lib/sobarch/durable-replace.sh
 
+# Runs as root via pkexec, same as the first-boot units notify-user.sh
+# was written for: a desktop notification back into the invoking user's
+# session needs the same runuser dance, not just an echo to a log
+# nobody's watching mid-refresh. 󰑐 (nf-md-refresh) matches
+# setup-menu.sh's own "Refresh Rescue ISO" entry icon. Success/failure
+# themselves stay refresh-rescue-menu.sh's job (it already reports
+# both once pkexec returns); these are just the in-progress steps of
+# what is otherwise a silent multi-minute download+write with nothing
+# to show for it until the very end.
+GLYPH=$'\U000F0450'
+source /usr/local/lib/sobarch/notify-user.sh
+
 RESCUE_DEV="$(blkid -L RESCUE)" || {
     echo "refresh-rescue-iso: no RESCUE partition found (rescue media opted out at install time?), nothing to do."
     exit 0
@@ -44,12 +56,15 @@ cleanup() {
 trap cleanup EXIT
 
 echo "refresh-rescue-iso: fetching current Arch ISO from $MIRROR_URL..."
+id=$(notify_user normal "sobarch: refresh rescue iso" "Fetching current Arch ISO from $MIRROR_URL...")
 fetch_rescue_iso "$WORK_DIR"
 
 echo "refresh-rescue-iso: extracting the ISO's own kernel/initramfs..."
+id=$(notify_user normal "sobarch: refresh rescue iso" "Extracting the ISO's own kernel/initramfs..." "$id")
 extract_rescue_kernel "$WORK_DIR"
 
 echo "refresh-rescue-iso: writing the refreshed ISO to $RESCUE_DEV..."
+id=$(notify_user normal "sobarch: refresh rescue iso" "Writing the refreshed ISO to $RESCUE_DEV..." "$id")
 mkdir -p "$RESCUE_MNT"
 mount "$RESCUE_DEV" "$RESCUE_MNT"
 # durable_replace, not a plain cp: the same crash-safety this project
@@ -62,6 +77,7 @@ durable_replace 644 "$WORK_DIR/archlinux-x86_64.iso" "$RESCUE_MNT/archlinux-x86_
 umount "$RESCUE_MNT"
 
 echo "refresh-rescue-iso: writing the refreshed kernel/initramfs to $RESCUE_BOOT_DEV..."
+id=$(notify_user normal "sobarch: refresh rescue iso" "Writing the refreshed kernel/initramfs to $RESCUE_BOOT_DEV..." "$id")
 mkdir -p "$RESCUE_BOOT_MNT"
 mount "$RESCUE_BOOT_DEV" "$RESCUE_BOOT_MNT"
 durable_replace 644 "$WORK_DIR/vmlinuz-linux" "$RESCUE_BOOT_MNT/vmlinuz-linux"

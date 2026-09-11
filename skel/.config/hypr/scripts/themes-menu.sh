@@ -8,8 +8,11 @@
 # it themes; nothing extra to do here beyond the apply itself.
 set -euo pipefail
 
+# md-format_color_fill: same icon setup-menu.sh's own "Themes" entry uses.
+TITLE=$'\U000F0266'"  sobarch: themes"
+
 if ! command -v tinty >/dev/null 2>&1; then
-    notify-send -u critical "sobarch: themes" \
+    notify-send -u critical "$TITLE" \
         "tinty isn't installed (Sobarch -> Update Config, to fetch base-required packages)."
     exit 1
 fi
@@ -18,7 +21,7 @@ choice=$(tinty list | fuzzel --dmenu --prompt "theme: ")
 [[ -n "${choice:-}" ]] || exit 0
 
 if tinty apply "$choice"; then
-    notify-send "sobarch: themes" "Applied $choice."
+    notify-send "$TITLE" "Applied $choice."
 else
-    notify-send -u critical "sobarch: themes" "Failed to apply $choice."
+    notify-send -u critical "$TITLE" "Failed to apply $choice."
 fi
