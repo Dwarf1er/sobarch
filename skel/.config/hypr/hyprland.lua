@@ -199,3 +199,14 @@ hl.layer_rule({
 	match = { namespace = "^(fuzzel)$" },
 	no_anim = true,
 })
+
+-- Waybar's CSS border-radius clips its corners to transparent, but
+-- Hyprland's blur pass can still flash the raw near-zero-alpha pixels
+-- there for a frame before settling. ignore_alpha tells it to skip
+-- rendering/blurring below that threshold instead.
+hl.layer_rule({
+	name = "rounded-waybar",
+	match = { namespace = "^(waybar)$" },
+	blur = true,
+	ignore_alpha = 0.5,
+})
