@@ -1,5 +1,10 @@
 #!/bin/sh
 
+if ! command -v fcitx5-remote >/dev/null 2>&1; then
+    echo '{"text": "", "tooltip": ""}'
+    exit 0
+fi
+
 current_im=$(fcitx5-remote -n 2>/dev/null)
 
 case "$current_im" in

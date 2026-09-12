@@ -29,7 +29,8 @@ set -euo pipefail
 # hyprland.lua specifically was touched: cheap, idempotent, and safe to
 # run even when nothing changed or this session isn't Hyprland (a
 # missing `hyprctl` or no running compositor both just no-op below).
-trap 'hyprctl reload >/dev/null 2>&1 || true' EXIT
+empty_file="$(mktemp)"
+trap 'hyprctl reload >/dev/null 2>&1 || true; rm -f "$empty_file"' EXIT
 
 # Shared with apply-skel.sh (installer/firstboot/durable-replace.sh):
 # a crash-safe replacement for `install -Dm"$mode" src dest`. A real
@@ -220,13 +221,23 @@ for f in "${conflicts[@]}"; do
                 break
                 ;;
             "[D] Diff")
+                # A conflict recorded for the first time (e.g. a file
+                # like .bashrc whose baseline was never written because
+                # apply-skel.sh deliberately leaves it unset on
+                # conflict) has no baseline file on disk at all. Diffing
+                # against it would otherwise fail silently (stderr
+                # discarded below) and show nothing; an empty stand-in
+                # makes that case just show the whole current/new file
+                # as one big addition instead.
+                diff_baseline="$baseline"
+                [[ -e "$diff_baseline" ]] || diff_baseline="$empty_file"
                 diff_tmp="$(mktemp)"
                 {
                     echo "=== your changes (baseline -> current) ==="
-                    diff -u "$baseline" "$original" 2>/dev/null || true
+                    diff -u "$diff_baseline" "$original" 2>/dev/null || true
                     echo
                     echo "=== upstream changes (baseline -> new) ==="
-                    diff -u "$baseline" "$new" 2>/dev/null || true
+                    diff -u "$diff_baseline" "$new" 2>/dev/null || true
                 } > "$diff_tmp"
                 kitty -e less "$diff_tmp"
                 rm -f "$diff_tmp"
@@ -236,7 +247,7 @@ for f in "${conflicts[@]}"; do
                 # Edits the pending merge (conflict markers and all, the
                 # same content pacdiff-style tools show for a .pacnew),
                 # not a blank slate: both sides are already visible in it.
-                kitty -e "${EDITOR:-nano}" "$f"
+                kitty -e "${EDITOR:-nvim}" "$f"
                 durable_replace "$mode" "$f" "$original"
                 durable_replace "$mode" "$new" "$baseline"
                 rm -f "$f"

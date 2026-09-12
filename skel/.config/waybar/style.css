@@ -87,8 +87,7 @@ tooltip {
 #custom-system,
 #network,
 #bluetooth,
-#language,
-#custom-fcitx5 {
+#language {
     background: alpha(@base05, 0.06);
     color: @base05;
     padding: 6px 14px;
@@ -135,10 +134,23 @@ tooltip {
     background: alpha(@base0D, 0.12);
 }
 
-/* Language/Keyboard layout */
+/* Language/Keyboard layout (collapses to zero width when fcitx5 isn't installed) */
 #custom-fcitx5 {
     color: @base0C;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    border-radius: 999px;
+    transition: all 0.2s ease;
+}
+
+#custom-fcitx5.en,
+#custom-fcitx5.fr,
+#custom-fcitx5.kr,
+#custom-fcitx5.unknown {
     background: alpha(@base0C, 0.12);
+    padding: 6px 14px;
+    margin: 6px 3px;
 }
 
 #network {

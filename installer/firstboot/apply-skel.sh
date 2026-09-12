@@ -9,10 +9,20 @@
 # user-invoked action, with its own interactive
 # [K]eep/[U]se-new/[D]iff/[E]dit/[S]kip walkthrough for any
 # `.sobarch-new` files layered on top; prompting is not this script's
-# concern. With no baseline recorded yet, every file below has
-# nothing to compare against, so the merge trivially resolves to "take
-# new": first boot is just this mechanism's first invocation, not a
-# separate copy path.
+# concern.
+#
+# On the very first-ever run (no VERSION_FILE yet), every file is
+# taken unconditionally rather than run through the diff3 path below:
+# `useradd` seeds a brand new $HOME from /etc/skel/ before this script
+# ever runs, and sobarch's own skel/ ships one file that collides with
+# Arch's stock skel (.bashrc). With no baseline recorded, diff3 would
+# otherwise see that pre-seeded stock file and sobarch's own default as
+# two independent, unrelated changes to an empty ancestor -- a genuine
+# conflict every time, silently leaving the stock .bashrc in place and
+# parking the real one as .bashrc.sobarch-new instead of ever landing
+# it (confirmed directly: Arch's /etc/skel ships .bash_logout,
+# .bash_profile, and .bashrc, only the last of which sobarch/skel also
+# ships).
 #
 # Must run as the target user, not root: it writes into that user's
 # $HOME and state directory. `sobarch-firstboot-skel.service` runs it
@@ -40,6 +50,9 @@ fi
 
 mkdir -p "$STATE_DIR"
 
+first_run=true
+[[ -f "$VERSION_FILE" ]] && first_run=false
+
 empty_file="$(mktemp)"
 merge_tmp="$(mktemp)"
 trap 'rm -f "$empty_file" "$merge_tmp"' EXIT
@@ -58,6 +71,14 @@ while IFS= read -r -d '' new_file; do
     current_file="$HOME/$rel"
     baseline_file="$BASELINE_DIR/$rel"
 
+    mode="$(stat -c%a "$new_file")"
+
+    if $first_run; then
+        durable_replace "$mode" "$new_file" "$current_file"
+        durable_replace "$mode" "$new_file" "$baseline_file"
+        continue
+    fi
+
     current_input="$current_file"
     [[ -e "$current_input" ]] || current_input="$empty_file"
     baseline_input="$baseline_file"
@@ -65,8 +86,6 @@ while IFS= read -r -d '' new_file; do
 
     rc=0
     diff3 -a -m "$current_input" "$baseline_input" "$new_file" > "$merge_tmp" || rc=$?
-
-    mode="$(stat -c%a "$new_file")"
     case "$rc" in
         0)
             # Clean merge: apply it, and advance this file's baseline to

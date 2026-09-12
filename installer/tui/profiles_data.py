@@ -27,7 +27,11 @@ def _pkgs(*names: str, aur: bool = False) -> tuple[Package, ...]:
 
 
 PROFILES: tuple[Profile, ...] = (
-    Profile("Developer", "developer", _pkgs("mise", "neovim", "presenterm")),
+    # neovim itself is base-required (base.json), not listed here: its
+    # config already ships unconditionally in skel/.config/nvim (Phase
+    # 1), so only its dev-tooling-specific packages belong to this
+    # profile.
+    Profile("Developer", "developer", _pkgs("mise", "presenterm")),
     Profile(
         "Gaming",
         "gaming",
