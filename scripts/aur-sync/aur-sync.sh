@@ -320,16 +320,30 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
 
     pkgfiles=("$build_dir"/*.pkg.tar.*)
 
+    # install_runner.py's _deploy_aur_sync deploys this very script as a
+    # raw bootstrap file at /usr/local/lib/sobarch/aur-sync.sh before
+    # sobarch-scripts (whose own package() owns that same path) can be
+    # built during a fresh install -- it has to, since this script is
+    # what builds sobarch-scripts in the first place. Pacman refuses to
+    # install over that file otherwise (on disk, but unowned by any
+    # package), so the one exact, known path is explicitly allowed to
+    # be replaced; nothing else about sobarch-scripts' file list is
+    # widened.
+    overwrite_args=()
+    if [[ "$name" == "sobarch-scripts" ]]; then
+        overwrite_args=(--overwrite /usr/local/lib/sobarch/aur-sync.sh)
+    fi
+
     # snap-pac creates a fresh Snapper snapshot pair per pacman
     # transaction with no built-in debounce; skip it for every install
     # in this run after the first to avoid snapshot spam from one
     # aur-sync pass touching several packages back to back.
     if $first_install; then
         install_result=0
-        pacman_locked -U --noconfirm "${pkgfiles[@]}" || install_result=$?
+        pacman_locked -U --noconfirm "${overwrite_args[@]}" "${pkgfiles[@]}" || install_result=$?
     else
         install_result=0
-        SNAP_PAC_SKIP=1 pacman_locked -U --noconfirm "${pkgfiles[@]}" || install_result=$?
+        SNAP_PAC_SKIP=1 pacman_locked -U --noconfirm "${overwrite_args[@]}" "${pkgfiles[@]}" || install_result=$?
     fi
 
     rm -rf "$build_dir"
