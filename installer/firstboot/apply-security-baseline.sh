@@ -43,6 +43,37 @@ echo "sobarch-firstboot: locking the root account..."
 id=$(notify_user normal "sobarch: security baseline" "Locking the root account..." "$id")
 passwd -l root
 
+# systemd's own shipped policy already grants power-off/reboot/suspend
+# to an active local session for free (`pkaction --action-id
+# org.freedesktop.login1.power-off --verbose` shows "implicit active:
+# yes"), but a manually-launched compositor session (no display
+# manager PAM/session integration beyond ly's own) can fail to resolve
+# as "active" to polkit, falling back to an auth_admin prompt instead.
+# This rule makes the grant explicit rather than depending on that
+# resolution. Scoped to wheel, not a blanket grant (unlike
+# empower.rules' "yes to anything" for its own group): a wheel member
+# can already reach root via sudo, so this doesn't cross a new
+# privilege boundary, just drops a redundant password step for an
+# action every desktop distro grants active sessions by default.
+echo "sobarch-firstboot: installing the polkit power rule..."
+id=$(notify_user normal "sobarch: security baseline" "Installing the polkit power rule..." "$id")
+
+mkdir -p /etc/polkit-1/rules.d
+cat > /etc/polkit-1/rules.d/46-sobarch-power.rules <<'EOF'
+// Managed by apply-security-baseline.sh; not reconciled like skel.
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.login1.power-off" ||
+         action.id == "org.freedesktop.login1.power-off-multiple-sessions" ||
+         action.id == "org.freedesktop.login1.reboot" ||
+         action.id == "org.freedesktop.login1.reboot-multiple-sessions" ||
+         action.id == "org.freedesktop.login1.suspend" ||
+         action.id == "org.freedesktop.login1.suspend-multiple-sessions") &&
+        subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
+});
+EOF
+
 # Base ruleset from Arch's own "Simple & Safe" nftables example:
 # default-drop inbound, always allow loopback and established/related
 # traffic, explicit exceptions only for required packages. LocalSend

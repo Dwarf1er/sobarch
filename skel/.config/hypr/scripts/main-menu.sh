@@ -37,7 +37,7 @@ case "$choice" in
 
         case "$power_choice" in
             "󰌾  Lock") exec hyprlock ;;
-            "󰍃  Logout") exec hyprctl dispatch exit ;;
+            "󰍃  Logout") exec hyprctl dispatch 'hl.dsp.exit()' ;;
             "󰒲  Suspend") exec systemctl suspend ;;
             "󰜉  Reboot") exec systemctl reboot ;;
             "󰤂  Shutdown") exec systemctl poweroff ;;

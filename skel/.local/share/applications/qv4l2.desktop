@@ -1,0 +1,6 @@
+# Overrides /usr/share/applications/qv4l2.desktop: hides "Qt V4L2 test Utility" from
+# the app launcher without touching the system package's own file.
+[Desktop Entry]
+Type=Application
+Name=Qt V4L2 test Utility
+Hidden=true

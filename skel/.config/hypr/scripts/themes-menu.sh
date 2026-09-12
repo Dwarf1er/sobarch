@@ -17,11 +17,33 @@ if ! command -v tinty >/dev/null 2>&1; then
     exit 1
 fi
 
-choice=$(tinty list | fuzzel --dmenu --prompt "theme: ")
-[[ -n "${choice:-}" ]] || exit 0
+# tinty list prints raw <scheme_system>-<scheme_name> ids (e.g.
+# base16-atelier-forest-light), which read as clutter in a picker;
+# reformat each into "Pretty Name" (only tagging non-base16 systems,
+# since base16 is the common case) while keeping the raw id around
+# (tab-separated, hidden via --with-nth) for the actual tinty apply call.
+line=$(tinty list | awk -F'-' '
+    length($0) == 0 { next }
+    {
+        raw = $0
+        sys = $1
+        name = substr(raw, length(sys) + 2)
+        gsub(/-/, " ", name)
+        n = split(name, words, " ")
+        pretty = ""
+        for (i = 1; i <= n; i++)
+            pretty = pretty (i > 1 ? " " : "") toupper(substr(words[i], 1, 1)) substr(words[i], 2)
+        if (sys == "base24") pretty = pretty " (24-color)"
+        else if (sys == "tinted8") pretty = pretty " (8-color)"
+        print pretty "\t" raw
+    }' | sort -f | fuzzel --dmenu --with-nth=1 --prompt "theme: ")
+[[ -n "${line:-}" ]] || exit 0
 
-if tinty apply "$choice"; then
-    notify-send "$TITLE" "Applied $choice."
+pretty="${line%%$'\t'*}"
+raw="${line#*$'\t'}"
+
+if tinty apply "$raw"; then
+    notify-send "$TITLE" "Applied $pretty."
 else
-    notify-send -u critical "$TITLE" "Failed to apply $choice."
+    notify-send -u critical "$TITLE" "Failed to apply $pretty."
 fi

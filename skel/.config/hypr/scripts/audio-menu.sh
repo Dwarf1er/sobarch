@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# md-volume_high: same icon this menu's own "Toggle Output Mute" entry
-# (and system-menu.sh's "Audio" entry) already use.
+# md-volume_high: same icon system-menu.sh's own "Audio" entry (and
+# this menu's own "Per-App Volume"/"Unmute" entries) already use.
 TITLE=$'\U000F057E'"  sobarch: audio"
 
 # notify_on_fail runs a wpctl/pactl action and, only if it fails,
@@ -15,34 +15,34 @@ notify_on_fail() {
 }
 
 choice=$(printf "%s\n" \
-    "󰕾  Toggle Output Mute" \
-    "󰍬  Toggle Mic Mute" \
-    "󰕾  Volume +5%" \
-    "󰕾  Volume -5%" \
+    "󰖁  Toggle Output Mute" \
+    "󰍭  Toggle Mic Mute" \
+    "󰝝  Volume +5%" \
+    "󰝞  Volume -5%" \
     "󰋋  Switch Output Device" \
     "󰍬  Switch Input Device" \
     "󰕾  Per-App Volume" \
     | fuzzel --dmenu --prompt "audio: ")
 
 case "$choice" in
-    "󰕾  Toggle Output Mute")
+    "󰖁  Toggle Output Mute")
         notify_on_fail wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
         ;;
-    "󰍬  Toggle Mic Mute")
+    "󰍭  Toggle Mic Mute")
         notify_on_fail wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
         ;;
-    "󰕾  Volume +5%")
+    "󰝝  Volume +5%")
         notify_on_fail wpctl set-volume --limit 1.0 @DEFAULT_AUDIO_SINK@ 5%+
         ;;
-    "󰕾  Volume -5%")
+    "󰝞  Volume -5%")
         notify_on_fail wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
         ;;
     "󰋋  Switch Output Device")
-        sink=$(pactl list sinks short | awk '{print $2}' | fuzzel --dmenu --prompt "output: ")
+        sink=$(pactl list sinks short | awk '{print $2}' | sort -f | fuzzel --dmenu --prompt "output: ")
         [ -n "$sink" ] && notify_on_fail pactl set-default-sink "$sink"
         ;;
     "󰍬  Switch Input Device")
-        source=$(pactl list sources short | awk '$2 !~ /\.monitor$/ {print $2}' | fuzzel --dmenu --prompt "input: ")
+        source=$(pactl list sources short | awk '$2 !~ /\.monitor$/ {print $2}' | sort -f | fuzzel --dmenu --prompt "input: ")
         [ -n "$source" ] && notify_on_fail pactl set-default-source "$source"
         ;;
     "󰕾  Per-App Volume")
@@ -53,12 +53,12 @@ case "$choice" in
             $0 ~ "application.name = \"" app "\"" {print input_id; exit}
         ')
         [ -n "$id" ] || exit 0
-        action=$(printf "%s\n" "󰖁  Mute" "󰕾  Unmute" "󰕾  Volume +5%" "󰕾  Volume -5%" | fuzzel --dmenu --prompt "$app: ")
+        action=$(printf "%s\n" "󰖁  Mute" "󰕾  Unmute" "󰝝  Volume +5%" "󰝞  Volume -5%" | fuzzel --dmenu --prompt "$app: ")
         case "$action" in
             "󰖁  Mute") notify_on_fail pactl set-sink-input-mute "$id" 1 ;;
             "󰕾  Unmute") notify_on_fail pactl set-sink-input-mute "$id" 0 ;;
-            "󰕾  Volume +5%") notify_on_fail pactl set-sink-input-volume "$id" +5% ;;
-            "󰕾  Volume -5%") notify_on_fail pactl set-sink-input-volume "$id" -5% ;;
+            "󰝝  Volume +5%") notify_on_fail pactl set-sink-input-volume "$id" +5% ;;
+            "󰝞  Volume -5%") notify_on_fail pactl set-sink-input-volume "$id" -5% ;;
         esac
         ;;
 esac

@@ -18,7 +18,7 @@ choice=$(printf "%s\n" \
     "󰖪  Disconnect" \
     "󰅙  Forget Network" \
     "󰆏  Copy IP Address" \
-    "󰍁  Share Wi-Fi QR" \
+    "󰐲  Share Wi-Fi QR" \
     | fuzzel --dmenu --prompt "network: ")
 
 case "$choice" in
@@ -44,14 +44,14 @@ case "$choice" in
         [ -n "$dev" ] && notify_on_fail nmcli dev disconnect "$dev"
         ;;
     "󰅙  Forget Network")
-        name=$(nmcli -e no -t -f NAME connection show | fuzzel --dmenu --prompt "forget: ")
+        name=$(nmcli -e no -t -f NAME connection show | sort -f | fuzzel --dmenu --prompt "forget: ")
         [ -n "$name" ] && notify_on_fail nmcli connection delete "$name"
         ;;
     "󰆏  Copy IP Address")
         dev=$(nmcli -t -f DEVICE,STATE dev status | awk -F: '$2=="connected"{print $1; exit}')
         [ -n "$dev" ] && nmcli -t -f IP4.ADDRESS dev show "$dev" | cut -d: -f2 | cut -d/ -f1 | wl-copy
         ;;
-    "󰍁  Share Wi-Fi QR")
+    "󰐲  Share Wi-Fi QR")
         conn=$(nmcli -t -f NAME,TYPE connection show --active | awk -F: '$2=="802-11-wireless"{print $1; exit}')
         [ -n "$conn" ] || exit 0
         ssid=$(nmcli -g 802-11-wireless.ssid connection show "$conn")

@@ -1,0 +1,6 @@
+# Overrides /usr/share/applications/avahi-discover.desktop: hides "Avahi Zeroconf Browser" from
+# the app launcher without touching the system package's own file.
+[Desktop Entry]
+Type=Application
+Name=Avahi Zeroconf Browser
+Hidden=true

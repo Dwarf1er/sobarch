@@ -1,0 +1,6 @@
+# Overrides /usr/share/applications/nvtop.desktop: hides "nvtop" from
+# the app launcher without touching the system package's own file.
+[Desktop Entry]
+Type=Application
+Name=nvtop
+Hidden=true

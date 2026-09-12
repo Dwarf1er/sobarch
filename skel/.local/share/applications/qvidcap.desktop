@@ -1,0 +1,6 @@
+# Overrides /usr/share/applications/qvidcap.desktop: hides "Qt V4L2 video capture utility" from
+# the app launcher without touching the system package's own file.
+[Desktop Entry]
+Type=Application
+Name=Qt V4L2 video capture utility
+Hidden=true

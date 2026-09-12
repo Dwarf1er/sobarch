@@ -1,0 +1,6 @@
+# Overrides /usr/share/applications/pcmanfm-desktop-pref.desktop: hides "Desktop Preferences" from
+# the app launcher without touching the system package's own file.
+[Desktop Entry]
+Type=Application
+Name=Desktop Preferences
+Hidden=true

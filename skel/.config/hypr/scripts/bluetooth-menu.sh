@@ -1,9 +1,6 @@
 #!/bin/bash
 
-# md-bluetooth: system-menu.sh's own "Bluetooth" entry is missing its
-# icon glyph (confirmed: that line has two plain spaces, not a
-# character, where every sibling entry has one), so this is the first
-# use of it in the repo rather than a reuse.
+# md-bluetooth (U+F00AF), reused from system-menu.sh's "Bluetooth" entry
 TITLE=$'\U000F00AF'"  sobarch: bluetooth"
 
 # notify_on_fail runs a bluetoothctl action and, only if it fails,
@@ -18,8 +15,8 @@ notify_on_fail() {
 
 choice=$(printf "%s\n" \
     "⏻  Toggle Power" \
-    "  Scan & Connect" \
-    "  Paired Devices" \
+    "󰂱  Scan & Connect" \
+    "󰾰  Paired Devices" \
     "󰂲  Disconnect" \
     | fuzzel --dmenu --prompt "bluetooth: ")
 
@@ -31,19 +28,19 @@ case "$choice" in
             notify_on_fail bluetoothctl power on
         fi
         ;;
-    "  Scan & Connect")
+    "󰂱  Scan & Connect")
         bluetoothctl power on
         bluetoothctl agent NoInputNoOutput
         bluetoothctl default-agent
         bluetoothctl --timeout 8 scan on >/dev/null 2>&1
-        mac=$(bluetoothctl devices | cut -d' ' -f2- | fuzzel --dmenu --prompt "connect: " | awk '{print $1}')
+        mac=$(bluetoothctl devices | sed -E 's/^Device ([0-9A-F:]+) (.*)$/\2\t\1/' | sort -f | fuzzel --dmenu --with-nth=1 --prompt "connect: " | cut -f2)
         [ -n "$mac" ] || exit 0
         notify_on_fail bluetoothctl pair "$mac"
         notify_on_fail bluetoothctl trust "$mac"
         notify_on_fail bluetoothctl connect "$mac"
         ;;
-    "  Paired Devices")
-        mac=$(bluetoothctl devices Paired | cut -d' ' -f2- | fuzzel --dmenu --prompt "paired: " | awk '{print $1}')
+    "󰾰  Paired Devices")
+        mac=$(bluetoothctl devices Paired | sed -E 's/^Device ([0-9A-F:]+) (.*)$/\2\t\1/' | sort -f | fuzzel --dmenu --with-nth=1 --prompt "paired: " | cut -f2)
         [ -n "$mac" ] || exit 0
         action=$(printf "%s\n" "󰌷  Connect" "󰌸  Disconnect" "󰆴  Remove" | fuzzel --dmenu --prompt "action: ")
         case "$action" in
@@ -53,7 +50,7 @@ case "$choice" in
         esac
         ;;
     "󰂲  Disconnect")
-        mac=$(bluetoothctl devices Connected | cut -d' ' -f2- | fuzzel --dmenu --prompt "disconnect: " | awk '{print $1}')
+        mac=$(bluetoothctl devices Connected | sed -E 's/^Device ([0-9A-F:]+) (.*)$/\2\t\1/' | sort -f | fuzzel --dmenu --with-nth=1 --prompt "disconnect: " | cut -f2)
         [ -n "$mac" ] && notify_on_fail bluetoothctl disconnect "$mac"
         ;;
 esac

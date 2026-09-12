@@ -1,0 +1,6 @@
+# Overrides /usr/share/applications/org.fcitx.fcitx5-migrator.desktop: hides "Fcitx 5 Migration Wizard" from
+# the app launcher without touching the system package's own file.
+[Desktop Entry]
+Type=Application
+Name=Fcitx 5 Migration Wizard
+Hidden=true
