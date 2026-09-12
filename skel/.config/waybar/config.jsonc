@@ -10,7 +10,10 @@
 {
   "layer": "top",
   "position": "top",
-  "height": 40,
+  "height": 44,
+  "margin-top": 8,
+  "margin-left": 8,
+  "margin-right": 8,
   "spacing": 4,
   "modules-left": ["hyprland/workspaces"],
   "modules-center": ["clock"],

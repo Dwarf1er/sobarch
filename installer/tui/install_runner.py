@@ -2,8 +2,9 @@
 pre-reboot arch-chroot step (deploying aur-sync.sh, building/installing
 sobarch-skel, sobarch-scripts, sobarch-limine-snapshots, and the
 base-required AUR packages, deploying the first-boot units,
-nvidia-setup.sh, snapper-setup.sh, rescue-iso-setup.sh, in that order)
-against the still-mounted target.
+nvidia-setup.sh, snapper-setup.sh, limine-theme-setup.sh,
+rescue-iso-setup.sh, ly-theme-setup.sh, in that order) against the
+still-mounted target.
 Only meaningfully testable on a real Arch ISO with a real disk; kept in
 its own module, independent of the Screen that drives it, so at least
 its config-generation half stays covered by the same tests as the rest
@@ -27,7 +28,13 @@ from state import WizardState
 
 MOUNTPOINT = Path("/mnt")
 ARCHINSTALL_DIR = Path(__file__).resolve().parent.parent / "archinstall"
-CHROOT_SETUP_SCRIPTS = ["nvidia-setup.sh", "snapper-setup.sh", "rescue-iso-setup.sh"]
+CHROOT_SETUP_SCRIPTS = [
+    "nvidia-setup.sh",
+    "snapper-setup.sh",
+    "limine-theme-setup.sh",
+    "rescue-iso-setup.sh",
+    "ly-theme-setup.sh",
+]
 CHROOT_SETUP_DIR_IN_TARGET = Path("/root/sobarch-setup")
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent

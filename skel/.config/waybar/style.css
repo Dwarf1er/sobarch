@@ -10,27 +10,28 @@
 window#waybar {
     background-color: @base00;
     color: @base05;
-    border: 2px solid @base0D;
+    border: 1px solid alpha(@base05, 0.12);
+    border-radius: 20px;
 }
 
 /* Workspaces */
 #workspaces {
     background: transparent;
-    margin: 4px 0;
+    margin: 6px 4px;
 }
 
 #workspaces button {
-    background: transparent;
+    background: alpha(@base05, 0.06);
     color: @base05;
     border: none;
-    border-radius: 8px;
-    padding: 4px 8px;
-    margin: 0 2px;
-    transition: all 0.3s ease;
+    border-radius: 999px;
+    padding: 6px 12px;
+    margin: 0 3px;
+    transition: all 0.2s ease;
 }
 
 #workspaces button:hover {
-    background-color: alpha(@base0D, 0.2);
+    background-color: alpha(@base0D, 0.18);
     color: @base0D;
 }
 
@@ -46,29 +47,24 @@ window#waybar {
 
 /* Window title */
 #window {
-    color: @base05;
+    color: alpha(@base05, 0.7);
     font-style: italic;
-    margin: 4px 8px;
+    margin: 6px 12px;
 }
 
 /* Clock */
 #clock {
     color: @base0D;
-    background: transparent;
-    padding: 4px 12px;
-    border-radius: 8px;
-    margin: 4px 0;
-    border: 1px solid transparent;
-}
-
-#clock:hover {
-    border: 1px solid @base0D;
+    background: alpha(@base0D, 0.12);
+    padding: 6px 16px;
+    border-radius: 999px;
+    margin: 6px 4px;
 }
 
 /* System tray */
 #tray {
     background: transparent;
-    margin: 4px 4px;
+    margin: 6px 8px;
 }
 
 #tray > .passive {
@@ -79,17 +75,17 @@ window#waybar {
     -gtk-icon-effect: highlight;
 }
 
-/* Module styling */
+/* Module styling - tonal "chip" surfaces */
 #battery,
 #custom-system,
-#language {
-    background: transparent;
+#language,
+#custom-fcitx5 {
+    background: alpha(@base05, 0.06);
     color: @base05;
-    padding: 4px 8px;
-    margin: 4px 2px;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    transition: all 0.3s ease;
+    padding: 6px 14px;
+    margin: 6px 3px;
+    border-radius: 999px;
+    transition: all 0.2s ease;
 }
 
 /* Do Not Disturb (collapses to zero width when inactive) */
@@ -98,53 +94,42 @@ window#waybar {
     background: transparent;
     padding: 0;
     margin: 0;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    transition: all 0.3s ease;
+    border-radius: 999px;
+    transition: all 0.2s ease;
 }
 
 #custom-dnd.active {
-    padding: 4px 8px;
-    margin: 4px 2px;
+    background: alpha(@base08, 0.14);
+    padding: 6px 14px;
+    margin: 6px 3px;
 }
 
-#custom-dnd:hover {
-    border: 1px solid @base08;
-}
-
-/* Individual module colors and hover effects */
+/* Individual module colors */
 #battery {
     color: @base0B;
-}
-
-#battery:hover {
-    border: 1px solid @base0B;
+    background: alpha(@base0B, 0.12);
 }
 
 #battery.warning {
     color: @base0A;
+    background: alpha(@base0A, 0.14);
 }
 
 #battery.critical {
     color: @base08;
+    background: alpha(@base08, 0.16);
     animation: blink 1s linear infinite alternate;
 }
 
 #custom-system {
     color: @base0D;
-}
-
-#custom-system:hover {
-    border: 1px solid @base0D;
+    background: alpha(@base0D, 0.12);
 }
 
 /* Language/Keyboard layout */
-#custom-fcitx5{
+#custom-fcitx5 {
     color: @base0C;
-}
-
-#custom-fcitx5:hover {
-    border: 1px solid @base0C;
+    background: alpha(@base0C, 0.12);
 }
 
 /* Animations */
