@@ -1,0 +1,114 @@
+// Tinted8 {{scheme.name}}
+// Author: {{scheme.author}}
+//
+// base16-waybar (the upstream template already wired for style.css)
+// only covers CSS custom properties, not this file: waybar's clock
+// module colors its calendar cells via inline Pango markup spans
+// (no CSS class hook exists for them), so this local template renders
+// the whole config.jsonc, non-color settings included, the same way
+// the hyprlock/starship/fastfetch local templates do.
+{
+  "layer": "top",
+  "position": "top",
+  "height": 44,
+  "margin-top": 8,
+  "margin-left": 8,
+  "margin-right": 8,
+  "spacing": 4,
+  "modules-left": ["hyprland/workspaces"],
+  "modules-center": ["clock"],
+  "modules-right": ["custom/fcitx5", "custom/dnd", "network", "bluetooth", "custom/system", "battery"],
+
+  "hyprland/workspaces": {
+    "on-click": "activate",
+    "format": "{icon}",
+    "all-outputs": true
+  },
+
+  "clock": {
+    "interval": 1,
+    "format": "{:%a %d  %H:%M}",
+    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      "mode": "year",
+      "mode-mon-col": 3,
+      "weeks-pos": "right",
+      "on-scroll": 1,
+      "format": {
+        "months": "<span color='#{{palette.blue.normal.hex}}'><b>{}</b></span>",
+        "days": "<span color='#{{ui.global.foreground.normal.hex}}'><b>{}</b></span>",
+        "weeks": "<span color='#{{palette.cyan.normal.hex}}'><b>W{}</b></span>",
+        "weekdays": "<span color='#{{palette.cyan.normal.hex}}'><b>{}</b></span>",
+        "today": "<span background='#{{palette.blue.normal.hex}}' color='#{{ui.global.background.normal.hex}}'><b> {} </b></span>"
+      }
+    }
+  },
+
+  "network": {
+    "format-wifi": "{icon}",
+    "format-ethernet": "󰈀",
+    "format-disconnected": "󰤭",
+    "format-icons": {
+      "wifi": ["󰤟", "󰤢", "󰤥", "󰤨"]
+    },
+    "tooltip-format-wifi": "{essid} ({signalStrength}%)",
+    "tooltip-format-ethernet": "{ifname}",
+    "tooltip-format-disconnected": "Disconnected",
+    "on-click": "bash ~/.config/hypr/scripts/network-menu.sh"
+  },
+
+  "bluetooth": {
+    "format": "󰂯",
+    "format-disabled": "󰂲",
+    "format-connected": "󰂱 {num_connections}",
+    "tooltip-format": "{controller_alias}",
+    "tooltip-format-connected": "{controller_alias}\n{device_enumerate}",
+    "on-click": "bash ~/.config/hypr/scripts/bluetooth-menu.sh"
+  },
+
+  "custom/fcitx5": {
+    "exec": "~/.config/waybar/scripts/fcitx5-status.sh",
+    "interval": 1,
+    "return-type": "json",
+    "format": "{text}",
+    "on-click": "fcitx5-remote -t"
+  },
+
+  "battery": {
+    "format": "{icon}  {capacity}%",
+    "format-icons": {
+      "charging": [
+        "󰢜","󰂆","󰂇","󰂈","󰢝","󰂉","󰢞","󰂊","󰂋","󰂅"
+      ],
+      "default": [
+        "󰁺","󰁻","󰁼","󰁽","󰁾","󰁿","󰂀","󰂁","󰂂","󰁹"
+      ]
+    },
+    "format-full": "Charged ",
+    "interval": 5,
+    "states": {
+      "warning": 20,
+      "critical": 10
+    },
+    "tooltip": true
+  },
+
+  "custom/dnd": {
+    "exec": "~/.config/waybar/scripts/dnd-status.sh",
+    "interval": 2,
+    "return-type": "json",
+    "format": "{}",
+    "on-click": "makoctl mode -t do-not-disturb"
+  },
+
+  "custom/system": {
+    "exec": "~/.config/waybar/scripts/system-status.sh",
+    "interval": 5,
+    "return-type": "json",
+    "format": "{}",
+    "on-click": "bash ~/.config/hypr/scripts/audio-menu.sh",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "on-scroll-up": "wpctl set-volume --limit 1.0 @DEFAULT_AUDIO_SINK@ 5%+",
+    "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
+  }
+}

@@ -1,0 +1,23 @@
+## Tinted8 {{scheme.name}}
+# Author: {{scheme.author}}
+#
+# You can use these variables anywhere in the mako configuration file.
+#
+# Same mapping as stacyharper/base16-mako, authored locally instead of
+# reused from that repo: it only pre-builds 140 of the 338 schemes in
+# the org's schemes repo, so switching to an uncovered scheme silently
+# left mako's colors stale (found and verified directly this session).
+
+background-color=#{{ui.global.background.normal.hex}}
+text-color=#{{ui.global.foreground.normal.hex}}
+border-color=#{{palette.blue.normal.hex}}
+
+[urgency=low]
+background-color=#{{ui.global.background.normal.hex}}
+text-color=#{{palette.yellow.normal.hex}}
+border-color=#{{palette.blue.normal.hex}}
+
+[urgency=high]
+background-color=#{{ui.global.background.normal.hex}}
+text-color=#{{palette.red.normal.hex}}
+border-color=#{{palette.blue.normal.hex}}
