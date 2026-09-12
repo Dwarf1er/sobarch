@@ -8,18 +8,4 @@ else
     icon="󰕾"
 fi
 
-net_dev=$(nmcli -t -f DEVICE,TYPE,STATE dev status 2>/dev/null | awk -F: '$3=="connected"{print $1" ("$2")"; exit}')
-[ -n "$net_dev" ] || net_dev="disconnected"
-
-if [ -d /sys/class/bluetooth ] && command -v bluetoothctl >/dev/null; then
-    if bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
-        bt_status="on"
-    else
-        bt_status="off"
-    fi
-else
-    bt_status="no controller"
-fi
-
-printf '{"text": "%s %s%%", "tooltip": "Volume: %s%%\\nNetwork: %s\\nBluetooth: %s"}\n' \
-    "$icon" "$volpct" "$volpct" "$net_dev" "$bt_status"
+printf '{"text": "%s %s%%", "tooltip": "Volume: %s%%"}\n' "$icon" "$volpct" "$volpct"

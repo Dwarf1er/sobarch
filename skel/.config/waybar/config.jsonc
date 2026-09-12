@@ -17,7 +17,7 @@
   "spacing": 4,
   "modules-left": ["hyprland/workspaces"],
   "modules-center": ["clock"],
-  "modules-right": ["custom/fcitx5", "custom/dnd", "custom/system", "battery"],
+  "modules-right": ["custom/fcitx5", "custom/dnd", "network", "bluetooth", "custom/system", "battery"],
 
   "hyprland/workspaces": {
     "on-click": "activate",
@@ -39,9 +39,28 @@
         "days": "<span color='#abb2bf'><b>{}</b></span>",
         "weeks": "<span color='#56b6c2'><b>W{}</b></span>",
         "weekdays": "<span color='#56b6c2'><b>{}</b></span>",
-        "today": "<span color='#e06c75'><b><u>{}</u></b></span>"
+        "today": "<span background='#61afef' color='#282c34'><b> {} </b></span>"
       }
     }
+  },
+
+  "network": {
+    "format-wifi": "  {signalStrength}%",
+    "format-ethernet": "󰈀",
+    "format-disconnected": "󰤭",
+    "tooltip-format-wifi": "{essid} ({signalStrength}%)",
+    "tooltip-format-ethernet": "{ifname}",
+    "tooltip-format-disconnected": "Disconnected",
+    "on-click": "bash ~/.config/hypr/scripts/network-menu.sh"
+  },
+
+  "bluetooth": {
+    "format": "󰂯",
+    "format-disabled": "󰂲",
+    "format-connected": "󰂱 {num_connections}",
+    "tooltip-format": "{controller_alias}",
+    "tooltip-format-connected": "{controller_alias}\n{device_enumerate}",
+    "on-click": "bash ~/.config/hypr/scripts/bluetooth-menu.sh"
   },
 
   "custom/fcitx5": {
@@ -90,3 +109,4 @@
     "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
   }
 }
+
