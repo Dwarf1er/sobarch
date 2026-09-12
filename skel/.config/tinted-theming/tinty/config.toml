@@ -1,7 +1,7 @@
 # Configuration for Tinty (https://github.com/tinted-theming/tinty)
 #
 # One [[items]] block per themed app. Reused upstream templates for
-# kitty/waybar/hyprland/mako; everything else is authored locally under
+# kitty/hyprland; everything else is authored locally under
 # ~/.config/sobarch/tinty-templates/ (no upstream template exists for
 # them). `tinty apply`/`install`/`sync` never render a template on
 # their own (confirmed by reading tinty's own source: `apply` only
@@ -29,11 +29,13 @@ write-to-file = ["~/.config/kitty/onedark.conf"]
 supported-systems = ["base16", "base24", "tinted8"]
 
 [[items]]
-path = "https://github.com/tinted-theming/base16-waybar"
-name = "base16-waybar"
+path = "~/.config/sobarch/tinty-templates/waybar-css"
+name = "sobarch-waybar-css"
 themes-dir = "colors"
-hook = "cp -r %f ~/.config/waybar/colors.css"
-supported-systems = ["base16"]
+write-to-file = ["~/.config/waybar/colors.css"]
+# Authored locally instead of reused from tinted-theming/base16-waybar:
+# see waybar-css/templates/default.mustache's own comment on why.
+supported-systems = ["base16", "base24", "tinted8"]
 
 [[items]]
 path = "~/.config/sobarch/tinty-templates/waybar-jsonc"
@@ -52,7 +54,7 @@ write-to-file = ["~/.config/waybar/config.jsonc"]
 # not optional. Waits for the old process to actually exit (bounded to
 # 1s) before relaunching, rather than racing a `waybar &` against a
 # not-yet-dead old instance for the same layer-shell surface. Placed on
-# this item, not base16-waybar's (colors.css), since this one runs
+# this item, not sobarch-waybar-css's (colors.css), since this one runs
 # last and both files (colors.css, just written by that earlier item,
 # and config.jsonc, written here) need to already be on disk before the
 # restart happens.
