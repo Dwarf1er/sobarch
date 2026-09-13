@@ -7,23 +7,29 @@
 #
 # hyprpaper links against librsvg, libpng, libjpeg, libwebp and libjxl
 # directly (confirmed via `ldd`) and its `wallpaper` IPC request takes
-# a fit_mode (confirmed via `hyprctl hyprpaper --help`), so it cover-
-# scales whatever format the file is on its own -- confirmed directly
-# this session by applying an SVG to a live monitor with fit_mode
-# "cover" and checking `hyprctl hyprpaper listactive`. That means this
-# script never needs to pre-rasterize or crop anything itself; it just
-# hands the (possibly recolored, see below) file straight to hyprpaper
-# for every connected monitor.
+# a fit_mode (confirmed via `hyprctl hyprpaper --help`), and its own
+# raster-image cover-scaling genuinely works (confirmed directly this
+# session). Its own SVG decoding does not, though: a file with a
+# separate background rect plus a mark path rendered as flat black
+# straight through hyprpaper's IPC, while rasterizing that exact same
+# file to PNG first and handing hyprpaper the PNG displayed correctly
+# (also confirmed directly this session, on a real machine, after
+# every other part of this pipeline, recoloring included, checked out
+# fine). So an SVG selection is always rasterized to PNG here before
+# ever reaching hyprpaper, at the design's own native resolution;
+# hyprpaper's own (working) raster cover-scaling handles fitting that
+# to whatever a given monitor's actual resolution/orientation is, the
+# same way it already does for an ordinary JPG/PNG wallpaper.
 #
 # An SVG selection is expected to follow one convention: an element
 # with id="sobarch-bg" and one with id="sobarch-accent", each carrying
 # a plain fill="#RRGGBB" attribute (not a `style="fill:...` shorthand,
 # see the substitution below for why). Those two get recolored to the
-# current theme's base00/base0D before handing the file to hyprpaper;
-# a plain raster image is used as-is, no recoloring possible or
-# expected. sobarch's own reference design (branding/sobarch-
-# wallpaper.svg, deployed to the backgrounds dir above) follows this
-# convention; anyone can drop their own SVG or image alongside it.
+# current theme's base00/base0D before rasterizing; a plain raster
+# image is used as-is, no recoloring possible or expected. sobarch's
+# own reference design (branding/sobarch-wallpaper.svg, deployed to
+# the backgrounds dir above) follows this convention; anyone can drop
+# their own SVG or image alongside it.
 #
 # Run both as the sobarch-waybar-css tinty item's hook (colors
 # changed, see that item's own comment in config.toml for why its hook
@@ -81,6 +87,12 @@ if [[ "$wallpaper" == *.svg ]]; then
         ' "$wallpaper" >"$recolored"
         path_to_apply="$recolored"
     fi
+
+    command -v rsvg-convert >/dev/null 2>&1 || exit 0
+    mkdir -p "$WORKDIR"
+    rasterized="$WORKDIR/wallpaper.png"
+    rsvg-convert "$path_to_apply" -o "$rasterized" || exit 0
+    path_to_apply="$rasterized"
 fi
 
 while read -r name; do
