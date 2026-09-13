@@ -4,6 +4,16 @@
 # fuzzel, hyprlock), the sobarch wallpaper as a boot background, and
 # branded interface text.
 #
+# Runs twice in this script's lifetime, unmodified either time: once
+# raw-copied into the target and run inside arch-chroot at install time
+# (install_runner.py's CHROOT_SETUP_SCRIPTS), and later, packaged as
+# /usr/local/lib/sobarch/limine-theme-setup.sh by sobarch-scripts,
+# re-run by update-config-menu.sh (via pkexec) whenever sobarch-skel
+# refreshes so an already-installed system picks up branding changes
+# too. Nothing here depends on being inside a fresh chroot specifically
+# (no archinstall-only env vars), and the block-replace logic below is
+# already idempotent, so no separate "refresh" variant was needed.
+#
 # UNVERIFIED: authored from Limine's documented CONFIG.md directives,
 # not confirmed against a real boot. This sandbox has no EFI/bootloader
 # environment to test a limine.conf against, and archinstall's exact

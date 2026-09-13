@@ -8,6 +8,19 @@
 # packaged config.lua's own defaults at all and would have silently
 # done nothing.
 #
+# Runs twice in this script's lifetime, unmodified either time: once
+# raw-copied into the target and run inside arch-chroot at install time
+# (install_runner.py's CHROOT_SETUP_SCRIPTS), and later, packaged as
+# /usr/local/lib/sobarch/ly-theme-setup.sh by sobarch-scripts, re-run by
+# update-config-menu.sh (via pkexec) whenever sobarch-skel refreshes so
+# an already-installed system picks up branding changes too. Nothing
+# here depends on being inside a fresh chroot specifically (no
+# archinstall-only env vars), and every write below already overwrites
+# unconditionally, so no separate "refresh" variant was needed. A
+# config.lua/sobarch-logo.lua rewrite only takes effect the next time ly
+# itself starts (reboot, or `systemctl restart ly`); this script doesn't
+# force that.
+#
 # The centerpiece is the sobarch mark rendered as ASCII art via ly's
 # "lua" animation type (a LuaJIT script implementing draw(), see
 # fairyglade/ly's Lua Animation API: ly.putLabel/ly.width/ly.height),

@@ -42,6 +42,8 @@ source /usr/local/lib/sobarch/durable-replace.sh
 APPLY_SKEL="/usr/local/lib/sobarch/apply-skel.sh"
 BUILD_TINTY_TEMPLATES="/usr/local/lib/sobarch/build-tinty-templates.sh"
 AUR_SYNC="/usr/local/lib/sobarch/aur-sync.sh"
+LIMINE_THEME_SETUP="/usr/local/lib/sobarch/limine-theme-setup.sh"
+LY_THEME_SETUP="/usr/local/lib/sobarch/ly-theme-setup.sh"
 SKEL_SRC="/usr/share/sobarch/skel"
 BASELINE_DIR="$HOME/.local/state/sobarch/skel-baseline"
 
@@ -138,6 +140,22 @@ if ! $review_only; then
         if ! pkexec "$AUR_SYNC" "${to_refresh[@]}"; then
             notify-send "$TITLE" \
                 "Refreshing ${to_refresh[*]} failed (offline?); continuing with the currently installed version(s)."
+        elif [[ -x "$LIMINE_THEME_SETUP" && -x "$LY_THEME_SETUP" ]]; then
+            # Re-applies boot/greeter theming from whatever branding
+            # sobarch-skel just refreshed to. Limine/ly have no
+            # "reload" of their own (a bootloader menu and a greeter
+            # that isn't running right now), so this is what makes
+            # limine.conf/ly's config.lua ever change on an
+            # already-installed system at all -- otherwise they're
+            # install-time-only, as an earlier pass here originally
+            # left them. Both scripts already no-op cheaply when
+            # nothing changed, so this runs on every successful
+            # refresh rather than trying to detect whether branding/
+            # itself was part of it.
+            if ! pkexec bash -c "'$LIMINE_THEME_SETUP' && '$LY_THEME_SETUP'"; then
+                notify-send "$TITLE" \
+                    "Refreshing boot/greeter theming failed; limine.conf or ly's config.lua may be stale until the next Update Config run."
+            fi
         fi
     fi
     if ! "$APPLY_SKEL"; then
