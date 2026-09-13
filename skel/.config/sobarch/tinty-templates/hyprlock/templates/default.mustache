@@ -14,39 +14,26 @@ background {
     color = rgba({{base00-hex}}ff)
 }
 
-# Between the username and date labels (70 and 180), not stacked above
-# the clock or below the input field: a small offset from center like
-# this stays clear of the screen edge on any real display, unlike the
-# 380/-170 offsets tried earlier. Exact clearance against the
-# neighboring labels' real rendered text height isn't confirmed against
-# a live display though (see both labels' font_size for the numbers
-# this was sized against); shrink `size` if it still overlaps either
-# one on real hardware.
-#
-# rounding = -1 (hyprlock's own default for `image`, made explicit
-# here) crops to a circle inscribed in `size`. The source PNG is
-# rendered with the mark scaled down and padded within its canvas
-# specifically so that circle doesn't clip it: the artwork's own
-# design bleeds almost to the edge of its square canvas (its bounding
-# box reaches within ~3px of the top/bottom edge), which a circular
-# crop at 1:1 would cut into.
-image {
-    monitor =
-    path = ~/.config/hypr/sobarch-logo.png
-    size = 120
-    rounding = -1
-    position = 0, 125
-    halign = center
-    valign = center
-}
-
+# The whole clock/date/logo/username/input stack below is laid out as
+# one group, not five independently-placed widgets: each position is
+# picked so there's a deliberate ~20-30 unit gap between one widget's
+# edge and the next (using each one's own font_size/size to estimate
+# its rendered extent), then the whole group is shifted so its total
+# span is centered on the screen (halign/valign=center's actual anchor
+# point, confirmed via testing to be true screen center, not wherever
+# this stack happened to sit before). Previous versions anchored the
+# clock at a fixed position with everything else hung below/around it,
+# which read as off-center overall and left too little room between
+# the date and username labels for the image below. If any of these
+# numbers need retuning after a real test, keep the whole group's
+# total span symmetric around 0 rather than moving one widget alone.
 label {
     monitor =
     text = cmd[update:1000] echo "$(date +'%H:%M')"
     color = rgba({{base05-hex}}ff)
     font_size = 96
     font_family = D2CodingLigature Nerd Font Mono
-    position = 0, 260
+    position = 0, 170
     halign = center
     valign = center
 }
@@ -57,7 +44,24 @@ label {
     color = rgba({{base0C-hex}}ff)
     font_size = 20
     font_family = D2CodingLigature Nerd Font Mono
-    position = 0, 180
+    position = 0, 80
+    halign = center
+    valign = center
+}
+
+# rounding = -1 (hyprlock's own default for `image`, made explicit
+# here) crops to a circle inscribed in `size`. The source PNG is
+# rendered with the mark scaled down and padded within its canvas
+# specifically so that circle doesn't clip it: the artwork's own
+# design bleeds almost to the edge of its square canvas (its bounding
+# box reaches within ~3px of the top/bottom edge), which a circular
+# crop at 1:1 would cut into.
+image {
+    monitor =
+    path = ~/.config/hypr/sobarch-logo.png
+    size = 130
+    rounding = -1
+    position = 0, -25
     halign = center
     valign = center
 }
@@ -68,7 +72,7 @@ label {
     color = rgba({{base0D-hex}}ff)
     font_size = 16
     font_family = D2CodingLigature Nerd Font Mono
-    position = 0, 70
+    position = 0, -130
     halign = center
     valign = center
 }
@@ -86,7 +90,7 @@ input-field {
     font_color = rgb({{base05-hex}})
     fade_on_empty = false
     rounding = 28
-    position = 0, 0
+    position = 0, -190
     halign = center
     valign = center
 }
