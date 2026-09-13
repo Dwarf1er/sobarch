@@ -3,7 +3,7 @@ pkgname=sobarch-skel
 # Pure-data meta-package with no upstream releases of its own; pkgver
 # tracks the date skel/ last changed in this monorepo.
 pkgver=20260913
-pkgrel=9
+pkgrel=10
 pkgdesc="Sobarch distribution-owned default desktop configuration (skel)"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
@@ -37,11 +37,11 @@ package() {
     # reconciliation the way everything under skel/ does.
     install -Dm644 "$startdir/data/profiles.txt" "$pkgdir/usr/share/sobarch/profiles.txt"
 
-    # Boot/greeter branding assets, same "outside skel/" reasoning as
-    # profiles.txt above: limine-theme-setup.sh and ly-theme-setup.sh
-    # run inside arch-chroot before the target user's $HOME exists, so
-    # they read these from the package payload rather than from a
-    # skel-deployed path.
-    install -Dm644 "$startdir/../../../branding/sobarch-wallpaper.png" "$pkgdir/usr/share/sobarch/branding/sobarch-wallpaper.png"
+    # Greeter branding asset, same "outside skel/" reasoning as
+    # profiles.txt above: ly-theme-setup.sh runs inside arch-chroot
+    # before the target user's $HOME exists, so it reads this from the
+    # package payload rather than from a skel-deployed path.
+    # limine-theme-setup.sh no longer needs a payload asset of its own:
+    # it sets colors/text only, no wallpaper image.
     install -Dm644 "$startdir/../../../branding/sobarch-logo-ascii.txt" "$pkgdir/usr/share/sobarch/branding/sobarch-logo-ascii.txt"
 }
