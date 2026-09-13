@@ -25,7 +25,9 @@
         "removable": true,
         "uki": false
     },
-    "custom_commands": [],
+    "custom_commands": [
+        "sed -i 's/^PRETTY_NAME=.*/PRETTY_NAME=\"Sobarch\"/' /etc/os-release"
+    ],
     "disk_config": {
         "btrfs_options": {
             "snapshot_config": {
