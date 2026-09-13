@@ -14,17 +14,28 @@ background {
     color = rgba({{base00-hex}}ff)
 }
 
-# Below the input field, not above the clock: stacking another widget
-# above the clock (already at position 260) leaves no headroom on a
-# shorter display (e.g. a 768px-tall panel, half-height 384) once the
-# clock's own font extent and a real gap are accounted for. Below
-# center is unused by every other widget here, so there's guaranteed
-# clearance regardless of screen height.
+# Between the username and date labels (70 and 180), not stacked above
+# the clock or below the input field: a small offset from center like
+# this stays clear of the screen edge on any real display, unlike the
+# 380/-170 offsets tried earlier. Exact clearance against the
+# neighboring labels' real rendered text height isn't confirmed against
+# a live display though (see both labels' font_size for the numbers
+# this was sized against); shrink `size` if it still overlaps either
+# one on real hardware.
+#
+# rounding = -1 (hyprlock's own default for `image`, made explicit
+# here) crops to a circle inscribed in `size`. The source PNG is
+# rendered with the mark scaled down and padded within its canvas
+# specifically so that circle doesn't clip it: the artwork's own
+# design bleeds almost to the edge of its square canvas (its bounding
+# box reaches within ~3px of the top/bottom edge), which a circular
+# crop at 1:1 would cut into.
 image {
     monitor =
     path = ~/.config/hypr/sobarch-logo.png
-    size = 100
-    position = 0, -170
+    size = 120
+    rounding = -1
+    position = 0, 125
     halign = center
     valign = center
 }
