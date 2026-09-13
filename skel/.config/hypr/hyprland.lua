@@ -68,6 +68,28 @@ hl.on("hyprland.start", function()
 	hl.exec_cmd("command -v tinty >/dev/null 2>&1 && { tinty list | grep -q . || { tinty install && /usr/local/lib/sobarch/build-tinty-templates.sh; }; tinty init; }")
 end)
 
+-------------------------------
+---- WALLPAPER ON HOTPLUG ----
+-------------------------------
+
+-- Re-runs apply-wallpaper.sh whenever a monitor is connected or
+-- disconnected, so a newly plugged monitor gets composed at its own
+-- resolution and orientation immediately instead of waiting for the
+-- next tinty theme switch.
+--
+-- "monitor.added"/"monitor.removed" are the event names implied by
+-- Hyprland's own event-bus field names under monitor.*, but aren't
+-- independently confirmed against this exact Hyprland version. Each
+-- call is wrapped in pcall so that if a name turns out wrong, hl.on's
+-- error is swallowed instead of aborting the rest of this file: this
+-- one feature just stays inactive rather than breaking everything else
+-- hyprland.lua configures.
+local function refresh_wallpaper()
+	hl.exec_cmd("$HOME/.config/hypr/scripts/apply-wallpaper.sh")
+end
+pcall(function() hl.on("monitor.added", refresh_wallpaper) end)
+pcall(function() hl.on("monitor.removed", refresh_wallpaper) end)
+
 hl.exec_cmd('gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"')
 hl.exec_cmd('gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"')
 hl.exec_cmd('gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark"')

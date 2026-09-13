@@ -1,11 +1,9 @@
 default:
-  extension: .jsonc
-  output: colors
+  filename: "colors/{{ scheme-system }}-{{ scheme-slug }}.jsonc"
   supported-systems: [base16, base24]
 
 tinted8:
-  extension: .jsonc
-  output: colors
+  filename: "colors/{{ scheme-system }}-{{ scheme-slug }}.jsonc"
   supported-systems: [tinted8]
   supports:
     tinted8-builder: "~0.2.0"

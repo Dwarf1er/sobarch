@@ -35,6 +35,13 @@ themes-dir = "colors"
 write-to-file = ["~/.config/waybar/colors.css"]
 # Authored locally instead of reused from tinted-theming/base16-waybar:
 # see waybar-css/templates/default.mustache's own comment on why.
+#
+# apply-wallpaper.sh's own hook is attached here rather than to a
+# dedicated tinty item: it reads base00/base0D straight out of this
+# item's own colors.css (no separate wallpaper-specific template to
+# keep in sync), so hooking its own write is the actual dependency,
+# not a borrowed one.
+hook = "~/.config/hypr/scripts/apply-wallpaper.sh"
 supported-systems = ["base16", "base24", "tinted8"]
 
 [[items]]

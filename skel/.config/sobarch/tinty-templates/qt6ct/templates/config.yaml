@@ -1,11 +1,9 @@
 default:
-  extension: .conf
-  output: colors
+  filename: "colors/{{ scheme-system }}-{{ scheme-slug }}.conf"
   supported-systems: [base16, base24]
 
 tinted8:
-  extension: .conf
-  output: colors
+  filename: "colors/{{ scheme-system }}-{{ scheme-slug }}.conf"
   supported-systems: [tinted8]
   supports:
     tinted8-builder: "~0.2.0"
