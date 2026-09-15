@@ -145,7 +145,7 @@ if ! $review_only; then
             # sobarch-skel just refreshed to. Limine/ly have no
             # "reload" of their own (a bootloader menu and a greeter
             # that isn't running right now), so this is what makes
-            # limine.conf/ly's config.lua ever change on an
+            # limine.conf/ly's config.ini ever change on an
             # already-installed system at all -- otherwise they're
             # install-time-only, as an earlier pass here originally
             # left them. Both scripts already no-op cheaply when
@@ -154,7 +154,7 @@ if ! $review_only; then
             # itself was part of it.
             if ! pkexec bash -c "'$LIMINE_THEME_SETUP' && '$LY_THEME_SETUP'"; then
                 notify-send "$TITLE" \
-                    "Refreshing boot/greeter theming failed; limine.conf or ly's config.lua may be stale until the next Update Config run."
+                    "Refreshing boot/greeter theming failed; limine.conf or ly's config.ini may be stale until the next Update Config run."
             fi
         fi
     fi

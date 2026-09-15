@@ -3,7 +3,7 @@ pkgname=sobarch-skel
 # Pure-data meta-package with no upstream releases of its own; pkgver
 # tracks the date skel/ last changed in this monorepo.
 pkgver=20260915
-pkgrel=1
+pkgrel=2
 pkgdesc="Sobarch distribution-owned default desktop configuration (skel)"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
@@ -42,7 +42,14 @@ package() {
     # both run inside arch-chroot before the target user's $HOME exists,
     # so they read these from the package payload rather than from a
     # skel-deployed path.
-    install -Dm644 "$startdir/../../../branding/sobarch-logo-ascii.txt" "$pkgdir/usr/share/sobarch/branding/sobarch-logo-ascii.txt"
+    #
+    # sobarch-logo.dur is a prebuilt ly DurFile animation (gzip-compressed
+    # JSON; see ly-theme-setup.sh's own header comment for why this isn't
+    # generated at install time the way the old Lua-based logo was), not
+    # regenerated from sobarch-logo-ascii.txt automatically -- if the mark
+    # in that ascii file ever changes, this .dur has to be rebuilt by hand
+    # to match, same as sobarch-logo-lockscreen.png below already is.
+    install -Dm644 "$startdir/../../../branding/sobarch-logo.dur" "$pkgdir/usr/share/sobarch/branding/sobarch-logo.dur"
     # 512x512, mostly-transparent mark (not the full opaque desktop
     # wallpaper): centered at native size over Limine's `backdrop`
     # colour, it stays small enough not to fight the menu text for
