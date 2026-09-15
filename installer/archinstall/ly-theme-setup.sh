@@ -24,98 +24,102 @@
 # here depends on being inside a fresh chroot specifically (no
 # archinstall-only env vars), and every write below already overwrites
 # unconditionally, so no separate "refresh" variant was needed. A
-# config.ini/sobarch-logo.dur rewrite only takes effect the next time ly
-# itself starts (reboot, or `systemctl restart ly@tty1` -- the unit is
-# templated per-tty, confirmed against the test machine's own
+# config.ini/sobarch-wordmark.dur rewrite only takes effect the next
+# time ly itself starts (reboot, or `systemctl restart ly@tty1` -- the
+# unit is templated per-tty, confirmed against the test machine's own
 # `pacman -Ql ly`, not a plain `ly.service`); this script doesn't force
 # that.
 #
-# The centerpiece is the sobarch mark played back via ly's built-in
-# `dur_file` animation type (config.ini's `animation` key has a fixed
-# enum: none/doom/matrix/colormix/gameoflife/dur_file -- confirmed
-# against the test machine's own /etc/ly/config.ini.example -- there is
-# no way to point it at a custom script or a plain static image; a
-# single-frame .dur "movie" is the only way to get a static custom
-# mark out of ly at all). The .dur file itself
-# (branding/sobarch-logo.dur) is a prebuilt gzip-compressed JSON asset,
-# not generated here.
+# The centerpiece is a "SOBARCH" wordmark (not the pictorial logo mark
+# used at boot/lockscreen) played back via ly's built-in `dur_file`
+# animation type (config.ini's `animation` key has a fixed enum:
+# none/doom/matrix/colormix/gameoflife/dur_file -- confirmed against
+# the test machine's own /etc/ly/config.ini.example -- there is no way
+# to point it at a custom script or a plain static image; a
+# single-frame .dur "movie" is the only way to get static custom
+# content out of ly at all). Superseded the pictorial mark (real-machine
+# testing, 2026-09-15): once actually visible on the greeter, that mark
+# (40x21 cells) turned out taller than the console's actual clear space
+# above ly's login box (only 18 rows, confirmed on the test machine;
+# ly's box position is hardcoded dead-center on both axes in this
+# version, no config exists to move it -- see below), an unavoidable
+# few rows of overlap at any vertical placement. The wordmark
+# (branding/sobarch-wordmark-ascii.txt, `branding/sobarch-wordmark.dur`
+# built from it) is only 7 rows tall, comfortably inside that budget
+# with room to spare, sidestepping the problem instead of fighting it.
+# It reads "SOBARCH" with the initial S replaced by the Hangul
+# consonant "siot" (ㅅ, U+3145) for a stylized mark, rendered via an
+# actual bold typeface (Noto Sans Black for the Latin letters, Noto
+# Sans CJK KR Black for ㅅ, height-matched by trimming each glyph to
+# its true ink bounds first -- the CJK font's own reported bounding box
+# included ~24px of invisible padding below the glyph, which is what
+# made a first attempt render ㅅ visibly shorter than the rest) and
+# downsampled to terminal cells using upper/lower half-block characters
+# (▄▀█) for 2x the vertical resolution of a plain character-per-cell
+# rendering, the same technique real terminal image viewers use. Both
+# files are prebuilt, not generated on the live ISO/target; regenerate
+# by hand (same font-render + half-block-downsample approach, then the
+# colorFormat/index scheme documented below) if the wordmark ever
+# changes.
 #
-# Real-machine testing (2026-09-15) confirmed the dur_file mechanism
-# itself does render (gzip+JSON parsing, sizing, glyph placement all
-# correct) but showed the mark in plain white, not colored, and
-# animated (reveal/disperse) rather than static -- both from this
-# file's first version, built before ly's actual color-index remap was
-# read from source. Fixed by reading fairyglade/ly's real upstream
-# source directly this time (DurFile.zig, TerminalBuffer.zig), not
-# copying an index pair from ly's own res/example.dur and hoping:
-#   - The old file used colorFormat 16 with fg/bg index 8 on every
-#     glyph cell. DurFile.zig's `draw()` remaps a 16-format index
-#     through `durcolor_table_to_color16` before use -- fg index 8
-#     remaps to 7, bg index 8 remaps (via its own `+1` offset quirk,
-#     confirmed in source, not guessed) to 8. With `full_color = true`
-#     (ly's own documented default, now also set explicitly below),
-#     those feed into `convert256ToRgb`, landing on
-#     `rgb_color_16[7]` = `TRUE_DIM_WHITE` (0xC0C0C0) for the glyph and
-#     `rgb_color_16[8]` = `Color.DEFAULT | BOLD` (transparent) for the
-#     background -- exactly the plain-white-on-transparent look
-#     reported.
-#   - The new file uses colorFormat 256 instead, which skips that
-#     16-color remap entirely (confirmed in source: the remap only
-#     runs `if (self.is_color_format_16)`) and passes the raw index
-#     straight into the same `convert256ToRgb`. Glyph cells use index
-#     75 (`sixCubeToChannel(1,3,5)` = 0x5FAFFF), the closest color in
+# ly's `dur_file` color handling (confirmed by reading fairyglade/ly's
+# real upstream source directly -- DurFile.zig, TerminalBuffer.zig --
+# not assumed, and cross-checked between its master branch and the
+# actually-installed v1.4.1 tag specifically, since master has already
+# drifted in places, e.g. a since-added configurable login-box position
+# this installed version doesn't have):
+#   - `colorFormat: "256"` (not "16") skips DurFile's fiddly 16-color
+#     index remap entirely (confirmed in source: that remap only runs
+#     `if (self.is_color_format_16)`) and passes the raw index straight
+#     into `convert256ToRgb`. Glyph cells use index 75
+#     (`sixCubeToChannel(1,3,5)` = 0x5FAFFF), the closest color in
 #     xterm-256's 6x6x6 cube to the OneDark accent used everywhere else
-#     in this session (0x61afef; off by 2/0/16 per channel out of
-#     255 -- not exact, cube-quantized colors can't be), and background
+#     in this session (0x61afef; off by 2/0/16 per channel out of 255 --
+#     not exact, cube-quantized colors can't be closer). Background
 #     cells use index 0, which resolves to `Color.DEFAULT` (confirmed:
-#     `rgb_color_16[0]`), the same transparent behavior as before so it
-#     still blends with `bg` below rather than painting a mismatched
-#     box.
-#   - colorFormat 256 requires `full_color = true` or ly refuses to
-#     draw the dur_file at all (config.ini.example's own documented
-#     warning) -- previously only true by relying on that being ly's
-#     compiled-in default when the key was omitted; now set explicitly
-#     below so this doesn't silently break if that default ever
-#     changes upstream.
-#   - The file was also collapsed from 43 frames (a reveal/disperse
-#     animation) down to 1 (the fully-revealed content only): DurFile's
-#     own frame-advance logic (`(self.frames + 1) % frame_count`)
-#     degenerates to redrawing the same single frame forever when
-#     frame_count is 1, confirmed directly in source, so this needed no
-#     config.ini change to stop animating.
-# If the mark in branding/sobarch-logo-ascii.txt ever changes,
-# sobarch-logo.dur has to be regenerated by hand to match (same
-# colorFormat/index scheme above); see sobarch-skel's PKGBUILD comment
-# on it.
+#     `rgb_color_16[0]`), i.e. transparent, so it blends with `bg`
+#     below rather than painting a solid box.
+#   - `colorFormat: "256"` requires `full_color = true` below or ly
+#     silently refuses to draw the dur_file at all
+#     (config.ini.example's own documented warning). This happens to
+#     already be ly's compiled-in default, but is set explicitly rather
+#     than relied on: an earlier version of this file's pictorial-mark
+#     predecessor used the default 16-color remap instead (a leftover
+#     from copying an index pair out of ly's own res/example.dur rather
+#     than reading the remap logic itself) and rendered in plain white
+#     as a direct result -- exactly the kind of undocumented-default
+#     assumption worth not repeating.
+#   - A .dur "movie" is collapsed to a single frame for static content:
+#     DurFile's own frame-advance logic (`(self.frames + 1) %
+#     frame_count`) degenerates to redrawing the same frame forever
+#     when `frame_count` is 1, confirmed directly in source, so no
+#     config.ini setting is needed to stop it animating.
 #
-# UNVERIFIED: the dur_file mechanism itself is now confirmed working on
-# real hardware (above), but this specific fix -- the exact color, the
-# switch to a single static frame, and the center->topcenter alignment
-# change -- has not been watched rendering yet, same sandbox limitation
-# as before (no display/TTY here). Sanity-check on the next real login
-# screen; if the mark is still wrong, the points above are exactly what
-# to re-check first, since each was confirmed against real source this
-# time rather than copied from a working reference. topcenter's actual
-# clearance from the login box specifically depends on the real
-# console's row count (framebuffer console size at the display's real
-# resolution/font, not necessarily 80x24), which isn't known from here;
-# `dur_y_offset` (added to the position topcenter already picks) is the
-# knob to reach for if it's close but still touching, before
-# re-deriving the alignment logic itself.
+# UNVERIFIED: the dur_file mechanism itself, colorFormat 256, and
+# static single-frame playback are all confirmed working on real
+# hardware (the pictorial mark's own fix, same mechanism this wordmark
+# reuses unchanged). Not yet watched rendering, though: this specific
+# wordmark content, and whether `topcenter` actually clears the login
+# box by the comfortable margin expected (18 clear rows measured
+# against a 7-row asset, versus the previous mark's 21-row asset
+# against that same 18-row budget) -- no display/TTY in the sandbox
+# this was authored in. Sanity-check on the next real login screen.
 
 set -euo pipefail
 
-LOGO_SRC="/usr/share/sobarch/branding/sobarch-logo.dur"
-LOGO_DUR="/etc/ly/sobarch-logo.dur"
+WORDMARK_SRC="/usr/share/sobarch/branding/sobarch-wordmark.dur"
+WORDMARK_DUR="/etc/ly/sobarch-wordmark.dur"
 
 mkdir -p /etc/ly
 
-cp -f "$LOGO_SRC" "$LOGO_DUR"
+cp -f "$WORDMARK_SRC" "$WORDMARK_DUR"
 
 # Leftovers from this script's earlier config.lua-based version: ly
 # never reads them (confirmed above), but a stale config.lua sitting
 # next to config.ini is a red herring for whoever debugs this next.
 rm -f /etc/ly/config.lua /etc/ly/sobarch-logo.lua
+# Leftover from the pictorial-mark version this wordmark superseded.
+rm -f /etc/ly/sobarch-logo.dur
 
 # OneDark, same values used across Limine (limine-theme-setup.sh's own
 # interface_branding_color/term_palette), Waybar, mako, fuzzel and
@@ -125,28 +129,28 @@ rm -f /etc/ly/config.lua /etc/ly/sobarch-logo.lua
 cat > /etc/ly/config.ini <<EOF
 allow_empty_password = false
 animation = dur_file
-# animation_frame_delay left at its own default (5ms): sobarch-logo.dur
-# is now a single static frame (see the header comment above), so this
-# only governs how often DurFile redraws an unchanging frame; harmless
+# animation_frame_delay left at its own default (5ms): sobarch-wordmark.dur
+# is a single static frame (see the header comment above), so this only
+# governs how often DurFile redraws an unchanging frame; harmless
 # either way, not worth tuning.
-dur_file_path = $LOGO_DUR
-# topcenter, not center: ly's login box (username/password/session
-# fields) is hardcoded dead-center on screen in the actual installed
-# version (confirmed against fairyglade/ly's real v1.4.1 tag, not its
-# newer master branch, which adds a since-unreleased configurable
+dur_file_path = $WORDMARK_DUR
+# topcenter: ly's login box (username/password/session fields) is
+# hardcoded dead-center on screen in the actual installed version
+# (confirmed against fairyglade/ly's real v1.4.1 tag, not its newer
+# master branch, which adds a since-unreleased configurable
 # box_position_v/h this version doesn't have -- state.box.positionXY in
-# src/main.zig centers on both axes unconditionally). The mark is 40x21
-# cells with content on every single row (no blank padding to trim), so
-# `center` put it directly behind that ~9-row box. `topcenter` anchors
-# it to the top of the screen instead, keeping the existing horizontal
-# centering.
+# src/main.zig centers on both axes unconditionally, no config term
+# feeds into it at all). The wordmark is only 7 rows tall against an
+# 18-row clear budget above the box (measured on the real test
+# machine), so topcenter has ample margin here, unlike the taller
+# pictorial mark this superseded.
 dur_offset_alignment = topcenter
-# Required for sobarch-logo.dur's colorFormat 256 to render at all
+# Required for sobarch-wordmark.dur's colorFormat 256 to render at all
 # (ly's own documented behavior: a 256-format dur file is silently not
 # drawn with this off). This happens to already be ly's own compiled-in
 # default, but is set explicitly rather than relied on, since that's
-# exactly the kind of undocumented-default assumption that already
-# caused this file's original color bug.
+# exactly the kind of undocumented-default assumption that caused this
+# asset's pictorial-mark predecessor's original color bug.
 full_color = true
 bigclock = none
 clock = %a %d %b  %H:%M
