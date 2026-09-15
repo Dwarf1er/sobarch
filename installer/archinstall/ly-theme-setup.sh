@@ -89,13 +89,19 @@
 # on it.
 #
 # UNVERIFIED: the dur_file mechanism itself is now confirmed working on
-# real hardware (above), but this specific fix -- the exact color, and
-# the switch to a single static frame -- has not been watched rendering
-# yet, same sandbox limitation as before (no display/TTY here).
-# Sanity-check on the next real login screen; if the mark is still
-# wrong, the four points above are exactly what to re-check first,
-# since each was confirmed against real source this time rather than
-# copied from a working reference.
+# real hardware (above), but this specific fix -- the exact color, the
+# switch to a single static frame, and the center->topcenter alignment
+# change -- has not been watched rendering yet, same sandbox limitation
+# as before (no display/TTY here). Sanity-check on the next real login
+# screen; if the mark is still wrong, the points above are exactly what
+# to re-check first, since each was confirmed against real source this
+# time rather than copied from a working reference. topcenter's actual
+# clearance from the login box specifically depends on the real
+# console's row count (framebuffer console size at the display's real
+# resolution/font, not necessarily 80x24), which isn't known from here;
+# `dur_y_offset` (added to the position topcenter already picks) is the
+# knob to reach for if it's close but still touching, before
+# re-deriving the alignment logic itself.
 
 set -euo pipefail
 
@@ -124,7 +130,17 @@ animation = dur_file
 # only governs how often DurFile redraws an unchanging frame; harmless
 # either way, not worth tuning.
 dur_file_path = $LOGO_DUR
-dur_offset_alignment = center
+# topcenter, not center: ly's login box (username/password/session
+# fields) is hardcoded dead-center on screen in the actual installed
+# version (confirmed against fairyglade/ly's real v1.4.1 tag, not its
+# newer master branch, which adds a since-unreleased configurable
+# box_position_v/h this version doesn't have -- state.box.positionXY in
+# src/main.zig centers on both axes unconditionally). The mark is 40x21
+# cells with content on every single row (no blank padding to trim), so
+# `center` put it directly behind that ~9-row box. `topcenter` anchors
+# it to the top of the screen instead, keeping the existing horizontal
+# centering.
+dur_offset_alignment = topcenter
 # Required for sobarch-logo.dur's colorFormat 256 to render at all
 # (ly's own documented behavior: a 256-format dur file is silently not
 # drawn with this off). This happens to already be ly's own compiled-in
