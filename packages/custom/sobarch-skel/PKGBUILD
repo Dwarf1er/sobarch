@@ -3,7 +3,7 @@ pkgname=sobarch-skel
 # Pure-data meta-package with no upstream releases of its own; pkgver
 # tracks the date skel/ last changed in this monorepo.
 pkgver=20260913
-pkgrel=10
+pkgrel=11
 pkgdesc="Sobarch distribution-owned default desktop configuration (skel)"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
@@ -37,11 +37,15 @@ package() {
     # reconciliation the way everything under skel/ does.
     install -Dm644 "$startdir/data/profiles.txt" "$pkgdir/usr/share/sobarch/profiles.txt"
 
-    # Greeter branding asset, same "outside skel/" reasoning as
-    # profiles.txt above: ly-theme-setup.sh runs inside arch-chroot
-    # before the target user's $HOME exists, so it reads this from the
-    # package payload rather than from a skel-deployed path.
-    # limine-theme-setup.sh no longer needs a payload asset of its own:
-    # it sets colors/text only, no wallpaper image.
+    # Greeter/bootloader branding assets, same "outside skel/" reasoning
+    # as profiles.txt above: ly-theme-setup.sh and limine-theme-setup.sh
+    # both run inside arch-chroot before the target user's $HOME exists,
+    # so they read these from the package payload rather than from a
+    # skel-deployed path.
     install -Dm644 "$startdir/../../../branding/sobarch-logo-ascii.txt" "$pkgdir/usr/share/sobarch/branding/sobarch-logo-ascii.txt"
+    # 512x512, mostly-transparent mark (not the full opaque desktop
+    # wallpaper): centered at native size over Limine's `backdrop`
+    # colour, it stays small enough not to fight the menu text for
+    # space, unlike the full-screen wallpaper this replaced.
+    install -Dm644 "$startdir/../../../branding/sobarch-logo-lockscreen.png" "$pkgdir/usr/share/sobarch/branding/sobarch-logo.png"
 }
