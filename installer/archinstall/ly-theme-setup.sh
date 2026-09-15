@@ -95,15 +95,18 @@
 #     when `frame_count` is 1, confirmed directly in source, so no
 #     config.ini setting is needed to stop it animating.
 #
-# UNVERIFIED: the dur_file mechanism itself, colorFormat 256, and
-# static single-frame playback are all confirmed working on real
-# hardware (the pictorial mark's own fix, same mechanism this wordmark
-# reuses unchanged). Not yet watched rendering, though: this specific
-# wordmark content, and whether `topcenter` actually clears the login
-# box by the comfortable margin expected (18 clear rows measured
-# against a 7-row asset, versus the previous mark's 21-row asset
-# against that same 18-row budget) -- no display/TTY in the sandbox
-# this was authored in. Sanity-check on the next real login screen.
+# CONFIRMED on real hardware (a real photo, 2026-09-15): the wordmark
+# renders in the intended color, static, clearing the login box with
+# the expected margin at plain `topcenter` (no overlap, unlike the
+# pictorial mark it replaced). That same photo showed it sitting flush
+# against the top hint line with a large uneven gap before the box,
+# which is what `dur_y_offset` above addresses.
+#
+# UNVERIFIED: `dur_y_offset`'s exact effect hasn't itself been watched
+# yet (no display/TTY in the sandbox this was authored in) -- 5 is a
+# computed midpoint of the measured 18-row band, not something rendered
+# and checked. Sanity-check on the next real login screen; if it's off,
+# it's a plain rows-from-top offset, safe to retune directly.
 
 set -euo pipefail
 
@@ -145,6 +148,15 @@ dur_file_path = $WORDMARK_DUR
 # machine), so topcenter has ample margin here, unlike the taller
 # pictorial mark this superseded.
 dur_offset_alignment = topcenter
+# A real photo showed the wordmark sitting flush against row 0 (topcenter's
+# unoffset position), crowding the F1/F2/clock hint line above it and
+# leaving a large, unbalanced gap before the box below. dur_y_offset
+# shifts it down by this many rows from topcenter's y=0 (config.ini.example:
+# "value is added to the current position determined by alignment").
+# 5 roughly centers the 7-row wordmark within the measured 18-row clear
+# band (5 rows clear above it, 6 below), rather than pinning it to
+# either edge.
+dur_y_offset = 5
 # Required for sobarch-wordmark.dur's colorFormat 256 to render at all
 # (ly's own documented behavior: a 256-format dur file is silently not
 # drawn with this off). This happens to already be ly's own compiled-in
