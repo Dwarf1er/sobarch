@@ -1,0 +1,146 @@
+# sobarch Plymouth boot splash: the mark brushed on in two passes,
+# looping, over a solid OneDark background (0x282c34, same value as
+# Limine's `backdrop` / ly's `bg`).
+#
+# This is a reveal-mask, not real vector stroke tracing:
+# branding/sobarch-logo.svg is a single solid filled path, not stroke
+# geometry, so there's no pen-order to trace (see docs/DECISIONS.md's
+# Plymouth entry for the reasoning, and the user's explicit call on
+# this trade-off). The prebaked `sobarch-logo.png` (the same OneDark-
+# blue-on-transparent mark already used by Limine/ly, confirmed by
+# inspecting its actual pixel colors -- not the raw black-fill SVG) is
+# sliced into horizontal strips at load time. Each strip's own crop
+# width (stroke 1: a left-to-right wipe, staggered top-to-bottom so
+# the combined effect reads as one diagonal brush pass) and opacity
+# (stroke 2: a second diagonal pass, bottom-to-top, brightening each
+# strip from a flat "first coat" to a fuller "second coat") are driven
+# from a single global tick counter incremented once per
+# Plymouth.SetRefreshFunction callback.
+#
+# UNVERIFIED, same as ly-theme-setup.sh/limine-theme-setup.sh's own
+# header comments already flag for their own untestable pieces: there
+# is no display/TTY in the sandbox this was authored in, so none of
+# this has actually been watched rendering. Two distinct things are
+# unverified here, for different reasons, and should be checked in
+# this order on the first real reboot:
+#   1. Syntax/API risk: array indexing (`foo[i] = ...`), the `Math.Int`
+#      truncation builtin, and the `global.x` scoping prefix used
+#      inside refresh_callback() below are all used the way real
+#      third-party script themes use them, but weren't individually
+#      confirmed against Plymouth's own primary source the way
+#      Image/Sprite/Crop/SetRefreshFunction were. If the splash fails
+#      to render at all, check these three first.
+#   2. Timing risk: Plymouth.SetRefreshFunction's real callback rate
+#      isn't confirmed against primary source either (commonly cited
+#      around 30-50Hz) -- every *_TICKS constant below is tuned in
+#      ticks, not seconds, and is an approximate starting point, not a
+#      measured duration. Retune these first if the animation plays
+#      but feels too fast/slow, before touching the structure itself.
+
+Window.SetBackgroundTopColor(0.157, 0.173, 0.204);
+Window.SetBackgroundBottomColor(0.157, 0.173, 0.204);
+
+logo_image = Image("sobarch-logo.png");
+logo_width = logo_image.GetWidth();
+logo_height = logo_image.GetHeight();
+
+screen_width = Window.GetWidth(0);
+screen_height = Window.GetHeight(0);
+
+logo_x = (screen_width - logo_width) / 2;
+logo_y = (screen_height - logo_height) / 2;
+
+strip_count = 16;
+strip_height = Math.Int(logo_height / strip_count) + 1;
+
+strip_image = [];
+strip_sprite = [];
+strip_h = [];
+
+i = 0;
+while (i < strip_count) {
+    y = i * strip_height;
+    h = strip_height;
+    if (y + h > logo_height) h = logo_height - y;
+    if (h < 1) h = 1;
+
+    strip_image[i] = logo_image.Crop(0, y, logo_width, h);
+    strip_h[i] = h;
+
+    strip_sprite[i] = Sprite();
+    strip_sprite[i].SetX(logo_x);
+    strip_sprite[i].SetY(logo_y + y);
+    strip_sprite[i].SetZ(10);
+    strip_sprite[i].SetOpacity(0);
+
+    i++;
+}
+
+fun clamp01(x) {
+    if (x < 0) return 0;
+    if (x > 1) return 1;
+    return x;
+}
+
+# Tuning constants: see the "Timing risk" note above before adjusting
+# these to chase a specific real-world duration.
+stagger1_ticks = 6;
+stroke1_ticks = 40;
+gap_ticks = 20;
+stagger2_ticks = 6;
+stroke2_ticks = 30;
+hold_ticks = 90;
+fade_ticks = 40;
+
+base_opacity = 0.55;
+full_opacity = 1.0;
+
+phase1_span = (strip_count - 1) * stagger1_ticks + stroke1_ticks;
+phase2_start = phase1_span + gap_ticks;
+phase2_span = (strip_count - 1) * stagger2_ticks + stroke2_ticks;
+hold_start = phase2_start + phase2_span;
+fade_start = hold_start + hold_ticks;
+cycle_ticks = fade_start + fade_ticks;
+
+global.tick = 0;
+
+fun refresh_callback() {
+    t = global.tick;
+
+    i = 0;
+    while (i < strip_count) {
+        # Stroke 1: left-to-right width reveal, staggered
+        # top-to-bottom across strips.
+        start1 = i * stagger1_ticks;
+        p1 = clamp01((t - start1) / stroke1_ticks);
+
+        w = Math.Int(logo_width * p1);
+        if (w > logo_width) w = logo_width;
+
+        if (w < 1) {
+            strip_sprite[i].SetOpacity(0);
+        } else {
+            strip_sprite[i].SetImage(strip_image[i].Crop(0, 0, w, strip_h[i]));
+
+            # Stroke 2: opacity sweep bottom-to-top, a second "coat"
+            # brightening each already-revealed strip.
+            start2 = phase2_start + (strip_count - 1 - i) * stagger2_ticks;
+            p2 = clamp01((t - start2) / stroke2_ticks);
+            opacity = base_opacity + (full_opacity - base_opacity) * p2;
+
+            if (t >= fade_start) {
+                fade_p = clamp01((t - fade_start) / fade_ticks);
+                opacity = opacity * (1 - fade_p);
+            }
+
+            strip_sprite[i].SetOpacity(opacity);
+        }
+
+        i++;
+    }
+
+    global.tick++;
+    if (global.tick >= cycle_ticks) global.tick = 0;
+}
+
+Plymouth.SetRefreshFunction(refresh_callback);

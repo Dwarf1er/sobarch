@@ -3,8 +3,8 @@ pre-reboot arch-chroot step (deploying aur-sync.sh, building/installing
 sobarch-skel, sobarch-scripts, sobarch-limine-snapshots, and the
 base-required AUR packages, deploying the first-boot units,
 nvidia-setup.sh, snapper-setup.sh, limine-theme-setup.sh,
-rescue-iso-setup.sh, ly-theme-setup.sh, in that order) against the
-still-mounted target.
+plymouth-setup.sh, rescue-iso-setup.sh, ly-theme-setup.sh, in that
+order) against the still-mounted target.
 Only meaningfully testable on a real Arch ISO with a real disk; kept in
 its own module, independent of the Screen that drives it, so at least
 its config-generation half stays covered by the same tests as the rest
@@ -32,6 +32,7 @@ CHROOT_SETUP_SCRIPTS = [
     "nvidia-setup.sh",
     "snapper-setup.sh",
     "limine-theme-setup.sh",
+    "plymouth-setup.sh",
     "rescue-iso-setup.sh",
     "ly-theme-setup.sh",
 ]

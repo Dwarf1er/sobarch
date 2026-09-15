@@ -23,7 +23,8 @@
     "bootloader_config": {
         "bootloader": "Limine",
         "removable": true,
-        "uki": false
+        "uki": false,
+        "plymouth": "spinner"
     },
     "custom_commands": [
         "sed -i 's/^PRETTY_NAME=.*/PRETTY_NAME=\"Sobarch\"/' /etc/os-release"

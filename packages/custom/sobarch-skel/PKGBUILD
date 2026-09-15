@@ -3,7 +3,7 @@ pkgname=sobarch-skel
 # Pure-data meta-package with no upstream releases of its own; pkgver
 # tracks the date skel/ last changed in this monorepo.
 pkgver=20260915
-pkgrel=2
+pkgrel=3
 pkgdesc="Sobarch distribution-owned default desktop configuration (skel)"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
@@ -55,4 +55,11 @@ package() {
     # colour, it stays small enough not to fight the menu text for
     # space, unlike the full-screen wallpaper this replaced.
     install -Dm644 "$startdir/../../../branding/sobarch-logo-lockscreen.png" "$pkgdir/usr/share/sobarch/branding/sobarch-logo.png"
+
+    # Plymouth boot splash theme (script-type): plymouth-setup.sh reads
+    # these from this same package payload, same "outside skel/,
+    # distro-owned, never diff3-reconciled" reasoning as the two files
+    # above.
+    install -Dm644 "$startdir/../../../branding/plymouth-sobarch/sobarch.plymouth" "$pkgdir/usr/share/sobarch/branding/plymouth-sobarch/sobarch.plymouth"
+    install -Dm644 "$startdir/../../../branding/plymouth-sobarch/sobarch.script" "$pkgdir/usr/share/sobarch/branding/plymouth-sobarch/sobarch.script"
 }

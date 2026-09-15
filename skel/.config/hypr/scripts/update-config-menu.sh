@@ -44,6 +44,7 @@ BUILD_TINTY_TEMPLATES="/usr/local/lib/sobarch/build-tinty-templates.sh"
 AUR_SYNC="/usr/local/lib/sobarch/aur-sync.sh"
 LIMINE_THEME_SETUP="/usr/local/lib/sobarch/limine-theme-setup.sh"
 LY_THEME_SETUP="/usr/local/lib/sobarch/ly-theme-setup.sh"
+PLYMOUTH_SETUP="/usr/local/lib/sobarch/plymouth-setup.sh"
 SKEL_SRC="/usr/share/sobarch/skel"
 BASELINE_DIR="$HOME/.local/state/sobarch/skel-baseline"
 
@@ -140,21 +141,22 @@ if ! $review_only; then
         if ! pkexec "$AUR_SYNC" "${to_refresh[@]}"; then
             notify-send "$TITLE" \
                 "Refreshing ${to_refresh[*]} failed (offline?); continuing with the currently installed version(s)."
-        elif [[ -x "$LIMINE_THEME_SETUP" && -x "$LY_THEME_SETUP" ]]; then
-            # Re-applies boot/greeter theming from whatever branding
-            # sobarch-skel just refreshed to. Limine/ly have no
-            # "reload" of their own (a bootloader menu and a greeter
-            # that isn't running right now), so this is what makes
-            # limine.conf/ly's config.ini ever change on an
-            # already-installed system at all -- otherwise they're
-            # install-time-only, as an earlier pass here originally
-            # left them. Both scripts already no-op cheaply when
-            # nothing changed, so this runs on every successful
-            # refresh rather than trying to detect whether branding/
-            # itself was part of it.
-            if ! pkexec bash -c "'$LIMINE_THEME_SETUP' && '$LY_THEME_SETUP'"; then
+        elif [[ -x "$LIMINE_THEME_SETUP" && -x "$LY_THEME_SETUP" && -x "$PLYMOUTH_SETUP" ]]; then
+            # Re-applies boot/greeter/splash theming from whatever
+            # branding sobarch-skel just refreshed to. Limine/ly/
+            # Plymouth have no "reload" of their own (a bootloader
+            # menu, a greeter, and an initramfs-baked splash, none of
+            # which are running right now), so this is what makes
+            # limine.conf/ly's config.ini/the Plymouth theme ever
+            # change on an already-installed system at all -- otherwise
+            # they're install-time-only, as an earlier pass here
+            # originally left them. All three scripts already no-op
+            # cheaply when nothing changed, so this runs on every
+            # successful refresh rather than trying to detect whether
+            # branding/ itself was part of it.
+            if ! pkexec bash -c "'$LIMINE_THEME_SETUP' && '$LY_THEME_SETUP' && '$PLYMOUTH_SETUP'"; then
                 notify-send "$TITLE" \
-                    "Refreshing boot/greeter theming failed; limine.conf or ly's config.ini may be stale until the next Update Config run."
+                    "Refreshing boot/greeter/splash theming failed; limine.conf, ly's config.ini, or the Plymouth theme may be stale until the next Update Config run."
             fi
         fi
     fi

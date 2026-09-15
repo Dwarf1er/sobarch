@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=sobarch
+Description=Sobarch boot splash: the mark brushed on in two strokes
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/sobarch
+ScriptFile=/usr/share/plymouth/themes/sobarch/sobarch.script

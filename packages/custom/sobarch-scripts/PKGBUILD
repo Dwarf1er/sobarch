@@ -3,7 +3,8 @@ pkgname=sobarch-scripts
 # Pure-data-adjacent meta-package (plain bash, no build() step) with no
 # upstream releases of its own; pkgver tracks the date
 # installer/firstboot/*.sh, scripts/aur-sync/aur-sync.sh, or
-# installer/archinstall/{limine,ly}-theme-setup.sh last changed in this
+# installer/archinstall/{limine,ly}-theme-setup.sh or
+# installer/archinstall/plymouth-setup.sh last changed in this
 # monorepo. Gives these scripts the same real pacman version tracking
 # sobarch-skel already has, instead of aur-sync.sh unconditionally
 # re-`install`ing them from a fresh checkout on every run regardless of
@@ -17,7 +18,7 @@ pkgname=sobarch-scripts
 # and the pacman hook have no such per-install variation, so both are
 # packaged below.
 pkgver=20260915
-pkgrel=3
+pkgrel=4
 pkgdesc="Sobarch first-boot reconciliation scripts and the local AUR/custom package sync mechanism"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
@@ -54,11 +55,12 @@ package() {
     # at install time (see its own module docstring), packaged here too
     # so update-config-menu.sh can re-run them against an already
     # installed system whenever sobarch-skel's branding assets change.
-    # Both are idempotent and install-time-agnostic already (no
+    # All three are idempotent and install-time-agnostic already (no
     # archinstall-only env vars, no chroot-only paths), so the same
     # script works unmodified in either context.
     install -Dm755 "$startdir/../../../installer/archinstall/limine-theme-setup.sh" "$pkgdir/usr/local/lib/sobarch/limine-theme-setup.sh"
     install -Dm755 "$startdir/../../../installer/archinstall/ly-theme-setup.sh" "$pkgdir/usr/local/lib/sobarch/ly-theme-setup.sh"
+    install -Dm755 "$startdir/../../../installer/archinstall/plymouth-setup.sh" "$pkgdir/usr/local/lib/sobarch/plymouth-setup.sh"
 
     # Must be executable: NetworkManager only runs dispatcher.d scripts
     # it itself considers executable.
