@@ -192,9 +192,6 @@
             "multilib"
         ]
     },
-    "pacman_config": {
-        "parallel_downloads": 5
-    },
     "network_config": {
         "type": "nm"
     },

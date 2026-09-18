@@ -41,13 +41,15 @@ if [[ -s "$OFFICIAL_LIST" ]]; then
     mapfile -t packages <"$OFFICIAL_LIST"
     total=${#packages[@]}
     echo "sobarch-firstboot: installing $total selected package(s): ${packages[*]}"
-    id=$(notify_user critical "sobarch: installing packages" "Installing $total selected package(s)..." 0 0)
-    n=0
-    for pkg in "${packages[@]}"; do
-        id=$(notify_user critical "sobarch: installing packages" "Installing ($((n + 1))/$total): $pkg" "$id" $((n * 100 / total)))
-        n=$((n + 1))
-        pacman -S --needed --noconfirm "$pkg"
-    done
+    # One transaction for the whole list, not one pacman invocation per
+    # package: each invocation would otherwise redo dependency
+    # resolution and (snap-pac) a full Snapper snapshot pair on its
+    # own, turning a full-profile install into dozens of transactions
+    # instead of one. No per-package percent hint here for the same
+    # reason the AUR branch below has none: nothing incremental to
+    # report mid-transaction, so a numeric value would be fabricated.
+    id=$(notify_user critical "sobarch: installing packages" "Installing $total selected package(s)..." 0)
+    pacman -S --needed --noconfirm "${packages[@]}"
     notify_user critical "sobarch: installing packages" "$total package(s) installed." "$id" 100 >/dev/null
 else
     echo "sobarch-firstboot: no optional official-repo packages were selected."

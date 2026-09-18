@@ -226,7 +226,7 @@ pacman_locked() {
 # full set of tools any PKGBUILD is entitled to assume is already
 # present without declaring it in makedepends, per Arch's own
 # packaging convention (a compiler/toolchain for a real build() step,
-# e.g. vesktop's; debugedit for makepkg's own default
+# e.g. tinty-git's `cargo build`; debugedit for makepkg's own default
 # debug-package generation, which sobarch-skel's PKGBUILD works around
 # with !debug precisely because base-devel isn't part of this minimal
 # base install otherwise). Installed once, up front, rather than
