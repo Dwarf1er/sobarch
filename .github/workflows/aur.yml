@@ -131,10 +131,16 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$branch"
+          git checkout -B "$branch"
           git add "packages/aur/$PKG"
           git commit -m "aur: update $PKG to $newver"
-          git push origin "$branch"
+          # Force: this branch name is entirely derived from
+          # $PKG+$newver above, so it's owned by this automation alone
+          # -- a stale ref left by an earlier run that pushed but
+          # failed before/at `gh pr create` (no open PR, so the guard
+          # above didn't catch it) must never block this run from
+          # reaching the same state.
+          git push --force origin "$branch"
 
           {
             echo "Automated update of \`$PKG\` to \`$newver\`, fetched from its AUR git repo."
