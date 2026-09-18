@@ -39,8 +39,15 @@ mount_opts="compress=zstd:3,ssd,discard=async,space_cache=v2"
 entries=""
 count=0
 
-for snap_dir in "$SNAPSHOTS_DIR"/*/; do
-    id="$(basename "$snap_dir")"
+# Sorted numerically by ID, not via the bare glob's own strcoll order:
+# a plain "$SNAPSHOTS_DIR"/*/ expansion sorts lexicographically, giving
+# 1, 10, 100, 101, ..., 109, 11, 110, ... once snapshot IDs run past
+# single digits. Snapper always names these directories as plain
+# positive integers, so a numeric sort is exact, not a heuristic.
+mapfile -t snap_ids < <(find "$SNAPSHOTS_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -n)
+
+for id in "${snap_ids[@]}"; do
+    snap_dir="$SNAPSHOTS_DIR/$id/"
     subvol_dir="${snap_dir}snapshot"
     info_xml="${snap_dir}info.xml"
     [ -d "$subvol_dir" ] || continue
