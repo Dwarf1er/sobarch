@@ -26,25 +26,8 @@ jobs:
           json="$(cut -d' ' -f1 outdated.txt | jq -R -s -c 'split("\n") | map(select(length > 0))')"
           echo "packages=$json" >> "$GITHUB_OUTPUT"
 
-  build-scanner:
-    needs: check
-    if: needs.check.outputs.packages != '[]'
-    runs-on: ubuntu-latest
-    container: archlinux:base-devel
-    steps:
-      - name: Install build dependencies
-        run: pacman -Sy --needed --noconfirm rust clang openssl git
-      - uses: actions/checkout@v7.0.1
-      - name: Build aur-scan
-        run: .github/scripts/build-aur-scan.sh /tmp/aur-scan
-      - uses: actions/upload-artifact@v7.0.1
-        with:
-          name: aur-scan-binary
-          path: /tmp/aur-scan
-          retention-days: 1
-
   update:
-    needs: [check, build-scanner]
+    needs: check
     if: needs.check.outputs.packages != '[]'
     runs-on: ubuntu-latest
     container: archlinux:base-devel
@@ -54,15 +37,10 @@ jobs:
         package: ${{ fromJson(needs.check.outputs.packages) }}
     steps:
       - name: Install update dependencies
-        run: pacman -Sy --needed --noconfirm git jq curl namcap github-cli
+        run: pacman -Sy --needed --noconfirm git jq github-cli
       - uses: actions/checkout@v7.0.1
       - name: Trust workspace as root despite the build user's chown below
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - uses: actions/download-artifact@v8.0.1
-        with:
-          name: aur-scan-binary
-          path: /usr/local/bin
-      - run: chmod +x /usr/local/bin/aur-scan
       - name: Create build user
         run: |
           useradd -m builder
@@ -81,37 +59,6 @@ jobs:
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Run namcap
-        if: steps.diff.outputs.changed == 'true'
-        env:
-          PKG: ${{ matrix.package }}
-        run: |
-          runuser -u builder -- namcap "packages/aur/$PKG/PKGBUILD" > namcap-output.txt 2>&1 || true
-      - name: Run ks-aur-scanner
-        if: steps.diff.outputs.changed == 'true'
-        env:
-          PKG: ${{ matrix.package }}
-        run: |
-          runuser -u builder -- aur-scan scan "packages/aur/$PKG" --format text > aurscan-output.txt 2>&1 || true
-      - name: Build scan report
-        if: steps.diff.outputs.changed == 'true'
-        env:
-          PKG: ${{ matrix.package }}
-        run: |
-          scanner_ref="$(cat .github/scripts/aur-scan.version)"
-          {
-            echo "Automated scan of the staged \`$PKG\` update."
-            echo
-            echo "### namcap PKGBUILD"
-            echo '```'
-            cat namcap-output.txt
-            echo '```'
-            echo
-            echo "### ks-aur-scanner ($scanner_ref)"
-            echo '```'
-            cat aurscan-output.txt
-            echo '```'
-          } > scan-report.md
       - name: Open pull request
         if: steps.diff.outputs.changed == 'true'
         id: pr
@@ -145,14 +92,9 @@ jobs:
           {
             echo "Automated update of \`$PKG\` to \`$newver\`, fetched from its AUR git repo."
             echo
-            echo "Requires human review before merge (no auto-merge configured); check the diff for anything beyond the version bump before approving. Scan report follows as a separate comment."
+            echo "Requires human review before merge (no auto-merge configured); check the diff for anything beyond the version bump before approving. namcap/aur-scan results are on the Checks tab, run automatically against this PR."
           } > pr-body.txt
           gh pr create --title "aur: update $PKG to $newver" --head "$branch" --base master --body-file pr-body.txt
 
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
           echo "created=true" >> "$GITHUB_OUTPUT"
-      - name: Post scan report
-        if: steps.diff.outputs.changed == 'true' && steps.pr.outputs.created == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh pr comment "${{ steps.pr.outputs.branch }}" --body-file scan-report.md
