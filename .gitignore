@@ -14,3 +14,6 @@ sobarch-install-output/*
 # (skel/.config/sobarch/tinty-templates/*/), rebuilt locally via
 # build-tinty-templates.sh instead of being committed
 skel/.config/sobarch/tinty-templates/*/colors/
+
+# Zola build output (website/), rebuilt by CI for GitHub Pages
+website/public/

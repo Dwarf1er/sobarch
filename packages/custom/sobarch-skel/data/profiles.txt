@@ -1,4 +1,4 @@
-developer|Developer|mise,neovim,presenterm
+developer|Developer|mise,presenterm
 gaming|Gaming|gamescope,lutris,mangohud,prismlauncher,protontricks,steam,protonup-qt-bin:aur
 creative|Creative|audacity,calf,easyeffects,gimp,inkscape,lsp-plugins,obs-studio,shotcut
 maker|Maker / 3D Printing|blender,freecad,orca-slicer-bin:aur

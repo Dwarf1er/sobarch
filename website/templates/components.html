@@ -1,0 +1,495 @@
+{#
+  Tera v2 components, ported from AdiDoks' original Tera v1 macros
+  (upstream: themes/adidoks/templates/macros/*.html). Zola 0.23 moved to
+  Tera v2, which removed macros/imports entirely in favour of globally
+  registered components, so this file is a straight port rather than a
+  design customization: each component below is a 1:1 translation of the
+  matching macro, kept here in one place since components need no import
+  and don't have to live next to their call sites.
+
+  Two behavioral differences from the old macros, both required by
+  Tera v2's stricter semantics:
+  - components are hermetic, so every ambient value a body reads
+    (config, page, section, lang, current_path, current_url) has to be
+    declared as a parameter, usually an implicit `@name` one so call
+    sites don't have to pass it by hand.
+  - `page`/`section` are not always in scope (e.g. `page` on a section
+    render), so accesses go through `?.` optional chaining instead of
+    plain dot access to avoid hard erroring on the missing side.
+#}
+
+{% component head.resource() %}
+{% endcomponent head.resource %}
+
+{% component head.stylesheet() %}
+<link rel="stylesheet" href="{{ get_url(path="main.css") | safe }}">
+{% endcomponent head.stylesheet %}
+
+{% component head.favicons(@config) %}
+  <meta name="theme-color" content="{{ config.extra.theme_color | default(value="#fff") }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ get_url(path="apple-touch-icon.png") | safe }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ get_url(path="favicon-32x32.png") | safe }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ get_url(path="favicon-16x16.png") | safe }}">
+  {% if not config.extra.is_netlify %}
+    <link rel="manifest" href="{{ get_url(path="site.webmanifest") | safe }}" crossorigin>
+  {% endif %}
+{% endcomponent head.favicons %}
+
+{% component head.seo(
+  title = "",
+  title_addition = "",
+  description = "",
+  type = "website",
+  is_home = false,
+  is_404 = false,
+  is_page = false,
+  page_images = "",
+  page_section = "",
+  created_time = none,
+  updated_time = none,
+  @config,
+  @page = none,
+  @section = none,
+  @current_url = none,
+  @current_path = none
+) %}
+{% if is_404 %}
+  <meta name="robots" content="noindex, follow">
+{% else %}
+  <meta name="robots" content="index, follow">
+  <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+{% endif %}
+{% if current_url %}
+	{% set page_url = current_url %}
+{% else %}
+	{% set page_url = get_url(path="404.html") %}
+{% endif %}
+{% if current_path %}
+	{% set page_path = current_path %}
+{% else %}
+	{% set page_path = "/404.html" %}
+{% endif %}
+<title>{{ title ~ title_addition }}</title>
+<meta name="description" content="{{ description }}">
+<link rel="canonical" href="{{ page_url | safe }}">
+
+{% if config.extra.open.enable %}
+  <meta name="twitter:card" content="summary_large_image">
+  {% if page?.extra?.images %}
+    {% for image in page.extra.images %}
+      <meta property="twitter:image" content="{{ get_url(path=image) | safe }}">
+    {% endfor %}
+  {% elif section?.extra?.images %}
+    {% for image in section.extra.images %}
+      <meta property="twitter:image" content="{{ get_url(path=image) | safe }}">
+    {% endfor %}
+  {% elif config.extra.open.image %}
+    <meta name="twitter:image" content="{{ config.base_url | safe }}/{{ config.extra.open.image }}">
+  {% endif %}
+  <meta name="twitter:title" content="{{ title }}">
+  <meta name="twitter:description" content="{{ description }}">
+  {% if config.extra.open.twitter_site %}<meta name="twitter:site" content="@{{ config.extra.open.twitter_site }}">{% endif %}
+  {% if config.extra.open.twitter_creator %}<meta name="twitter:creator" content="@{{ config.extra.open.twitter_creator }}">{% endif %}
+
+  <meta property="og:title" content="{{ title }}">
+  <meta property="og:description" content="{{ description }}">
+  <meta property="og:type" content="{{ type }}">
+  <meta property="og:url" content="{{ page_url | safe }}">
+
+  {% if page?.extra?.images %}
+    {% for image in page.extra.images %}
+      <meta property="og:image" content="{{ get_url(path=image) | safe }}">
+    {% endfor %}
+  {% elif section?.extra?.images %}
+    {% for image in section.extra.images %}
+      <meta property="og:image" content="{{ get_url(path=image) | safe }}">
+    {% endfor %}
+  {% elif config.extra.open.image %}
+    <meta property="og:image" content="{{ config.base_url | safe }}/{{ config.extra.open.image }}">
+  {% endif %}
+
+  <meta property="og:updated_time" content="{{ updated_time }}">
+  <meta property="og:site_name" content="{{ title }}">
+
+  {% if config.extra.open.locale %}
+    <meta property="og:locale" content="{{ config.extra.open.locale }}">
+  {% endif %}
+  {% if config.extra.open.facebook_publisher %}<meta property="article:publisher" content="https://www.facebook.com/{{ config.extra.open.facebook_publisher }}">{% endif %}
+  {% if config.extra.open.facebook_author %}<meta property="article:author" content="https://www.facebook.com/{{ config.extra.open.facebook_author }}">{% endif %}
+  {% if config.extra.open.og_locale %}<meta property="og:locale" content="{{ config.extra.open.og_locale }}">{% endif %}
+{% endif %}
+
+{% if is_home and config.extra.schema %}
+  {% if config.extra.schema.type == "Organization" %}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "url": "{{ page_path | safe }}",
+      "name": "{{ title }}",
+      "logo": "{{ page_path | safe }}{{ config.extra.schema.logo }}",
+      "sameAs": [
+        {% if config.extra.schema.twitter %}"{{ config.extra.schema.twitter | safe }}",{% endif %}
+        {% if config.extra.schema.linked_in %}"{{ config.extra.schema.linked_in | safe }}",{% endif %}
+        {% if config.extra.schema.github %}"{{ config.extra.schema.github | safe }}"{% endif %}
+      ]
+    }
+    </script>
+  {% endif %}
+{% endif %}
+
+{% if is_page and config.extra.schema %}
+  {% if config.extra.schema.section == page_section %}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "{{ page_path | safe }}"
+      },
+      "headline": "{{ title }}",
+      "datePublished": "{{ created_time }}",
+      "dateModified": "{{ updated_time }}",
+      "author": {
+        "@type": "{{ config.extra.schema.type }}",
+        "name": "{{ title }}"
+      },
+      "publisher": {
+        "@type": "{{ config.extra.schema.type }}",
+        "name": "{{ title }}"
+      },
+      "description": "{{ description }}"
+    }
+    </script>
+  {% endif %}
+{% endif %}
+
+<script type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "BreadcrumbList",
+    {% if page_path == "/" %}
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "{{ config.base_url | safe }}/"
+    }
+    {% else %}
+      {% set paths = page_path | trim_start(pat="/") | trim_end(pat="/") | split(pat="/") %}
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "{{ config.base_url | safe }}/"
+      },
+      {% set_global crumb_url = config.base_url %}
+      {% for val in paths %}
+        {% set_global crumb_url = crumb_url ~ "/" ~ val %}
+        {% set name_array = val | split(pat="-") %}
+        {% set_global str = "" %}
+        {% for word in name_array %}
+          {% set_global str = str ~ (word | capitalize) ~ " " %}
+        {% endfor %}
+        {
+          "@type": "ListItem",
+          "position": {{ loop.index + 1 }},
+          "name": "{{ str | trim_end(pat=" ") | title }}",
+          "item": "{{ crumb_url | safe }}"
+        }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    {% endif %}
+  }
+</script>
+
+{% if config.extra.ganalytics %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{config.extra.ganalytics}}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '{{config.extra.ganalytics}}');
+</script>
+{% endif %}
+{% endcomponent head.seo %}
+
+{% component layout.header(current_section = "", @config, @lang = "en") %}
+<div class="header-bar fixed-top"></div>
+<header class="navbar fixed-top navbar-expand-md navbar-light">
+	<div class="container">
+		<input class="menu-btn order-0" type="checkbox" id="menu-btn">
+		<label class="menu-icon d-md-none" for="menu-btn"><span class="navicon"></span></label>
+		<a class="navbar-brand order-1 order-md-0 me-auto brand-mark" href="{{ config.base_url | safe }}">
+			<svg width="20" height="20" viewBox="0 0 270.93333 270.93333" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="#61afef" d="m 15.794102,267.47816 c -6.1756285,-7.46003 -3.878033,-17.90146 -0.34782,-27.55506 5.339953,-9.41189 10.593902,-18.74919 17.620155,-27.03255 18.183359,-24.87775 39.392837,-47.37741 59.655289,-70.5187 -1.251856,-12.92369 13.888534,-18.42831 22.329944,-24.58574 6.71666,-9.11281 14.55996,-17.846164 23.52599,-25.448774 14.29579,-15.629279 27.26334,-32.448067 42.19938,-47.520249 9.22783,-9.204263 17.7747,-20.2137 28.31875,-27.405452 8.37152,-6.036313 13.38495,-24.7046424 26.02508,-12.3585 13.45884,1.1133527 20.89186,16.951824 18.01117,26.814268 0.55571,3.36077 -5.76822,6.513745 1.10986,10.434364 4.78378,4.35856 7.3163,12.182748 0.90503,3.073453 -3.04175,-10.518423 -18.63047,-4.978618 -7.83479,2.913519 4.22152,5.546924 7.3005,13.047121 0.1074,3.508243 -2.94993,-8.300761 -12.42188,-4.682057 -6.94186,-1.215737 1.72196,-0.610279 -3.1226,7.612704 0.37887,11.931963 -2.16215,-4.451916 -8.20979,-14.763358 -6.4879,-3.328635 1.71608,7.729293 -3.7747,9.625568 -1.29551,0.0756 -3.37314,-3.541425 -0.16229,-4.301422 -0.90729,-7.906037 -8.53118,0.138168 -16.88255,8.436245 -25.50926,8.575449 -8.87605,7.591524 -19.37391,12.189734 -28.6123,19.509621 -4.95665,3.972409 -9.36468,7.63516 -9.52849,10.002761 -8.08513,1.041138 -12.25257,15.164763 -17.67556,13.417513 -6.12773,4.20422 0.52422,9.39459 -8.69184,11.96616 -10.74745,-1.92661 0.73478,15.534 -0.44991,23.15428 -1.39429,10.17596 -0.79913,20.61216 1.52733,31.34169 11.5036,29.47444 23.19758,4.15262 26.23763,1.11105 -3.97097,12.14157 -12.87055,26.92449 -26.8597,28.81895 -14.32886,-1.22578 -17.87252,-17.46897 -24.1128,-27.59143 -2.2548,-8.3831 -10.23846,-25.89198 -15.29807,-15.34301 -11.075515,2.0349 13.78809,-12.01318 -0.43349,-10.5049 -9.068631,8.65688 -17.678011,18.76629 -26.988808,27.92941 -2.662801,9.62939 -19.049615,15.35559 -15.679685,23.47309 -10.683976,-0.89854 12.026007,1.02648 0.752526,5.6153 -5.556177,1.00503 -6.909735,5.76843 -9.002094,6.56177 4.027866,3.33513 -9.475104,15.07602 -11.694041,21.3231 -3.769822,8.52735 -6.829495,17.07567 -12.063599,25.0087 12.35508,4.21173 23.244406,-12.02406 33.823771,-17.66566 2.724206,-2.94219 14.816417,-10.89922 5.23364,-2.8274 -14.950829,11.73843 -26.564076,29.72132 -45.732922,34.78007 -2.20368,0.0703 -4.057145,-1.16318 -5.614076,-2.53249 z m 34.207163,-60.54634 c -3.487169,0.5024 -0.772843,4.68825 0,0 z m 3.27571,-3.30082 c 2.394187,1.03194 -3.00435,-5.6377 -2.246936,1.4187 0.665276,0.10028 1.777163,-3.27791 2.246936,-1.4187 z m 5.564168,-2.04498 c 3.234456,-5.79158 -3.117429,2.95589 -4.4809,-2.02423 1.978675,2.76409 -0.256864,4.7366 4.4809,2.02423 z m 82.154207,-60.06157 c -1.89528,-4.83783 -1.1066,6.1284 0,0 z m 0.70863,-27.45854 c 1.55773,-6.72868 -6.82083,2.4797 0,7e-5 z m 3.59329,-4.15451 c 1.12462,-5.50037 -5.98214,3.05762 0,0 z M 72.348963,229.21914 c 9.402086,-7.69573 -2.828953,5.41022 0,0 z m -8.857588,-33.48619 c 1.658423,-3.28108 3.391645,2.99258 0,0 z M 63.0485,192.06564 c 6.63502,-1.37885 15.594009,-10.866 12.773865,-13.39491 7.69972,3.48752 10.218118,-15.69267 15.002327,-9.85674 -7.763341,7.63272 -15.348521,25.35248 -27.776192,23.25165 z m -15.500803,-0.76145 c 0.233919,-3.24841 2.658587,2.98393 0,0 z M 58.61969,176.40698 c 2.143033,-5.05254 3.654868,1.01176 0,0 z m 23.477562,-4.59496 c 6.553964,-5.01708 -3.402047,5.60672 0,0 z m 12.395729,-2.65185 c 0.233969,-3.24834 2.658523,2.98399 0,0 z m -2.53472,-2.21438 c 0.296498,-4.86551 2.624444,4.58908 0,0 z m -5.880027,-0.4429 c 2.384957,-3.5696 2.087435,3.44863 0,0 z m 9.550304,-1.68701 c -2.435343,-9.88588 9.392042,-4.19254 1.281783,1.47527 z M 143.8224,115.0624 c 2.83432,-3.56463 2.99671,3.74226 0,0 z m 7.10284,-8.38445 c 0.61833,-4.81977 5.52725,3.43535 0,0 z m 86.32269,-32.884586 c -2.38165,-4.56316 3.25014,1.041325 0,0 z"/></svg>
+			<span>{{ config.title | default(value="sobarch") }}</span>
+		</a>
+		<button id="mode" class="btn btn-link order-2 order-md-4" type="button" aria-label="Toggle mode">
+			<span class="toggle-dark"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></span>
+			<span class="toggle-light"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg></span>
+		</button>
+		<ul class="navbar-nav fork-me order-3 order-md-5">
+			{% if config.extra.menu.social %}
+				{% for val in config.extra.menu.social %}
+					<li class="nav-item">
+						<a class="nav-link" href="{{ val.url | safe }}">{{ val.pre | safe }}<span class="ms-2 visually-hidden">{{ val.name }}</span></a>
+					</li>
+				{% endfor %}
+			{% endif %}
+		</ul>
+		<div class="collapse navbar-collapse order-4 order-md-1">
+			<ul class="navbar-nav main-nav me-auto order-5 order-md-2">
+				{% if lang == config.default_language %}
+					{% set rootsectionpath = "_index.md" %}
+				{% else %}
+					{% set rootsectionpath = "_index." ~ lang ~ ".md" %}
+				{% endif %}
+				{% set mainsec = get_section(path=rootsectionpath) %}
+				{% if mainsec.extra.menu.main %}
+					{% for val in mainsec.extra.menu.main %}
+						<li class="nav-item{% if current_section == val.section %} {{ current_section }} active{% endif %}">
+							<a class="nav-link" href="{{ get_url(path=val.url, trailing_slash=true) | safe }}">{{ val.name }}</a>
+						</li>
+					{% endfor %}
+				{% elif config.extra.menu.main %}
+					{% for val in config.extra.menu.main %}
+						<li class="nav-item{% if current_section == val.section %} {{ current_section }} active{% endif %}">
+							<a class="nav-link" href="{{ get_url(path=val.url, trailing_slash=true) | safe }}">{{ val.name }}</a>
+						</li>
+					{% endfor %}
+				{% else %}
+				<li class="nav-item">
+					<a class="nav-link" href="{{ get_url(path="docs", trailing_slash=true) | safe }}">Docs</a>
+				</li>
+				{% endif %}
+			</ul>
+			<div class="break order-6 d-md-none"></div>
+			{% if config.build_search_index %}
+				<form class="navbar-form flex-grow-1 order-7 order-md-3">
+					<input id="userinput" class="form-control is-search" type="search" placeholder="Search docs..."
+						aria-label="Search docs..." autocomplete="off">
+					<div id="suggestions" class="shadow bg-white rounded"></div>
+				</form>
+			{% endif %}
+		</div>
+	</div>
+</header>
+{% endcomponent layout.header %}
+
+{% component layout.footer(@config) %}
+<footer class="footer text-muted">
+	<div class="container">
+		<div class="row">
+			<div class="col-lg-8 order-last order-lg-first">
+				<ul class="list-inline">
+					{% if config.extra.footer.info %}
+						<li class="list-inline-item">{{ config.extra.footer.info | default(value="Powered by AdiDoks") | safe }}</li>
+					{% else %}
+						<li class="list-inline-item">Powered by <a href="https://www.getzola.org/">Zola</a> and <a href="https://github.com/aaranxu/adidoks">AdiDoks</a></li>
+					{% endif %}
+				</ul>
+			</div>
+			<div class="col-lg-8 order-first order-lg-last text-lg-end">
+				<ul class="list-inline">
+					{% if config.extra.footer.nav %}
+						{% for val in config.extra.footer.nav %}
+							<li class="list-inline-item"><a href="{{ get_url(path=val.url, trailing_slash=true) | safe }}">{{ val.name }}</a></li>
+						{% endfor %}
+					{% endif %}
+				</ul>
+			</div>
+		</div>
+	</div>
+</footer>
+{% endcomponent layout.footer %}
+
+{% component layout.javascript(@config, @lang = "en") %}
+<script type="text/javascript" src="{{ get_url(path="js/main.js") | safe }}" defer></script>
+{% if config.build_search_index %}
+  <script type="text/javascript" src="{{ get_url(path="plugins/elasticlunr.min.js") | safe }}" defer></script>
+  <script type="text/javascript" src="{{ get_url(path="search_index." ~ lang ~ ".js") | safe }}" defer></script>
+  <script type="text/javascript" src="{{ get_url(path="js/search.js") | safe }}" defer></script>
+{% endif %}
+{% endcomponent layout.javascript %}
+
+{% component layout.math(@config, @page = none, @section = none) %}
+  {% if page?.extra?.math or section?.extra?.math or config.extra.math %}
+    {% if config.extra.library and config.extra.library == "mathjax" %}
+      <script>
+      window.MathJax = {
+      	tex: {
+      	inlineMath: [['$', '$'], ['\\(', '\\)']],
+      	displayMath: [['$$', '$$'], ['\[\[', '\]\]']],
+      	processEscapes: true,
+      	processEnvironments: true,
+      	},
+      	options: {
+      	skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+      	}
+      };
+      </script>
+      <script async defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script"></script>
+    {% else %}
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq" crossorigin="anonymous">
+      <script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l+B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd+qj+o24G5ZU2zJz" crossorigin="anonymous"></script>
+      <script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+    {% endif %}
+  {% endif %}
+{% endcomponent layout.math %}
+
+{% component docs.sidebar(current_section = "", @current_url = none) %}
+<div class="col-lg-5 col-xl-4 docs-sidebar">
+	<nav class="docs-links" aria-label="Main navigation">
+			{% set index_path = (current_section ~ "/_index.md") | trim_start(pat="/") %}
+			{% set index = get_section(path=index_path) %}
+			{% if index.pages %}
+					<h3>{{ index.title }}</h3>
+					<ul class="list-unstyled">
+					{% for page in index.pages %}
+							<li><a class="docs-link{% if current_url == page.permalink %} active{% endif %}" href="{{ page.permalink | safe }}">{{ page.title }}</a></li>
+					{% endfor %}
+					</ul>
+			{% endif %}
+			{% if index.subsections %}
+					{% for s in index.subsections %}
+					{% set subsection = get_section(path=s) %}
+					{% if subsection.pages %}
+							<h3>{{ subsection.title }}</h3>
+							<ul class="list-unstyled">
+							{% for page in subsection.pages %}
+									<li><a class="docs-link{% if current_url == page.permalink %} active{% endif %}" href="{{ page.permalink | safe }}">{{ page.title }}</a></li>
+							{% endfor %}
+					</ul>
+					{% endif %}
+					{% endfor %}
+			{% endif %}
+	</nav>
+</div>
+{% endcomponent docs.sidebar %}
+
+{% component docs.toc(@page = none) %}
+  {% if page?.extra?.toc %}
+  <nav class="docs-toc d-none d-xl-block col-xl-3" aria-label="Secondary navigation">
+  	<div class="page-links">
+  			<h3>On this page</h3>
+  			<nav id="TableOfContents">
+  					<ul>
+  							{% for h1 in page.toc %}
+  							<li><a href="{{ h1.permalink | safe}}">{{ h1.title }}</a></li>
+  							{% if h1.children %}
+  									<ul>
+  											{% for h2 in h1.children %}
+  											<li><a href="{{ h2.permalink | safe }}">{{ h2.title }}</a></li>
+  											{% endfor %}
+  									</ul>
+  							{% endif %}
+  							{% endfor %}
+  					</ul>
+  			</nav>
+  	</div>
+  </nav>
+  {% endif %}
+{% endcomponent docs.toc %}
+
+{% component docs.edit_page(current_path = "", @config) %}
+<p class="edit-page"><a href="{{ config.extra.docs_repo }}/blob/{{ config.extra.repo_branch }}/website/content{{ current_path | replace(from="\\", to="/") | trim_end(pat="/") }}.md"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>Edit this page on GitHub</a></p>
+{% endcomponent docs.edit_page %}
+
+{% component docs.navigation(current_section = "", @page = none) %}
+<div class="docs-navigation d-flex justify-content-between">
+  {% if page?.lower %}
+  <a href="{{ page.lower.permalink }}">
+    <div class="card my-1">
+      <div class="card-body py-2">
+        &larr; {{ page.lower.title }}
+      </div>
+    </div>
+  </a>
+  {% elif not page?.extra?.top %}
+    {% set index = get_section(path=page.ancestors | reverse | first) %}
+    {% set parent = get_section(path=index.ancestors | reverse | first)%}
+    {% set first_subsection = get_section(path=parent.subsections | first) %}
+    {% if index == first_subsection %}
+      {% if parent.pages %}
+        {% set last_page = parent.pages | last %}
+        <a href="{{ last_page.permalink }}">
+          <div class="card my-1">
+            <div class="card-body py-2">
+              &larr; {{ last_page.title }}
+            </div>
+          </div>
+        </a>
+      {% endif %}
+    {% else %}
+      {% for s in parent.subsections | reverse %}
+        {% set subsection = get_section(path=s) %}
+        {% if subsection.permalink == index.permalink %}
+          {% set_global found_current = true %}
+        {% else %}
+          {% if found_current %}
+            {% if subsection.pages %}
+              {% set last_page = subsection.pages | last %}
+              <a href="{{ last_page.permalink }}">
+                <div class="card my-1">
+                  <div class="card-body py-2">
+                    &larr; {{ last_page.title }}
+                  </div>
+                </div>
+              </a>
+            {% endif %}
+            {% set_global found_current = false %}
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endif %}
+
+  {% if page?.higher %}
+    <a class="ms-auto" href="{{ page.higher.permalink }}">
+      <div class="card my-1">
+        <div class="card-body py-2">
+          {{ page.higher.title }} &rarr;
+        </div>
+      </div>
+    </a>
+  {% elif page?.extra?.top %}
+    {% set index_path = (current_section ~ "/_index.md") | trim_start(pat="/") %}
+    {% set index = get_section(path=index_path) %}
+    {% set first_subsection = get_section(path=index.subsections | first) %}
+    {% if first_subsection.pages %}
+      {% set first_page = first_subsection.pages | first %}
+      <a class="ms-auto" href="{{ first_page.permalink }}">
+        <div class="card my-1">
+          <div class="card-body py-2">
+            {{ first_page.title }} &rarr;
+          </div>
+        </div>
+      </a>
+    {% endif %}
+  {% else %}
+    {% set index = get_section(path=page.ancestors | reverse | first) %}
+    {% set parent = get_section(path=index.ancestors | reverse | first)%}
+    {% for s in parent.subsections %}
+      {% set subsection = get_section(path=s) %}
+      {% if subsection.permalink == index.permalink %}
+        {% set_global found_current = true %}
+      {% else %}
+        {% if found_current %}
+          {% if subsection.pages %}
+          {% set first_page = subsection.pages | first %}
+          <a class="ms-auto" href="{{ first_page.permalink }}">
+            <div class="card my-1">
+              <div class="card-body py-2">
+                {{ first_page.title }} &rarr;
+              </div>
+            </div>
+          </a>
+          {% endif %}
+          {% set_global found_current = false %}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+</div>
+{% endcomponent docs.navigation %}

@@ -1,0 +1,175 @@
+// sobarch-specific additions layered on top of AdiDoks + the OneDark
+// palette in common/_variables.scss.
+
+::selection {
+  background: rgba($onedark-blue, 0.25);
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: $font-family-monospace;
+  font-weight: 600;
+
+  svg {
+    flex: none;
+  }
+}
+
+// Hero
+
+.home-hero {
+  padding: 6rem 0 4rem;
+  text-align: center;
+}
+
+.home-hero-inner {
+  max-width: 780px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.home-logo {
+  display: block;
+  margin: 0 auto 1.5rem;
+  width: 120px;
+  height: 120px;
+
+  @include media-breakpoint-up(md) {
+    width: 180px;
+    height: 180px;
+  }
+}
+
+.home-name {
+  margin: 0 0 0.5rem;
+  font-family: $font-family-monospace;
+  font-weight: 600;
+  font-size: 1.25rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $gray-600;
+}
+
+body.dark .home-name {
+  color: $body-color-dark;
+}
+
+.home-tagline {
+  font-size: 1.75rem;
+
+  @include media-breakpoint-up(md) {
+    font-size: 2.25rem;
+  }
+}
+
+.home-lead {
+  max-width: 46rem;
+  margin: 0 auto 2rem;
+  font-size: 1.125rem;
+  color: $gray-600;
+}
+
+body.dark .home-lead {
+  color: $body-color-dark;
+}
+
+.home-terminal {
+  max-width: 640px;
+  margin: 0 auto 2rem;
+  text-align: left;
+  border: 1px solid $gray-300;
+  background: $gray-900;
+}
+
+body.dark .home-terminal {
+  border-color: $border-dark;
+  background: $body-overlay-dark;
+}
+
+.home-terminal-bar {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid rgba($white, 0.1);
+
+  span {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: rgba($white, 0.25);
+  }
+}
+
+.home-terminal-body {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  background: none;
+  border: 0;
+  color: $gray-300;
+  font-family: $font-family-monospace;
+  font-size: 0.9rem;
+
+  code {
+    color: inherit;
+    background: none;
+  }
+
+  &::before {
+    content: "$ ";
+    color: $onedark-green;
+  }
+}
+
+.home-cta {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+// Pillars
+
+.home-pillars {
+  padding: 3rem 0 5rem;
+  border-top: 1px solid $gray-200;
+}
+
+body.dark .home-pillars {
+  border-top-color: $border-dark;
+}
+
+.home-pillar-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+
+  @include media-breakpoint-up(md) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.home-pillar {
+  padding: 1.5rem;
+  border: 1px solid $gray-200;
+
+  h2 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    margin: 0;
+    color: $gray-600;
+  }
+}
+
+body.dark .home-pillar {
+  border-color: $border-dark;
+
+  p {
+    color: $body-color-dark;
+  }
+}
