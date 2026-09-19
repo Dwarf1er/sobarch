@@ -173,3 +173,22 @@ body.dark .home-pillar {
     color: $body-color-dark;
   }
 }
+
+// Included
+
+.home-included {
+  padding: 0 0 5rem;
+  border-top: 1px solid $gray-200;
+}
+
+body.dark .home-included {
+  border-top-color: $border-dark;
+}
+
+.home-included .home-section-title {
+  margin: 3rem 0 1.5rem;
+}
+
+.home-included .home-pillar-grid + .home-section-title {
+  margin-top: 4rem;
+}

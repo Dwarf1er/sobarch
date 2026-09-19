@@ -41,4 +41,26 @@
     </div>
   </div>
 </section>
+
+<section class="home-included">
+  <div class="container">
+    <h2 class="home-section-title">What's included</h2>
+    <div class="home-pillar-grid">
+      {% for item in section.extra.included %}
+        <div class="home-pillar">
+          <h2>{{ item.title }}</h2>
+          <p>{{ item.content }}</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    <h2 class="home-section-title">Optional software profiles</h2>
+    <p>
+      Applied after first boot, left unchecked by default. Take a whole
+      profile, hand-pick packages from it, or skip it entirely:
+      {% for profile in section.extra.profiles %}<code>{{ profile.name }}</code>{% if not loop.last %}, {% endif %}{% endfor %}.
+      See the <a href="{{ get_url(path="/docs/installer/software-profiles/") | safe }}">full package list</a> per profile.
+    </p>
+  </div>
+</section>
 {% endblock content %}

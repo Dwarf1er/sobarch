@@ -25,6 +25,58 @@ repository, and as little custom tooling as possible.
 It's primarily built for its maintainer, but aims to stay understandable
 and usable by others.
 
+## What's included
+
+**Desktop.** Hyprland, Waybar, Mako notifications, Fuzzel launcher, Kitty,
+and `ly` as the display manager, with `hyprlock`/`hypridle`/`hyprpaper`/
+`hyprshot`/`hyprpicker` rounding out locking, idle handling, wallpapers,
+and screenshots. GPU driver selection (including NVIDIA generation
+detection) is automatic during install.
+
+**One theme, the whole desktop.** Every app config is generated from the
+same base16/base24 color scheme via `tinty`, so picking a new theme from
+the built-in menu recolors the terminal, bar, launcher, and editor
+together instead of one app at a time.
+
+**Snapshots you can actually boot into.** BTRFS root snapshots (Snapper)
+show up as their own boot entries directly in the Limine bootloader menu,
+and a dedicated on-disk partition carries a spare Arch ISO so a rollback
+is possible even if the installed system won't boot at all, no separate
+USB drive needed.
+
+**Security baseline, applied by default.** A default-deny `nftables`
+firewall and a locked root account ship out of the box; SSH stays off
+unless enabled during install.
+
+**No terminal required for day-to-day upkeep.** A Fuzzel-driven menu
+(bound to the Super key) covers pulling config updates and walking
+through any merge conflicts, installing additional packages, switching
+themes/wallpapers, and refreshing the rescue ISO.
+
+**Optional software profiles**, applied after first boot and left
+unchecked by default:
+
+| Profile | Included |
+| --- | --- |
+| Developer | `mise`, `presenterm` |
+| Gaming | Steam, Lutris, Prism Launcher, gamescope, MangoHud, Protontricks, ProtonUp-Qt |
+| Creative | GIMP, Inkscape, OBS Studio, Shotcut, Audacity, EasyEffects, Calf, LSP plugins |
+| Maker / 3D Printing | Blender, FreeCAD, OrcaSlicer |
+| Virtualization | QuickEMU, QuickGUI |
+| Office | LibreOffice, Homebank |
+| Browsers & Chat | Brave, Signal, Vesktop |
+| System Tuning | TLP, LACT, nvtop, smartmontools, ethtool, VIA keyboard support |
+| Input Method | fcitx5 (CJK, Hangul) |
+
+Each profile can also be expanded to hand-pick individual packages
+instead of taking it as a whole, and "install everything" is a single
+toggle away.
+
+**Packages come from two places only**: Arch's official repositories,
+and a small set of AUR packages vendored and reviewed into this repo,
+built locally by a dedicated build user. No AUR helper, no third-party
+binary repository.
+
 ## Quickstart
 
 Boot the [official Arch Linux ISO](https://archlinux.org/download/),
