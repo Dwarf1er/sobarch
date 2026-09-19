@@ -6,9 +6,6 @@
 <img alt="Sobarch logo" height="280" src="branding/sobarch-logo.svg" />
 
 ![License](https://img.shields.io/github/license/Dwarf1er/sobarch?style=for-the-badge)
-![Issues](https://img.shields.io/github/issues/Dwarf1er/sobarch?style=for-the-badge)
-![PRs](https://img.shields.io/github/issues-pr/Dwarf1er/sobarch?style=for-the-badge)
-![Stars](https://img.shields.io/github/stars/Dwarf1er/sobarch?style=for-the-badge)
 
 </div>
 
