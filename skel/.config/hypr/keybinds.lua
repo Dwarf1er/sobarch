@@ -60,7 +60,13 @@ hl.bind(
 -- kb: Print Screen | Screenshot: full output to clipboard
 hl.bind("PRINT", hl.dsp.exec_cmd(screenshot .. " -m output --clipboard-only"))
 -- kb: SUPER + S | Screenshot: full output to file + clipboard, no focus grab
-hl.bind(mainMod .. " + S", hl.dsp.exec_cmd(screenshot .. " -m output"))
+hl.bind(
+	mainMod .. " + S",
+	hl.dsp.exec_cmd(
+		screenshot
+			.. [[ -m output -m "$(hyprctl monitors | awk '/^Monitor/{name=$2} /focused: yes/{print name; exit}')"]]
+	)
+)
 -- kb: SUPER + SHIFT + S | Screenshot: region to clipboard
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd(screenshot .. " -m region --clipboard-only"))
 -- kb: SUPER + O | OCR screen region to clipboard
