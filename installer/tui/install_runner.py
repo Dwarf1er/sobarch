@@ -205,11 +205,13 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
     at /usr/local/lib/sobarch/, so the loop below no longer needs to
     copy those scripts in by hand.
 
-    sobarch-skel's PKGBUILD reaches out to ../../../skel, and
-    sobarch-scripts' to ../../../installer/firstboot and
-    ../../../scripts/aur-sync, both via a relative path, so those
-    directories must be staged alongside their package directories
-    here, not just the package directories in isolation."""
+    sobarch-skel's PKGBUILD reaches out to ../../../skel and
+    ../../../branding; sobarch-scripts' to ../../../installer/firstboot,
+    ../../../installer/archinstall (limine-theme-setup.sh,
+    ly-theme-setup.sh, plymouth-setup.sh), and ../../../scripts/aur-sync,
+    all via a relative path, so those directories must be staged
+    alongside their package directories here, not just the package
+    directories in isolation."""
     build_dir = MOUNTPOINT / SOBARCH_SKEL_BUILD_DIR_IN_TARGET.relative_to("/")
     shutil.rmtree(build_dir, ignore_errors=True)
     shutil.copytree(REPO_ROOT / "packages" / "custom" / "sobarch-skel", build_dir / "packages" / "custom" / "sobarch-skel")
@@ -222,7 +224,9 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
         build_dir / "packages" / "custom" / "sobarch-scripts",
     )
     shutil.copytree(REPO_ROOT / "skel", build_dir / "skel")
+    shutil.copytree(REPO_ROOT / "branding", build_dir / "branding")
     shutil.copytree(REPO_ROOT / "installer" / "firstboot", build_dir / "installer" / "firstboot")
+    shutil.copytree(REPO_ROOT / "installer" / "archinstall", build_dir / "installer" / "archinstall")
     shutil.copytree(REPO_ROOT / "scripts" / "aur-sync", build_dir / "scripts" / "aur-sync")
     for pkg in BASE_AUR_PACKAGES:
         shutil.copytree(REPO_ROOT / "packages" / "aur" / pkg, build_dir / "packages" / "aur" / pkg)

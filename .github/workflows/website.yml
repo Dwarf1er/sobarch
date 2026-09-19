@@ -1,7 +1,10 @@
 name: Website
 
 on:
-  workflow_dispatch: {}
+  push:
+    branches: [master]
+    paths:
+      - "website/**"
 
 permissions:
   contents: read

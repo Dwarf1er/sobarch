@@ -1,5 +1,5 @@
 # The URL the site will be built for.
-base_url = "https://dwarf1er.github.io/sobarch"
+base_url = "https://sobarch.antoinepoulin.com"
 title = "sobarch"
 description = "A minimal, reproducible Arch Linux + Hyprland desktop setup."
 

@@ -6,9 +6,9 @@ document.getElementById('mode').addEventListener('click', () => {
   
 });
   
-// enforce local storage setting but also fallback to user-agent preferences
-if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-  
+// enforce local storage setting but also fallback to user-agent preferences, defaulting to dark
+if (localStorage.getItem('theme') !== 'light' && !(!localStorage.getItem('theme') && window.matchMedia("(prefers-color-scheme: light)").matches)) {
+
   document.body.classList.add('dark');
-  
+
 }

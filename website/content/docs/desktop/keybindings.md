@@ -52,6 +52,7 @@ toc = true
 | Keybind | Action |
 | --- | --- |
 | `Print Screen` | Screenshot the full output to the clipboard |
+| `Super+S` | Screenshot the full output to a file and the clipboard, without grabbing keyboard focus (region capture below does, since it shells out to `slurp`; this doesn't) |
 | `Super+Shift+S` | Screenshot a region to the clipboard |
 | `Super+O` | OCR a screen region to the clipboard |
 | `Super+Shift+O` | Scan a QR code or barcode in a region to the clipboard |
