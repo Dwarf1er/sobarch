@@ -47,3 +47,7 @@ packages via `pacman`, AUR/custom packages via the [package sync
 mechanism](../../packages/installing-updating/)), just for one package
 at a time instead of a whole profile. Already-installed packages don't
 show up in the list.
+
+<figure class="figure">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/software-install-menu.webp" width="1366" height="768" alt="The Install menu, listing packages not yet installed">
+</figure>

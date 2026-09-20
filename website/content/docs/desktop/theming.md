@@ -27,6 +27,10 @@ Open the theme picker from **Super → Sobarch**, or run
 tinty knows about, tagging non-base16 systems for clarity
 (`(24-color)`, `(8-color)`), and applies whichever one you pick.
 
+<figure class="figure">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/theming-picker-menu.webp" width="1366" height="768" alt="The theme picker, listing available base16/base24/tinted8 color schemes">
+</figure>
+
 Applying a scheme writes each app's color file and reloads that app:
 `hyprctl reload` for Hyprland, `makoctl reload` for mako, a full
 restart for waybar (it has no live file-watcher for its own config),
@@ -38,3 +42,30 @@ The picker itself doesn't need to know about it; it only calls
 
 `tinty install` fetches new schemes and runs automatically on login, so
 newly available schemes show up in the picker without any manual step.
+Browse the [tinted gallery](https://tinted-theming.github.io/tinted-gallery/)
+for the full list of available schemes.
+
+## The same desktop, four schemes
+
+Terminal, waybar, and wallpaper all recolor together, whatever scheme
+is active:
+
+<figure class="figure">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/theming-onedark.webp" width="1366" height="768" alt="The desktop themed with OneDark, the default scheme">
+  <figcaption class="figure-caption">OneDark, the default</figcaption>
+</figure>
+
+<figure class="figure">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/theming-catppuccin-mocha.webp" width="1366" height="768" alt="The desktop themed with Catppuccin Mocha">
+  <figcaption class="figure-caption">Catppuccin Mocha</figcaption>
+</figure>
+
+<figure class="figure">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/theming-catppuccin-latte.webp" width="1366" height="768" alt="The desktop themed with Catppuccin Latte">
+  <figcaption class="figure-caption">Catppuccin Latte</figcaption>
+</figure>
+
+<figure class="figure">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/theming-github-dark.webp" width="1366" height="768" alt="The desktop themed with GitHub Dark">
+  <figcaption class="figure-caption">GitHub Dark</figcaption>
+</figure>

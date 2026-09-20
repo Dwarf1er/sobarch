@@ -22,6 +22,10 @@ repository, and as little custom tooling as possible.
 It's primarily built for its maintainer, but aims to stay understandable
 and usable by others.
 
+<p align="center">
+  <img alt="The sobarch desktop: Hyprland with waybar, a themed terminal, and the default wallpaper" src="website/static/images/home/desktop-hero.webp" width="800" />
+</p>
+
 ## What's included
 
 **Desktop.** Hyprland, Waybar, Mako notifications, Fuzzel launcher, Kitty,

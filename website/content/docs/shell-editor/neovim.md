@@ -13,6 +13,10 @@ The config isn't a distribution like LazyVim: it's a small, from-scratch
 set of Lua files using Neovim's own built-in `vim.pack` plugin manager,
 so there's no separate plugin-manager runtime to learn or update.
 
+<figure class="figure">
+  <img class="img-fluid rounded shadow-sm" src="/images/shell-editor/neovim.webp" width="1351" height="685" alt="Neovim with LSP, treesitter, and the tinty-themed colorscheme">
+</figure>
+
 ## What's included
 
 - **[mason.nvim](https://github.com/mason-org/mason.nvim)** installs

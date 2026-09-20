@@ -30,6 +30,16 @@ config changes do:
   static frame since ly has no way to display custom static content
   other than its own movie-animation format.
 
+<figure class="figure">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/boot-theming-plymouth.webp" width="800" height="600" alt="The Plymouth boot splash showing the sobarch mark">
+  <figcaption class="figure-caption">Plymouth</figcaption>
+</figure>
+
+<figure class="figure">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/boot-theming-ly.webp" width="1505" height="930" alt="The ly login screen showing the SOBARCH wordmark">
+  <figcaption class="figure-caption">ly</figcaption>
+</figure>
+
 None of this needs any action from you. If you're customizing your
 own boot menu or login screen entries by hand, look for the
 `SOBARCH THEME START`/`SOBARCH THEME END` markers in `limine.conf`

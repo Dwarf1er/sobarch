@@ -71,6 +71,10 @@ toc = true
 
 ## The cheat sheet
 
+<figure class="figure">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/keybindings-cheatsheet.webp" width="1366" height="768" alt="The on-screen keybindings cheat sheet, opened with Super+/">
+</figure>
+
 `Super+/` opens a read-only fuzzel list built by grepping the
 Hyprland config for `-- kb: <combo> | <description>` comments, one per
 real bind, so the list can't list a bind that doesn't exist or omit
