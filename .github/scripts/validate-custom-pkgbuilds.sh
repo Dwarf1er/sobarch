@@ -18,8 +18,11 @@
 #     changed between BASE_REF and HEAD_REF but the PKGBUILD's
 #     pkgver/pkgrel didn't, that's a real bug: this is exactly what
 #     happened for real with sobarch-skel and the ble.sh commit.
-#     Skipped entirely when BASE_REF/HEAD_REF aren't set (e.g. a
-#     workflow_dispatch run with no PR base to diff against).
+#     Skipped entirely when BASE_REF isn't set. With BASE_REF set but no
+#     HEAD_REF (the .githooks/pre-commit usage, see docs/DECISIONS.md
+#     decision #16), diffs BASE_REF against the working tree instead of
+#     a second ref, matching pkgver_at's own "WORKTREE" read below
+#     (which already compares against files on disk, not the index).
 #   - Runs namcap against the PKGBUILD. Advisory only, never fails the
 #     run, same treatment the AUR check gives it.
 #
@@ -31,8 +34,12 @@ set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 changed_files=()
-if [[ -n "${BASE_REF:-}" && -n "${HEAD_REF:-}" ]]; then
-    mapfile -t changed_files < <(git diff --name-only "$BASE_REF" "$HEAD_REF" 2>/dev/null)
+if [[ -n "${BASE_REF:-}" ]]; then
+    if [[ -n "${HEAD_REF:-}" ]]; then
+        mapfile -t changed_files < <(git diff --name-only "$BASE_REF" "$HEAD_REF" 2>/dev/null)
+    else
+        mapfile -t changed_files < <(git diff --name-only "$BASE_REF" 2>/dev/null)
+    fi
 fi
 
 pkgver_at() {
@@ -59,6 +66,13 @@ path_changed_under() {
     return 1
 }
 
+have_namcap=false
+if command -v namcap >/dev/null 2>&1; then
+    have_namcap=true
+else
+    echo "namcap not found on PATH, skipping advisory namcap checks"
+fi
+
 mismatches=()
 for dir in packages/custom/*/; do
     [[ -d "$dir" ]] || continue
@@ -83,8 +97,10 @@ for dir in packages/custom/*/; do
     fi
     rm -f "$generated"
 
-    echo "== $name: namcap =="
-    namcap "$pkgbuild" || true
+    if $have_namcap; then
+        echo "== $name: namcap =="
+        namcap "$pkgbuild" || true
+    fi
 
     if ((${#changed_files[@]})); then
         # Derive this package's external payload paths straight from

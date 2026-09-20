@@ -100,6 +100,12 @@ target disk. It can also install into existing free space instead, for
 dual-boot alongside another OS (see the [Dual-Boot
 docs](https://sobarch.antoinepoulin.com/docs/installer/dual-boot/)).
 
+## Development
+
+After cloning, run `scripts/install-git-hooks.sh` once. It points git at
+this repo's tracked `.githooks/` dir, which validates `packages/custom/`
+PKGBUILDs before each commit (requires `makepkg`/`namcap` on `PATH`).
+
 ## License
 
 This software is licensed under the [MIT license](LICENSE).

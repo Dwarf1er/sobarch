@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Runs the same packages/custom/ PKGBUILD check that used to live in
+# custom-pkgbuilds.yml, moved here instead: see docs/DECISIONS.md
+# decision #16. Requires makepkg and namcap on PATH; must run as a
+# non-root user (makepkg refuses root outright).
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+BASE_REF=HEAD .github/scripts/validate-custom-pkgbuilds.sh
