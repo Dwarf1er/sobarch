@@ -46,6 +46,11 @@ hl.bind(
 	mainMod .. " + SHIFT + B",
 	hl.dsp.exec_cmd("bash " .. os.getenv("HOME") .. "/.config/hypr/scripts/bluetooth-menu.sh")
 )
+-- kb: SUPER + SHIFT + F | Open firmware menu
+hl.bind(
+	mainMod .. " + SHIFT + F",
+	hl.dsp.exec_cmd("bash " .. os.getenv("HOME") .. "/.config/hypr/scripts/fwupd-menu.sh")
+)
 -- kb: SUPER (tap) | Open main menu
 hl.bind(
 	mainMod .. " + SUPER_L",

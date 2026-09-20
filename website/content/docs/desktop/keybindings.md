@@ -33,6 +33,7 @@ toc = true
 | `Super+A` | Open the audio menu |
 | `Super+N` | Open the network menu |
 | `Super+Shift+B` | Open the Bluetooth menu |
+| `Super+Shift+F` | Open the firmware menu |
 | `Super+/` | Show this cheat sheet |
 
 ## Windows and workspaces
