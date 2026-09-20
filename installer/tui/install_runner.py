@@ -332,6 +332,8 @@ def run_install(
             env_updates["RESCUE_BOOT_PARTITION"] = partition_device_path(
                 state.disk_device, generated.rescue_boot_partition_number
             )
+        elif generated.rescue_boot_merged:
+            env_updates["RESCUE_BOOT_MERGED"] = "true"
 
         for script in CHROOT_SETUP_SCRIPTS:
             on_output(f"Running {script} inside the new install...")

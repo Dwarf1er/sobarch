@@ -41,6 +41,7 @@ class GeneratedConfig:
     credentials: dict
     rescue_partition_number: int | None
     rescue_boot_partition_number: int | None
+    rescue_boot_merged: bool
 
 
 def _to_mib(size_or_start: dict) -> int:
@@ -86,13 +87,32 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
     boot_end_mib = _to_mib(boot["start"]) + _to_mib(boot["size"])
     rescue_partition_number = None
     rescue_boot_partition_number = None
+    rescue_boot_merged = False
 
     if state.rescue_media:
         if rescue is None or rescue_boot is None:
             raise ConfigGenError("rescue media was requested but base.json has no rescue partition template")
-        btrfs_start_mib = boot_end_mib + _to_mib(rescue_boot["size"]) + _to_mib(rescue["size"])
-        rescue_boot_partition_number = partitions.index(rescue_boot) + 1
-        rescue_partition_number = partitions.index(rescue) + 1
+        if hardware.is_uefi:
+            btrfs_start_mib = boot_end_mib + _to_mib(rescue_boot["size"]) + _to_mib(rescue["size"])
+            rescue_boot_partition_number = partitions.index(rescue_boot) + 1
+            rescue_partition_number = partitions.index(rescue) + 1
+        else:
+            # archinstall picks MBR (not GPT) for a BIOS install, and
+            # caps it at 3 primary partitions -- one over budget with a
+            # dedicated rescue-boot partition alongside boot/rescue/root.
+            # The rescue kernel/initramfs live directly under /boot
+            # instead (installer/archinstall/rescue-iso-setup.sh writes
+            # them to /boot/rescue/ rather than formatting a separate
+            # partition), dropping the count back to 3.
+            partitions.remove(rescue_boot)
+            rescue["start"] = {
+                "sector_size": rescue["start"]["sector_size"],
+                "unit": "MiB",
+                "value": boot_end_mib,
+            }
+            btrfs_start_mib = boot_end_mib + _to_mib(rescue["size"])
+            rescue_partition_number = partitions.index(rescue) + 1
+            rescue_boot_merged = True
     else:
         if rescue is not None:
             partitions.remove(rescue)
@@ -140,6 +160,7 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
         credentials=credentials,
         rescue_partition_number=rescue_partition_number,
         rescue_boot_partition_number=rescue_boot_partition_number,
+        rescue_boot_merged=rescue_boot_merged,
     )
 
 

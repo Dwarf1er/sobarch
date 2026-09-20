@@ -9,6 +9,11 @@ from pathlib import Path
 
 HARDWARE_DETECT_SCRIPT = Path(__file__).resolve().parent.parent / "archinstall" / "hardware-detect.sh"
 
+# Same check archinstall's own SysInfo.has_uefi() makes; a plain
+# directory check needs no shell script of its own the way the other
+# hardware facts below do.
+EFI_VARS_DIR = Path("/sys/firmware/efi")
+
 
 @dataclass
 class HardwareInfo:
@@ -18,6 +23,7 @@ class HardwareInfo:
     nvidia_present: bool
     nvidia_proprietary_driver: bool
     bluetooth_detected: bool
+    is_uefi: bool
 
 
 def _parse_bool(value: str) -> bool:
@@ -53,4 +59,5 @@ def detect_hardware(script_path: Path = HARDWARE_DETECT_SCRIPT) -> HardwareInfo:
         nvidia_present=_parse_bool(values.get("NVIDIA_PRESENT", "false")),
         nvidia_proprietary_driver=_parse_bool(values.get("NVIDIA_PROPRIETARY_DRIVER", "false")),
         bluetooth_detected=_parse_bool(values.get("BLUETOOTH_DETECTED", "false")),
+        is_uefi=EFI_VARS_DIR.is_dir(),
     )

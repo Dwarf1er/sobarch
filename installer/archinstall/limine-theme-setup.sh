@@ -38,10 +38,10 @@
 # reinstated wallpaper/transparency/font-scale changes have not been
 # checked against an actual boot yet. If the logo still collides with
 # the menu or is still hidden, delete the block between the
-# START/END markers below from /boot/EFI/BOOT/limine.conf
-# (rescue-media/live-USB access, same recovery path
-# scripts/snapshot-rollback.sh already documents) and file a fix rather
-# than trusting this script blindly.
+# START/END markers below from limine.conf (/boot/EFI/BOOT/limine.conf
+# on UEFI, /boot/limine/limine.conf on BIOS; rescue-media/live-USB
+# access, same recovery path scripts/snapshot-rollback.sh already
+# documents) and file a fix rather than trusting this script blindly.
 #
 # Deliberately narrow: only additive directives Limine has no config
 # from archinstall to conflict with (term colors, wallpaper, branding
@@ -51,7 +51,17 @@
 
 set -euo pipefail
 
-LIMINE_CONF="/boot/EFI/BOOT/limine.conf"
+# Same has_uefi() check archinstall's own _add_limine_bootloader() makes
+# to decide where it writes limine.conf in the first place: EFI/BOOT
+# on the ESP when UEFI, /boot/limine otherwise. /sys/firmware/efi is
+# bind-mounted into the chroot from the live environment by arch-chroot,
+# so this reflects the same boot mode archinstall saw, both at install
+# time and later when this script is re-run on the installed system.
+if [ -d /sys/firmware/efi ]; then
+    LIMINE_CONF="/boot/EFI/BOOT/limine.conf"
+else
+    LIMINE_CONF="/boot/limine/limine.conf"
+fi
 # Same package payload path ly-theme-setup.sh reads its ASCII logo
 # from: sobarch-skel installs both under /usr/share/sobarch/branding/,
 # built earlier in this same chroot session (see install_runner.py's

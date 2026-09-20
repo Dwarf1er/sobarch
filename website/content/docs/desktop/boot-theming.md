@@ -32,7 +32,8 @@ config changes do:
 
 None of this needs any action from you. If you're customizing your
 own boot menu or login screen entries by hand, look for the
-`SOBARCH THEME START`/`SOBARCH THEME END` markers in
-`/boot/EFI/BOOT/limine.conf`, and for `/etc/ly/config.ini`; both are
-rewritten wholesale on every refresh, so hand edits inside the marked
-block (or to `config.ini` at all) don't survive one.
+`SOBARCH THEME START`/`SOBARCH THEME END` markers in `limine.conf`
+(`/boot/EFI/BOOT/limine.conf` on a UEFI install, `/boot/limine/limine.conf`
+on legacy BIOS), and for `/etc/ly/config.ini`; both are rewritten
+wholesale on every refresh, so hand edits inside the marked block (or
+to `config.ini` at all) don't survive one.

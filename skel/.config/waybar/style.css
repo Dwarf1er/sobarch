@@ -12,6 +12,12 @@ window#waybar {
     color: @base05;
     border: 1px solid alpha(@base05, 0.12);
     border-radius: 20px;
+    /* Without this, the leftmost/rightmost module (workspace pills,
+       battery) sits inside the corner's rounding-clip zone on this
+       44px-tall bar, and its own independently-rounded edge doesn't
+       composite cleanly against the window's corner clip: a black
+       wedge shows through where the two roundings disagree. */
+    padding: 0 10px;
 }
 
 tooltip {

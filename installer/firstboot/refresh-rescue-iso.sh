@@ -2,21 +2,26 @@
 # Privileged worker behind Sobarch -> Refresh Rescue ISO
 # (skel/.config/hypr/scripts/refresh-rescue-menu.sh), run via
 # pkexec. Re-fetches a current Arch ISO and re-extracts its
-# kernel/initramfs onto the two rescue partitions
+# kernel/initramfs onto the rescue media
 # installer/archinstall/rescue-iso-setup.sh laid out at install time
-# (RESCUE: the .iso itself; RESCUEBOOT: vmlinuz-linux/
-# initramfs-linux.img), overwriting their content in place. No mkfs,
-# no partition-table change, no limine.conf edit: both partitions and
-# the UUID/PARTUUID rescue-iso-setup.sh's Limine entry already
-# addresses them by are untouched, so that entry keeps working against
-# the refreshed files with nothing else to update.
+# (RESCUE: the .iso itself; RESCUEBOOT, on UEFI only, or /boot/rescue
+# on BIOS: vmlinuz-linux/initramfs-linux.img), overwriting content in
+# place. No mkfs, no partition-table change, no limine.conf edit: the
+# UUID/PARTUUID or boot()-relative path rescue-iso-setup.sh's Limine
+# entry already addresses these files by stays untouched, so that entry
+# keeps working against the refreshed files with nothing else to
+# update.
 #
-# Found by filesystem label, not a device path: unlike
+# RESCUE found by filesystem label, not a device path: unlike
 # rescue-iso-setup.sh (a TUI-driven install-time step with
 # RESCUE_PARTITION/RESCUE_BOOT_PARTITION passed in as env vars), this
 # runs standalone against an already-installed system with no such
-# input available. rescue-iso-setup.sh labels them RESCUE/RESCUEBOOT
-# specifically so this script can find them again later.
+# input available. rescue-iso-setup.sh labels it RESCUE specifically so
+# this script can find it again later; same for RESCUEBOOT when it
+# exists (UEFI). On BIOS there's no dedicated rescue-boot partition to
+# label at all (config_gen.py's own MBR 3-primary-partition workaround,
+# see rescue-iso-setup.sh), so firmware mode is what decides which case
+# this is, same has_uefi() check used everywhere else in this project.
 
 set -euo pipefail
 
@@ -39,10 +44,21 @@ RESCUE_DEV="$(blkid -L RESCUE)" || {
     echo "refresh-rescue-iso: no RESCUE partition found (rescue media opted out at install time?), nothing to do."
     exit 0
 }
-RESCUE_BOOT_DEV="$(blkid -L RESCUEBOOT)" || {
-    echo "refresh-rescue-iso: RESCUE partition found but RESCUEBOOT is missing; refusing to proceed with a half rescue setup." >&2
-    exit 1
-}
+
+RESCUE_BOOT_DEV=""
+if [ -d /sys/firmware/efi ]; then
+    RESCUE_BOOT_DEV="$(blkid -L RESCUEBOOT)" || {
+        echo "refresh-rescue-iso: RESCUE partition found but RESCUEBOOT is missing; refusing to proceed with a half rescue setup." >&2
+        exit 1
+    }
+    RESCUE_BOOT_DEST="$RESCUE_BOOT_DEV"
+else
+    [ -d /boot/rescue ] || {
+        echo "refresh-rescue-iso: RESCUE partition found but /boot/rescue is missing; refusing to proceed with a half rescue setup." >&2
+        exit 1
+    }
+    RESCUE_BOOT_DEST="/boot/rescue"
+fi
 
 WORK_DIR=$(mktemp -d)
 RESCUE_MNT="$WORK_DIR/rescue"
@@ -76,12 +92,17 @@ mount "$RESCUE_DEV" "$RESCUE_MNT"
 durable_replace 644 "$WORK_DIR/archlinux-x86_64.iso" "$RESCUE_MNT/archlinux-x86_64.iso"
 umount "$RESCUE_MNT"
 
-echo "refresh-rescue-iso: writing the refreshed kernel/initramfs to $RESCUE_BOOT_DEV..."
-id=$(notify_user normal "sobarch: refresh rescue iso" "Writing the refreshed kernel/initramfs to $RESCUE_BOOT_DEV..." "$id")
-mkdir -p "$RESCUE_BOOT_MNT"
-mount "$RESCUE_BOOT_DEV" "$RESCUE_BOOT_MNT"
-durable_replace 644 "$WORK_DIR/vmlinuz-linux" "$RESCUE_BOOT_MNT/vmlinuz-linux"
-durable_replace 644 "$WORK_DIR/initramfs-linux.img" "$RESCUE_BOOT_MNT/initramfs-linux.img"
-umount "$RESCUE_BOOT_MNT"
+echo "refresh-rescue-iso: writing the refreshed kernel/initramfs to $RESCUE_BOOT_DEST..."
+id=$(notify_user normal "sobarch: refresh rescue iso" "Writing the refreshed kernel/initramfs to $RESCUE_BOOT_DEST..." "$id")
+if [ -n "$RESCUE_BOOT_DEV" ]; then
+    mkdir -p "$RESCUE_BOOT_MNT"
+    mount "$RESCUE_BOOT_DEV" "$RESCUE_BOOT_MNT"
+    durable_replace 644 "$WORK_DIR/vmlinuz-linux" "$RESCUE_BOOT_MNT/vmlinuz-linux"
+    durable_replace 644 "$WORK_DIR/initramfs-linux.img" "$RESCUE_BOOT_MNT/initramfs-linux.img"
+    umount "$RESCUE_BOOT_MNT"
+else
+    durable_replace 644 "$WORK_DIR/vmlinuz-linux" "$RESCUE_BOOT_DEST/vmlinuz-linux"
+    durable_replace 644 "$WORK_DIR/initramfs-linux.img" "$RESCUE_BOOT_DEST/initramfs-linux.img"
+fi
 
 echo "refresh-rescue-iso: done."
