@@ -11,8 +11,9 @@ toc = true
 
 The TUI walks through:
 
-- Disk selection (the installer only supports full-disk installs: the
-  entire target disk is partitioned and wiped, no dual/multi-boot)
+- Disk selection: wipes and partitions the entire target disk by
+  default, or installs into existing free space instead for
+  [dual-boot](../dual-boot/) alongside another OS
 - Hostname, keyboard layout, system language, and timezone
 - User account and password
 - An optional SSH toggle

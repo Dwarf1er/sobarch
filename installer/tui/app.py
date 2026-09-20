@@ -68,13 +68,26 @@ class SobarchApp(App):
         self._step_index += 1
         if self._step_index >= len(STEPS):
             self._step_index = len(STEPS) - 1
+        elif self._skip_current_step():
+            self._step_index += 1
         self.switch_screen(STEPS[self._step_index]())
 
     def wizard_back(self) -> None:
         if self._step_index == 0:
             return
         self._step_index -= 1
+        if self._step_index > 0 and self._skip_current_step():
+            self._step_index -= 1
         self.switch_screen(STEPS[self._step_index]())
+
+    def _skip_current_step(self) -> bool:
+        # RescueScreen is skipped for free-space (dual-boot) installs:
+        # rescue media is disabled outright for those (screens/disk.py
+        # forces state.rescue_media False), so there's nothing left for
+        # that screen to ask about. The only conditional step today; a
+        # second one would want a per-STEPS-entry predicate instead of
+        # this if-chain.
+        return STEPS[self._step_index] is RescueScreen and self.state.free_space_install
 
     def begin_install(self) -> None:
         self.switch_screen(ProgressScreen())

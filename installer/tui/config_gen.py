@@ -54,6 +54,18 @@ def _to_mib(size_or_start: dict) -> int:
     raise ConfigGenError(f"unexpected unit {unit!r} in base.json template")
 
 
+def _mib_dict(template: dict, value_mib: int) -> dict:
+    """Same {sector_size, unit: MiB, value} shape used throughout
+    base.json's partition entries, keyed off an existing dict's own
+    sector_size rather than a hardcoded 512, in case a future template
+    partition uses a different one."""
+    return {
+        "sector_size": template["sector_size"],
+        "unit": "MiB",
+        "value": value_mib,
+    }
+
+
 def partition_device_path(disk_device: str, partition_number: int) -> str:
     """/dev/sda -> /dev/sda1, but /dev/nvme0n1 -> /dev/nvme0n1p1: any
     device path ending in a digit needs a "p" separator before the
@@ -84,57 +96,92 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
     )
     btrfs = next(p for p in partitions if p.get("fs_type") == "btrfs")
 
-    boot_end_mib = _to_mib(boot["start"]) + _to_mib(boot["size"])
     rescue_partition_number = None
     rescue_boot_partition_number = None
     rescue_boot_merged = False
 
-    if state.rescue_media:
-        if rescue is None or rescue_boot is None:
-            raise ConfigGenError("rescue media was requested but base.json has no rescue partition template")
-        if hardware.is_uefi:
-            btrfs_start_mib = boot_end_mib + _to_mib(rescue_boot["size"]) + _to_mib(rescue["size"])
-            rescue_boot_partition_number = partitions.index(rescue_boot) + 1
-            rescue_partition_number = partitions.index(rescue) + 1
-        else:
-            # archinstall picks MBR (not GPT) for a BIOS install, and
-            # caps it at 3 primary partitions -- one over budget with a
-            # dedicated rescue-boot partition alongside boot/rescue/root.
-            # The rescue kernel/initramfs live directly under /boot
-            # instead (installer/archinstall/rescue-iso-setup.sh writes
-            # them to /boot/rescue/ rather than formatting a separate
-            # partition), dropping the count back to 3.
-            partitions.remove(rescue_boot)
-            rescue["start"] = {
-                "sector_size": rescue["start"]["sector_size"],
-                "unit": "MiB",
-                "value": boot_end_mib,
-            }
-            btrfs_start_mib = boot_end_mib + _to_mib(rescue["size"])
-            rescue_partition_number = partitions.index(rescue) + 1
-            rescue_boot_merged = True
-    else:
+    if state.free_space_install:
+        # Installing alongside another OS (docs/DECISIONS.md): never
+        # wipe, never shrink anything -- the free space was already
+        # carved out by the user (disk_probe.py only offered this
+        # option because it found enough of it). rescue_media is
+        # forced False by screens/disk.py for this path, so the rescue
+        # partitions are always dropped, same as the ordinary
+        # no-rescue-media branch below.
         if rescue is not None:
             partitions.remove(rescue)
         if rescue_boot is not None:
             partitions.remove(rescue_boot)
-        btrfs_start_mib = boot_end_mib
 
-    btrfs["start"] = {
-        "sector_size": btrfs["start"]["sector_size"],
-        "unit": "MiB",
-        "value": btrfs_start_mib,
-    }
+        device_mod["wipe"] = False
+        assert state.free_space_start_bytes is not None and state.free_space_size_bytes is not None
+        free_space_start_mib = state.free_space_start_bytes // MIB
+        free_space_end_mib = (state.free_space_start_bytes + state.free_space_size_bytes) // MIB
 
-    root_size_mib = (state.disk_size_bytes - (btrfs_start_mib * MIB) - GPT_TRAILING_RESERVE_BYTES) // MIB
+        if state.existing_esp_path is not None:
+            # Reuse the other OS's own ESP untouched: "existing" status,
+            # never "modify" -- archinstall deletes-then-recreates any
+            # "modify" partition when the device isn't wiped, which
+            # would destroy the other OS's boot files. "existing" is
+            # excluded from both repartitioning and reformatting, only
+            # mounted as-is. It lives wherever it already was on disk,
+            # unrelated to the free space, so the new root partition
+            # simply starts at the free space's own beginning.
+            assert state.existing_esp_start_bytes is not None and state.existing_esp_size_bytes is not None
+            boot["status"] = "existing"
+            boot["dev_path"] = state.existing_esp_path
+            boot["start"] = _mib_dict(boot["start"], state.existing_esp_start_bytes // MIB)
+            boot["size"] = _mib_dict(boot["size"], state.existing_esp_size_bytes // MIB)
+            btrfs_start_mib = free_space_start_mib
+        else:
+            # No ESP anywhere on this disk (rare): create one at the
+            # start of the free space, same as the ordinary layout.
+            boot["start"] = _mib_dict(boot["start"], free_space_start_mib)
+            btrfs_start_mib = free_space_start_mib + _to_mib(boot["size"])
+
+        root_size_mib = free_space_end_mib - btrfs_start_mib
+        # The GPT-tail reserve only matters when the free space runs to
+        # the physical end of the disk; a gap between two existing
+        # partitions needs no such reserve.
+        if state.free_space_at_disk_end:
+            root_size_mib -= GPT_TRAILING_RESERVE_BYTES // MIB
+    else:
+        boot_end_mib = _to_mib(boot["start"]) + _to_mib(boot["size"])
+
+        if state.rescue_media:
+            if rescue is None or rescue_boot is None:
+                raise ConfigGenError("rescue media was requested but base.json has no rescue partition template")
+            if hardware.is_uefi:
+                btrfs_start_mib = boot_end_mib + _to_mib(rescue_boot["size"]) + _to_mib(rescue["size"])
+                rescue_boot_partition_number = partitions.index(rescue_boot) + 1
+                rescue_partition_number = partitions.index(rescue) + 1
+            else:
+                # archinstall picks MBR (not GPT) for a BIOS install, and
+                # caps it at 3 primary partitions -- one over budget with a
+                # dedicated rescue-boot partition alongside boot/rescue/root.
+                # The rescue kernel/initramfs live directly under /boot
+                # instead (installer/archinstall/rescue-iso-setup.sh writes
+                # them to /boot/rescue/ rather than formatting a separate
+                # partition), dropping the count back to 3.
+                partitions.remove(rescue_boot)
+                rescue["start"] = _mib_dict(rescue["start"], boot_end_mib)
+                btrfs_start_mib = boot_end_mib + _to_mib(rescue["size"])
+                rescue_partition_number = partitions.index(rescue) + 1
+                rescue_boot_merged = True
+        else:
+            if rescue is not None:
+                partitions.remove(rescue)
+            if rescue_boot is not None:
+                partitions.remove(rescue_boot)
+            btrfs_start_mib = boot_end_mib
+
+        root_size_mib = (state.disk_size_bytes - (btrfs_start_mib * MIB) - GPT_TRAILING_RESERVE_BYTES) // MIB
+
     if root_size_mib <= 0:
         raise ConfigGenError("the selected disk is too small for this partition layout")
 
-    btrfs["size"] = {
-        "sector_size": btrfs["size"]["sector_size"],
-        "unit": "MiB",
-        "value": root_size_mib,
-    }
+    btrfs["start"] = _mib_dict(btrfs["start"], btrfs_start_mib)
+    btrfs["size"] = _mib_dict(btrfs["size"], root_size_mib)
 
     base["hostname"] = state.hostname
     base["locale_config"]["kb_layout"] = state.kb_layout

@@ -24,9 +24,9 @@ see [AUR & Custom Packages](../../packages/aur-and-custom/).
 
 ## Can I dual-boot with Windows or another OS?
 
-No. The installer only supports full-disk installs: the entire target
-disk is partitioned and wiped. See
-[Disk & Account Setup](../../installer/disk-and-accounts/).
+Yes, if you free up disk space for it yourself first (the installer
+never shrinks an existing partition for you). See
+[Dual-Boot](../../installer/dual-boot/).
 
 ## Is my disk encrypted?
 

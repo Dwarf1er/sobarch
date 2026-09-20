@@ -5,7 +5,7 @@ weight = 10
 template = "docs/page.html"
 
 [extra]
-lead = "The installer only supports full-disk installs: it partitions and wipes the entire target disk. Dual/multi-boot is not supported."
+lead = "By default the installer partitions and wipes the entire target disk. It can also install into existing free space instead, for dual-boot alongside another OS."
 toc = true
 +++
 

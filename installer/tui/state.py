@@ -10,6 +10,19 @@ class WizardState:
     disk_device: str | None = None
     disk_size_bytes: int | None = None
 
+    # Set together, only when the user chose "install into existing
+    # free space" on screens/disk.py instead of wiping the whole disk
+    # (see disk_probe.py). free_space_install is the single flag
+    # config_gen.py branches on; the rest are the probe results needed
+    # to place partitions without touching what's already there.
+    free_space_install: bool = False
+    free_space_start_bytes: int | None = None
+    free_space_size_bytes: int | None = None
+    free_space_at_disk_end: bool = False
+    existing_esp_path: str | None = None
+    existing_esp_start_bytes: int | None = None
+    existing_esp_size_bytes: int | None = None
+
     hostname: str = ""
     username: str = ""
     password: str = ""

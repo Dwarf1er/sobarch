@@ -87,8 +87,10 @@ repository and launches the TUI installer, which walks through disk
 selection, account/locale setup, and optional software profiles before
 handing off to `archinstall`.
 
-**Note:** the installer only supports full-disk installs. It partitions
-and wipes the entire target disk; dual/multi-boot is not supported.
+**Note:** by default, the installer partitions and wipes the entire
+target disk. It can also install into existing free space instead, for
+dual-boot alongside another OS (see the [Dual-Boot
+docs](https://sobarch.antoinepoulin.com/docs/installer/dual-boot/)).
 
 ## License
 

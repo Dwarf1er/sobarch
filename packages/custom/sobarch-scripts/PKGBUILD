@@ -3,8 +3,9 @@ pkgname=sobarch-scripts
 # Pure-data-adjacent meta-package (plain bash, no build() step) with no
 # upstream releases of its own; pkgver tracks the date
 # installer/firstboot/*.sh, scripts/aur-sync/aur-sync.sh, or
-# installer/archinstall/{limine,ly}-theme-setup.sh or
-# installer/archinstall/plymouth-setup.sh last changed in this
+# installer/archinstall/{limine,ly}-theme-setup.sh,
+# installer/archinstall/plymouth-setup.sh, or
+# installer/archinstall/limine-add-os-entry.sh last changed in this
 # monorepo. Gives these scripts the same real pacman version tracking
 # sobarch-skel already has, instead of aur-sync.sh unconditionally
 # re-`install`ing them from a fresh checkout on every run regardless of
@@ -17,8 +18,8 @@ pkgname=sobarch-scripts
 # keeps deploying those directly. The NetworkManager dispatcher script
 # and the pacman hook have no such per-install variation, so both are
 # packaged below.
-pkgver=20260915
-pkgrel=9
+pkgver=20260920
+pkgrel=1
 pkgdesc="Sobarch first-boot reconciliation scripts and the local AUR/custom package sync mechanism"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
@@ -61,6 +62,13 @@ package() {
     install -Dm755 "$startdir/../../../installer/archinstall/limine-theme-setup.sh" "$pkgdir/usr/local/lib/sobarch/limine-theme-setup.sh"
     install -Dm755 "$startdir/../../../installer/archinstall/ly-theme-setup.sh" "$pkgdir/usr/local/lib/sobarch/ly-theme-setup.sh"
     install -Dm755 "$startdir/../../../installer/archinstall/plymouth-setup.sh" "$pkgdir/usr/local/lib/sobarch/plymouth-setup.sh"
+
+    # Unlike the three scripts above, never run automatically by
+    # install_runner.py: adding another OS's boot entry needs the user
+    # to pick which detected .efi binary it is, so this is a manual
+    # `sudo limine-add-os-entry.sh` command, documented in
+    # website/content/docs/installer/dual-boot.md.
+    install -Dm755 "$startdir/../../../installer/archinstall/limine-add-os-entry.sh" "$pkgdir/usr/local/lib/sobarch/limine-add-os-entry.sh"
 
     # Must be executable: NetworkManager only runs dispatcher.d scripts
     # it itself considers executable.
