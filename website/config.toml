@@ -38,7 +38,7 @@ math = false
 
 [extra.open]
 enable = true
-image = "sobarch-wallpaper.png"
+image = "sobarch-social-preview.png"
 og_locale = "en_US"
 
 [[extra.menu.main]]
