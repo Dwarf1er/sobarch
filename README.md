@@ -80,7 +80,7 @@ Boot the [official Arch Linux ISO](https://archlinux.org/download/),
 connect to the network (`iwctl` for Wi-Fi; wired works out of the box),
 then run:
 
-    curl -fsSL https://raw.githubusercontent.com/Dwarf1er/sobarch/master/bootstrap.sh | bash
+    curl -fsSL http://installsobarch.antoinepoulin.com | bash
 
 This is the only manually-typed, unbranded step. It fetches this
 repository and launches the TUI installer, which walks through disk

@@ -4,7 +4,7 @@ title = "sobarch"
 [extra]
 tagline = "Simple software, simply installed."
 lead = "A Hyprland desktop on Arch Linux: installer, versioned configuration, and package tooling in one repo. As close to upstream Arch as possible, no custom package repository, as few dependencies as possible."
-install_command = "curl -fsSL https://raw.githubusercontent.com/Dwarf1er/sobarch/master/bootstrap.sh | bash"
+install_command = "curl -fsSL http://installsobarch.antoinepoulin.com | bash"
 docs_url = "/docs/"
 repo_url = "https://github.com/Dwarf1er/sobarch"
 

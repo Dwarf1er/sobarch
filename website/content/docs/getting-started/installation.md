@@ -13,7 +13,7 @@ Boot the [official Arch Linux ISO](https://archlinux.org/download/), connect to
 the network (`iwctl` for Wi-Fi; wired works out of the box), then run:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Dwarf1er/sobarch/master/bootstrap.sh | bash
+curl -fsSL http://installsobarch.antoinepoulin.com | bash
 ```
 
 This is the only manually-typed, unbranded step. `bootstrap.sh` fetches a
