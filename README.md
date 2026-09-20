@@ -1,7 +1,7 @@
 <div align="center">
 
 # Sobarch
-##### A minimal, reproducible Arch Linux + Hyprland desktop setup
+##### Arch's own principle, finally applied to the desktop.
 
 <img alt="Sobarch logo" height="280" src="branding/sobarch-logo.svg" />
 
@@ -9,18 +9,22 @@
 
 </div>
 
-A minimal, reproducible Arch Linux + Hyprland desktop setup: installer,
-versioned configuration, and package tooling in one repo.
+Sobarch is a Hyprland desktop for Arch Linux: installer, versioned
+configuration, and package tooling in one repo. It applies Arch's own
+KISS principle to the layer most distributions abandon it at: the
+desktop environment itself.
 
-Sobarch started after a dotfiles repository grew into a pile of
-OS-level tweaks, packages, and installation scripts. Rebuilding that as
-a small, reproducible environment turned out to be less overhead than
-letting the dotfiles spaghetti keep growing. The goals: minimalistic in
-all aspects, as close to upstream Arch as possible, no custom package
-repository, and as little custom tooling as possible.
+A modern desktop needs a secrets store, a polkit agent, network
+management, and a video editor, among other things. Sobarch picks
+whichever tool delivers each of those without pulling in a whole
+foreign desktop environment's framework to get there: `oo7` instead of
+KWallet, `hyprpolkitagent` instead of `polkit-kde-agent`, a
+NetworkManager-driven fuzzel menu instead of a GUI applet, Shotcut
+instead of Kdenlive. Same capability, a fraction of what actually gets
+installed.
 
-It's primarily built for its maintainer, but aims to stay understandable
-and usable by others.
+Built to run one machine well, kept legible enough that yours can be
+the second.
 
 <p align="center">
   <img alt="The sobarch desktop: Hyprland with waybar, a themed terminal, and the default wallpaper" src="website/static/images/home/desktop-hero.webp" width="800" />

@@ -5,6 +5,32 @@
   background: rgba($onedark-blue, 0.25);
 }
 
+// The theme's default header-bar gradient (cyan -> blue -> purple) doesn't
+// match sobarch's own blue mark; keep it in the same brand-blue family.
+.header-bar {
+  border-image-source: linear-gradient(90deg, $onedark-cyan, $onedark-blue);
+}
+
+// Bootstrap's default inline-code color is a bright pink, which reads as an
+// error/warning next to plain prose (e.g. the profile-name list). Keep it
+// legible but calm.
+code {
+  color: $onedark-purple;
+  background: $gray-100;
+}
+
+body.dark code {
+  background: $body-overlay-dark;
+}
+
+// Fenced code blocks keep their own beige/dark background and inherited
+// text color (highlight.js tokens supply the actual syntax colors); only
+// inline code in prose should pick up the override above.
+pre code {
+  color: inherit;
+  background: none;
+}
+
 .brand-mark {
   display: inline-flex;
   align-items: center;
@@ -20,11 +46,38 @@
 // Hero
 
 .home-hero {
-  padding: 6rem 0 4rem;
+  position: relative;
+  overflow: hidden;
+  padding: 4rem 0 3.5rem;
   text-align: center;
+
+  @include media-breakpoint-up(md) {
+    padding: 6rem 0 4.5rem;
+  }
+
+  // A soft radial glow behind the mark gives the hero some depth instead of
+  // sitting flat against the page background.
+  &::before {
+    content: "";
+    position: absolute;
+    top: -10rem;
+    left: 50%;
+    width: 60rem;
+    height: 40rem;
+    transform: translateX(-50%);
+    background: radial-gradient(closest-side, rgba($onedark-blue, 0.16), rgba($onedark-blue, 0));
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+body.dark .home-hero::before {
+  background: radial-gradient(closest-side, rgba($onedark-blue, 0.22), rgba($onedark-blue, 0));
 }
 
 .home-hero-inner {
+  position: relative;
+  z-index: 1;
   max-width: 780px;
   margin-left: auto;
   margin-right: auto;
@@ -32,7 +85,7 @@
 
 .home-logo {
   display: block;
-  margin: 0 auto 1.5rem;
+  margin: 0 auto 2rem;
   width: 120px;
   height: 120px;
 
@@ -40,20 +93,6 @@
     width: 180px;
     height: 180px;
   }
-}
-
-.home-name {
-  margin: 0 0 0.5rem;
-  font-family: $font-family-monospace;
-  font-weight: 600;
-  font-size: 1.25rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: $gray-600;
-}
-
-body.dark .home-name {
-  color: $body-color-dark;
 }
 
 .home-tagline {
@@ -80,12 +119,16 @@ body.dark .home-lead {
   margin: 0 auto 2rem;
   text-align: left;
   border: 1px solid $gray-300;
+  border-radius: 0.5rem;
+  overflow: hidden;
   background: $gray-900;
+  box-shadow: 0 1.5rem 3rem -1.5rem rgba($black, 0.35);
 }
 
 body.dark .home-terminal {
   border-color: $border-dark;
   background: $body-overlay-dark;
+  box-shadow: 0 1.5rem 3rem -1.5rem rgba($black, 0.6);
 }
 
 .home-terminal-bar {
@@ -151,36 +194,126 @@ body.dark .home-terminal {
   justify-content: center;
   gap: 1rem;
   flex-wrap: wrap;
-}
 
-// Pillars
+  .btn {
+    padding: 0.65rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 
-.home-pillars {
-  padding: 3rem 0 5rem;
-  border-top: 1px solid $gray-200;
-}
+    &:hover,
+    &:focus-visible {
+      transform: translateY(-1px);
+    }
+  }
 
-body.dark .home-pillars {
-  border-top-color: $border-dark;
-}
-
-.home-pillar-grid {
-  display: grid;
-  gap: 1.5rem;
-  grid-template-columns: 1fr;
-
-  @include media-breakpoint-up(md) {
-    grid-template-columns: repeat(3, 1fr);
+  .btn-primary:hover,
+  .btn-primary:focus-visible {
+    box-shadow: 0 0.75rem 1.5rem -0.75rem rgba($onedark-blue, 0.6);
   }
 }
 
-.home-pillar {
-  padding: 1.5rem;
-  border: 1px solid $gray-200;
+// Section head: a small code-comment-style kicker plus a heading, with an
+// optional arrow-link floated to the end. Reused by philosophy/included/profiles.
+
+.home-kicker {
+  margin: 0 0 0.5rem;
+  font-family: $font-family-monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: $onedark-blue;
+}
+
+.home-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
 
   h2 {
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
+    margin: 0;
+    font-size: 1.75rem;
+  }
+}
+
+.home-arrow-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: $font-family-monospace;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &::after {
+    content: "\2192";
+    display: inline-block;
+    transition: transform 0.15s ease;
+  }
+
+  &:hover::after,
+  &:focus-visible::after {
+    transform: translateX(3px);
+  }
+}
+
+// Philosophy
+
+.home-philosophy {
+  padding: 4.5rem 0;
+  background: $gray-100;
+  border-top: 1px solid $gray-200;
+  border-bottom: 1px solid $gray-200;
+}
+
+body.dark .home-philosophy {
+  background: $body-overlay-dark;
+  border-top-color: $border-dark;
+  border-bottom-color: $border-dark;
+}
+
+.home-philosophy-inner {
+  max-width: 46rem;
+
+  p {
+    font-size: 1.125rem;
+    line-height: 1.7;
+    color: $gray-600;
+  }
+
+  p:not(:last-child) {
+    margin-bottom: 1.5rem;
+  }
+}
+
+body.dark .home-philosophy-inner p {
+  color: $body-color-dark;
+}
+
+// Included
+
+.home-included {
+  padding: 5rem 0;
+}
+
+.home-feature-grid {
+  display: grid;
+  gap: 2.5rem 3rem;
+  grid-template-columns: 1fr;
+
+  @include media-breakpoint-up(md) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.home-feature {
+  padding-top: 1.5rem;
+  border-top: 1px solid $gray-200;
+
+  h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.15rem;
   }
 
   p {
@@ -189,29 +322,62 @@ body.dark .home-pillars {
   }
 }
 
-body.dark .home-pillar {
-  border-color: $border-dark;
+body.dark .home-feature {
+  border-top-color: $border-dark;
 
   p {
     color: $body-color-dark;
   }
 }
 
-// Included
+.home-feature-index {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-family: $font-family-monospace;
+  font-weight: 700;
+  color: $onedark-blue;
+}
 
-.home-included {
-  padding: 0 0 5rem;
+// Optional software profiles
+
+.home-profiles {
+  padding: 4.5rem 0 5rem;
+  background: $gray-100;
   border-top: 1px solid $gray-200;
 }
 
-body.dark .home-included {
+body.dark .home-profiles {
+  background: $body-overlay-dark;
   border-top-color: $border-dark;
 }
 
-.home-included .home-section-title {
-  margin: 3rem 0 1.5rem;
+.home-profiles-lead {
+  max-width: 42rem;
+  margin: 0 0 2rem;
+  color: $gray-600;
 }
 
-.home-included .home-pillar-grid + .home-section-title {
-  margin-top: 4rem;
+body.dark .home-profiles-lead {
+  color: $body-color-dark;
+}
+
+.home-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.home-chip {
+  padding: 0.35rem 0.85rem;
+  border: 1px solid $gray-300;
+  border-radius: 999px;
+  background: $white;
+  font-family: $font-family-monospace;
+  font-size: 0.9rem;
+  color: $onedark-purple;
+}
+
+body.dark .home-chip {
+  border-color: $border-dark;
+  background: $body-bg-dark;
 }

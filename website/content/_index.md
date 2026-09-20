@@ -2,29 +2,21 @@
 title = "sobarch"
 
 [extra]
-tagline = "Simple software, simply installed."
-lead = "A Hyprland desktop on Arch Linux: installer, versioned configuration, and package tooling in one repo. As close to upstream Arch as possible, no custom package repository, as few dependencies as possible."
+tagline = "Arch's own principle, finally applied to the desktop."
+lead = "A Hyprland desktop for Arch Linux: installer, versioned configuration, and package tooling in one repo. Every feature comes from the smallest tool that can deliver it, never from pulling in a foreign desktop environment's framework to get there."
 install_command = "curl -fsSL http://installsobarch.antoinepoulin.com | bash"
 docs_url = "/docs/"
 repo_url = "https://github.com/Dwarf1er/sobarch"
+philosophy = [
+  "A modern desktop needs a secrets store, a polkit agent, network management, and a video editor, among other things. Sobarch picks whichever tool delivers each of those without dragging in a whole foreign desktop environment's framework: oo7 instead of KWallet, hyprpolkitagent instead of polkit-kde-agent, a NetworkManager-driven fuzzel menu instead of a GUI applet, Shotcut instead of Kdenlive. Same capability, a fraction of what's actually installed.",
+  "One installer and one set of versioned configs make rebuilding a machine from scratch the normal way to make a change, not a last resort. Every app's config is generated from the same base16/base24 color scheme via tinty, so picking a new theme from the built-in menu recolors the terminal, bar, launcher, and editor together, not one app at a time.",
+]
 
 [[extra.menu.main]]
 name = "Docs"
 section = "docs"
 url = "/docs/"
 weight = 10
-
-[[extra.pillars]]
-title = "Minimal"
-content = "No custom package repository, no bespoke daemons. What isn't upstream Arch or Hyprland is a plain dotfile or a script you can read top to bottom."
-
-[[extra.pillars]]
-title = "Reproducible"
-content = "One installer, one set of versioned configs. Rebuilding a machine from scratch is the normal way to make a change, not a last resort."
-
-[[extra.pillars]]
-title = "Themeable at the root"
-content = "Every app config is generated from the same base16/base24 color scheme via tinty, so switching a theme recolors the whole desktop at once, not one app at a time."
 
 [[extra.included]]
 title = "Desktop"

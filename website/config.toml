@@ -1,7 +1,7 @@
 # The URL the site will be built for.
 base_url = "https://sobarch.antoinepoulin.com"
 title = "sobarch"
-description = "A minimal, reproducible Arch Linux + Hyprland desktop setup."
+description = "A Hyprland desktop for Arch Linux that carries Arch's own KISS principle all the way to the desktop: full modern features, none of the framework bloat."
 
 theme = "adidoks"
 
