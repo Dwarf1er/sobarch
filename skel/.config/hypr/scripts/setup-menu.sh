@@ -12,6 +12,7 @@ choice=$(printf "%s\n" \
     "󰏔  Install" \
     "󰉦  Themes" \
     "󰸉  Wallpaper" \
+    $'⚙'"  Default Apps" \
     "󰑐  Refresh Rescue ISO" \
     "${ICON_DOCS}  Docs" \
     | fuzzel --dmenu --prompt "sobarch: ")
@@ -22,6 +23,7 @@ case "$choice" in
     "󰏔  Install") exec bash "$HOME/.config/hypr/scripts/setup-package-menu.sh" ;;
     "󰉦  Themes") exec bash "$HOME/.config/hypr/scripts/themes-menu.sh" ;;
     "󰸉  Wallpaper") exec bash "$HOME/.config/hypr/scripts/wallpaper-menu.sh" ;;
+    $'⚙'"  Default Apps") exec bash "$HOME/.config/hypr/scripts/mimetype-menu.sh" ;;
     "󰑐  Refresh Rescue ISO") exec bash "$HOME/.config/hypr/scripts/refresh-rescue-menu.sh" ;;
     "${ICON_DOCS}  Docs") exec xdg-open "https://sobarch.antoinepoulin.com" ;;
 esac
