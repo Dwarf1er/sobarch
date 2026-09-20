@@ -104,7 +104,7 @@ docs](https://sobarch.antoinepoulin.com/docs/installer/dual-boot/)).
 
 After cloning, run `scripts/install-git-hooks.sh` once. It points git at
 this repo's tracked `.githooks/` dir, which validates `packages/custom/`
-PKGBUILDs before each commit (requires `makepkg`/`namcap` on `PATH`).
+PKGBUILDs before each commit (requires `makepkg` on `PATH`).
 
 ## License
 

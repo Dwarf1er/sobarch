@@ -23,11 +23,12 @@
 #     decision #16), diffs BASE_REF against the working tree instead of
 #     a second ref, matching pkgver_at's own "WORKTREE" read below
 #     (which already compares against files on disk, not the index).
-#   - Runs namcap against the PKGBUILD. Advisory only, never fails the
-#     run, same treatment the AUR check gives it.
 #
 # Must run as a non-root user: makepkg refuses outright to run as
-# root.
+# root. No namcap pass here: unlike validate-vendored-pkgbuilds.sh,
+# this runs as a local pre-commit hook (docs/DECISIONS.md decision
+# #16), where namcap's presence on a given machine can't be assumed
+# the way a CI container guarantees it.
 
 set -uo pipefail
 
@@ -66,13 +67,6 @@ path_changed_under() {
     return 1
 }
 
-have_namcap=false
-if command -v namcap >/dev/null 2>&1; then
-    have_namcap=true
-else
-    echo "namcap not found on PATH, skipping advisory namcap checks"
-fi
-
 mismatches=()
 for dir in packages/custom/*/; do
     [[ -d "$dir" ]] || continue
@@ -96,11 +90,6 @@ for dir in packages/custom/*/; do
         mismatches+=("$name (.SRCINFO stale)")
     fi
     rm -f "$generated"
-
-    if $have_namcap; then
-        echo "== $name: namcap =="
-        namcap "$pkgbuild" || true
-    fi
 
     if ((${#changed_files[@]})); then
         # Derive this package's external payload paths straight from
