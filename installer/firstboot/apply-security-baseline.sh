@@ -43,6 +43,44 @@ echo "sobarch-firstboot: locking the root account..."
 id=$(notify_user normal "sobarch: security baseline" "Locking the root account..." "$id")
 passwd -l root
 
+# ly's own shipped /etc/pam.d/{ly,ly-autologin} still reference
+# pam_gnome_keyring.so, not oo7's pam_oo7.so (decision #9 switched the
+# Secret Service implementation but never touched ly's PAM stack to
+# match). Since pam_gnome_keyring.so isn't installed on a sobarch
+# system, that line is a silent no-op ("optional" swallows the missing
+# module), so the login keyring is never auto-unlocked with the login
+# password: every Secret Service request from then on blocks on an
+# interactive unlock prompt that has nothing to answer it, which is
+# what actually broke Chromium-based browsers (their password/cookie
+# encryption goes through the same Secret Service call). Confirmed by
+# reproducing the hang directly with `secret-tool store` on a real
+# install and finding the default collection still locked post-login.
+echo "sobarch-firstboot: wiring oo7 into ly's PAM stack..."
+id=$(notify_user normal "sobarch: security baseline" "Wiring oo7 into the login PAM stack..." "$id")
+
+for pam_file in /etc/pam.d/ly /etc/pam.d/ly-autologin; do
+    sed -i 's/pam_gnome_keyring\.so/pam_oo7.so/g' "$pam_file"
+done
+
+# pam_oo7.so alone isn't enough: if oo7-daemon isn't already running by
+# the time PAM's session phase hands off the login password, pam_oo7.so
+# falls back to forking oo7-daemon directly itself, then immediately
+# tries to connect to its not-yet-created $XDG_RUNTIME_DIR/oo7-pam.sock
+# and gives up (confirmed in the journal: "Socket not found, attempting
+# to start daemon" followed by "Failed to connect to daemon socket: No
+# such file or directory" two seconds later, password discarded, no
+# retry) -- oo7-daemon.service is disabled by default, only ever
+# D-Bus-activated on first demand, which loses this race every time.
+# The ArchWiki's oo7 page documents the fix directly: "To enable it to
+# start at login, enable the oo7-daemon.service user unit." `--global`
+# (rather than `--user`, which needs an active session/bus for the
+# target account that doesn't exist yet at first boot) enables it for
+# every user account up front, the same way `enable --now` is used for
+# system-level units just below.
+echo "sobarch-firstboot: enabling oo7-daemon.service so it's already running by login..."
+id=$(notify_user normal "sobarch: security baseline" "Enabling the oo7 keyring daemon..." "$id")
+systemctl --global enable oo7-daemon.service
+
 # systemd's own shipped policy already grants power-off/reboot/suspend
 # to an active local session for free (`pkaction --action-id
 # org.freedesktop.login1.power-off --verbose` shows "implicit active:

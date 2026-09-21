@@ -3,6 +3,11 @@
 # custom-pkgbuilds.yml, moved here instead: see docs/DECISIONS.md
 # decision #16. Requires makepkg on PATH; must run as a non-root user
 # (makepkg refuses root outright).
+#
+# --fix: a payload-changed-without-a-version-bump or a stale/missing
+# .SRCINFO is auto-corrected and `git add`-ed in place rather than
+# failing the commit, since packages/custom/'s pkgver=<date> convention
+# makes the fix fully mechanical here (see the script's own comment).
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
-BASE_REF=HEAD .github/scripts/validate-custom-pkgbuilds.sh
+BASE_REF=HEAD .github/scripts/validate-custom-pkgbuilds.sh --fix

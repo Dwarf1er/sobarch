@@ -29,10 +29,25 @@
 # this runs as a local pre-commit hook (docs/DECISIONS.md decision
 # #16), where namcap's presence on a given machine can't be assumed
 # the way a CI container guarantees it.
+#
+# --fix (only meaningful with BASE_REF set, i.e. the pre-commit usage):
+# instead of failing on a payload-changed-without-a-version-bump or a
+# stale/missing .SRCINFO, fixes it in place and stages the result with
+# `git add`, so the fix rides along in the commit being made. Safe to
+# do mechanically here because every packages/custom/ PKGBUILD uses
+# the same pkgver=<today's date> convention (no upstream version to
+# reconcile against) -- confirmed across all four before adding this.
+# Bumps pkgrel instead of pkgver when pkgver is already today's date
+# (a same-day second payload change). A makepkg --printsrcinfo failure
+# is never auto-fixable (a real PKGBUILD syntax error), so that case
+# still fails even under --fix.
 
 set -uo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+
+fix=false
+[[ "${1:-}" == "--fix" ]] && fix=true
 
 changed_files=()
 if [[ -n "${BASE_REF:-}" ]]; then
@@ -73,23 +88,6 @@ for dir in packages/custom/*/; do
     name="$(basename "$dir")"
     pkgbuild="${dir%/}/PKGBUILD"
     committed="${dir%/}/.SRCINFO"
-    generated="$(mktemp)"
-
-    if ! (cd "$dir" && makepkg --printsrcinfo) > "$generated" 2>/dev/null; then
-        echo "== $name: makepkg --printsrcinfo failed =="
-        mismatches+=("$name (printsrcinfo failed)")
-        rm -f "$generated"
-        continue
-    fi
-
-    if [[ ! -f "$committed" ]]; then
-        echo "== $name: missing .SRCINFO =="
-        mismatches+=("$name (missing .SRCINFO)")
-    elif ! diff -u "$committed" "$generated"; then
-        echo "== $name: .SRCINFO is stale, regenerate with 'makepkg --printsrcinfo > .SRCINFO' =="
-        mismatches+=("$name (.SRCINFO stale)")
-    fi
-    rm -f "$generated"
 
     if ((${#changed_files[@]})); then
         # Derive this package's external payload paths straight from
@@ -139,11 +137,52 @@ for dir in packages/custom/*/; do
             read -r base_ver base_rel < <(pkgver_at "$BASE_REF" "$pkgbuild" | tr '\n' ' ')
             read -r head_ver head_rel < <(pkgver_at "WORKTREE" "$pkgbuild" | tr '\n' ' ')
             if [[ -n "$base_ver" && "$base_ver $base_rel" == "$head_ver $head_rel" ]]; then
-                echo "== $name: payload changed (${extra_paths[*]:-$dir}) but pkgver/pkgrel didn't =="
-                mismatches+=("$name (payload changed without a version bump)")
+                if $fix; then
+                    today="$(date +%Y%m%d)"
+                    if [[ "$head_ver" == "$today" ]]; then
+                        new_ver="$head_ver"
+                        new_rel=$((head_rel + 1))
+                    else
+                        new_ver="$today"
+                        new_rel=1
+                    fi
+                    sed -i "s/^pkgver=.*/pkgver=$new_ver/" "$pkgbuild"
+                    sed -i "s/^pkgrel=.*/pkgrel=$new_rel/" "$pkgbuild"
+                    echo "== $name: payload changed (${extra_paths[*]:-$dir}); bumped $head_ver-$head_rel -> $new_ver-$new_rel =="
+                    git add "$pkgbuild"
+                else
+                    echo "== $name: payload changed (${extra_paths[*]:-$dir}) but pkgver/pkgrel didn't =="
+                    mismatches+=("$name (payload changed without a version bump)")
+                fi
             fi
         fi
     fi
+
+    # .SRCINFO check runs last so it picks up any pkgver/pkgrel bump
+    # from the payload check above.
+    generated="$(mktemp)"
+    if ! (cd "$dir" && makepkg --printsrcinfo) > "$generated" 2>/dev/null; then
+        echo "== $name: makepkg --printsrcinfo failed =="
+        mismatches+=("$name (printsrcinfo failed)")
+        rm -f "$generated"
+        continue
+    fi
+
+    if [[ ! -f "$committed" ]] || ! diff -u "$committed" "$generated" > /dev/null; then
+        if $fix; then
+            cp "$generated" "$committed"
+            echo "== $name: regenerated .SRCINFO =="
+            git add "$committed"
+        elif [[ ! -f "$committed" ]]; then
+            echo "== $name: missing .SRCINFO =="
+            mismatches+=("$name (missing .SRCINFO)")
+        else
+            diff -u "$committed" "$generated"
+            echo "== $name: .SRCINFO is stale, regenerate with 'makepkg --printsrcinfo > .SRCINFO' =="
+            mismatches+=("$name (.SRCINFO stale)")
+        fi
+    fi
+    rm -f "$generated"
 done
 
 if ((${#mismatches[@]})); then
