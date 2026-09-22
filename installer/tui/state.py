@@ -46,6 +46,13 @@ class WizardState:
     # install-profile-packages.sh.
     ssh_enabled: bool = False
 
+    # Both blank means "skip": no user.name/user.email is written into
+    # the new account's git config. An SSH key is still generated on
+    # first boot regardless (see write_git_config()/apply-git-setup.sh),
+    # since that needs no identity to be useful.
+    git_name: str = ""
+    git_email: str = ""
+
     install_everything: bool = False
     # Profile name -> selected package list. A profile only appears
     # here once the user has selected at least one of its packages;

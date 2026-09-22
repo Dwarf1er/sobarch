@@ -264,3 +264,16 @@ def write_security_flags(state: WizardState, sobarch_dir: Path) -> Path:
     path = sobarch_dir / "ssh-enabled"
     path.write_text("true\n" if state.ssh_enabled else "false\n")
     return path
+
+
+def write_git_config(state: WizardState, sobarch_dir: Path) -> Path:
+    """Two lines, name then email, read by apply-git-setup.sh at first
+    boot. Always written, same rationale as write_security_flags() above:
+    a config hand-run outside the TUI gets an explicit "skip git config"
+    answer (two blank lines) rather than the first-boot script guessing.
+    Blank either line means apply-git-setup.sh skips `git config
+    --global user.*` entirely, but still generates the SSH key."""
+    sobarch_dir.mkdir(parents=True, exist_ok=True)
+    path = sobarch_dir / "git-identity"
+    path.write_text(f"{state.git_name}\n{state.git_email}\n")
+    return path

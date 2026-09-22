@@ -9,6 +9,7 @@ from config_gen import (
     generate_configs,
     write_configs,
     write_firstboot_package_lists,
+    write_git_config,
     write_profile_selection,
     write_security_flags,
 )
@@ -42,6 +43,7 @@ class ReviewScreen(WizardScreen):
                 f"Rescue ISO: {'yes' if state.rescue_media else 'no'}",
                 f"Profiles:   {_profiles_summary(state)}",
                 f"SSH:        {'enabled' if state.ssh_enabled else 'disabled'}",
+                f"Git config: {state.git_name + ' <' + state.git_email + '>' if state.git_name else 'skipped'}",
             ]
             yield Static("\n".join(summary_lines), classes="card-subtitle")
 
@@ -88,12 +90,13 @@ class ReviewScreen(WizardScreen):
             profiles_path = write_profile_selection(state, out_dir)
             official_path, aur_path = write_firstboot_package_lists(state, out_dir)
             ssh_path = write_security_flags(state, out_dir)
+            git_path = write_git_config(state, out_dir)
         except ConfigGenError as error:
             self.show_error(str(error))
             return
 
         self.clear_error()
-        saved_paths = [base_path, credentials_path, profiles_path, official_path, aur_path, ssh_path]
+        saved_paths = [base_path, credentials_path, profiles_path, official_path, aur_path, ssh_path, git_path]
         self.query_one("#status-message", Static).update(
             "\n".join(f"Saved: {path}" for path in saved_paths)
         )

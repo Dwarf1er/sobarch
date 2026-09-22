@@ -21,6 +21,7 @@ from config_gen import (
     partition_device_path,
     write_configs,
     write_firstboot_package_lists,
+    write_git_config,
     write_security_flags,
 )
 from hardware import HardwareInfo
@@ -101,12 +102,16 @@ BASE_AUR_PACKAGES = _read_base_aur_packages()
 #   optional SSH component, reading the ssh-enabled
 #   flag write_security_flags() writes below. Same as
 #   install-profile-packages.sh above: no [Install] section, dispatcher-only.
+# - apply-git-setup.sh: generates an SSH key and applies the git
+#   identity collected by the TUI's Git screen. Needs no network
+#   (unlike apply-skel.sh's peers below), so it's boot-enabled too.
 FIRSTBOOT_DIR = Path(__file__).resolve().parent.parent / "firstboot"
 FIRSTBOOT_UNITS = [
     ("unblock-rfkill.sh", "sobarch-firstboot-rfkill.service"),
     ("install-profile-packages.sh", "sobarch-firstboot-packages.service"),
     ("apply-skel.sh", "sobarch-firstboot-skel.service"),
     ("apply-security-baseline.sh", "sobarch-firstboot-security.service"),
+    ("apply-git-setup.sh", "sobarch-firstboot-git.service"),
 ]
 # Subset of FIRSTBOOT_UNITS above that actually has an [Install] section
 # and should be started at boot. install-profile-packages.sh and
@@ -118,6 +123,7 @@ FIRSTBOOT_UNITS = [
 FIRSTBOOT_BOOT_ENABLED_SERVICES = {
     "sobarch-firstboot-rfkill.service",
     "sobarch-firstboot-skel.service",
+    "sobarch-firstboot-git.service",
 }
 FIRSTBOOT_SERVICE_DIR_IN_TARGET = Path("/etc/systemd/system")
 SOBARCH_DIR_IN_TARGET = Path("/etc/sobarch")
@@ -288,6 +294,7 @@ def run_install(
 
         write_firstboot_package_lists(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
         write_security_flags(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
+        write_git_config(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
 
         # /usr/local/lib/sobarch/ itself already exists by this point:
         # the sobarch-scripts package built and installed above put it
@@ -300,8 +307,9 @@ def run_install(
         service_names = []
         for _script_name, service_name in FIRSTBOOT_UNITS:
             # __USERNAME__ only appears in sobarch-firstboot-skel.service
-            # (it must run as the new account, not root, to write into
-            # its $HOME); plain text substitution on the rest is a no-op.
+            # and sobarch-firstboot-git.service (both must run as the new
+            # account, not root, to write into its $HOME); plain text
+            # substitution on the rest is a no-op.
             service_text = (FIRSTBOOT_DIR / service_name).read_text().replace("__USERNAME__", state.username)
             (firstboot_service_dir / service_name).write_text(service_text)
             service_names.append(service_name)

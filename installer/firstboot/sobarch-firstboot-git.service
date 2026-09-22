@@ -1,0 +1,12 @@
+[Unit]
+Description=Generate an SSH key and apply the git identity for the user
+ConditionPathExists=!/home/__USERNAME__/.local/state/sobarch/git-setup-done
+After=local-fs.target
+
+[Service]
+Type=oneshot
+User=__USERNAME__
+ExecStart=/usr/local/lib/sobarch/apply-git-setup.sh
+
+[Install]
+WantedBy=multi-user.target

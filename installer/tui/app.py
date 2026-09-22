@@ -11,6 +11,7 @@ from textual.app import App
 from hardware import HardwareInfo, detect_hardware
 from screens.account import AccountScreen
 from screens.disk import DiskScreen
+from screens.git import GitScreen
 from screens.localization import LocalizationScreen
 from screens.profiles import ProfilesScreen
 from screens.progress import ProgressScreen
@@ -29,6 +30,7 @@ STEPS = [
     RescueScreen,
     ProfilesScreen,
     SshScreen,
+    GitScreen,
     ReviewScreen,
 ]
 
