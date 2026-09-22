@@ -4,15 +4,18 @@ screens/base.py), and lazily detects hardware once it's actually
 needed."""
 
 import os
+from collections.abc import Callable
 from pathlib import Path
 
 from textual.app import App
 
 from hardware import HardwareInfo, detect_hardware
+from network import is_connected
 from screens.account import AccountScreen
 from screens.disk import DiskScreen
 from screens.git import GitScreen
 from screens.localization import LocalizationScreen
+from screens.network import NetworkScreen
 from screens.profiles import ProfilesScreen
 from screens.progress import ProgressScreen
 from screens.rescue import RescueScreen
@@ -24,6 +27,7 @@ from theme import ONEDARK_THEME
 
 STEPS = [
     WelcomeScreen,
+    NetworkScreen,
     DiskScreen,
     AccountScreen,
     LocalizationScreen,
@@ -33,6 +37,16 @@ STEPS = [
     GitScreen,
     ReviewScreen,
 ]
+
+# One predicate per conditionally-skipped step, checked fresh every
+# time (never cached the way get_hardware() is): unlike hardware, both
+# of these can change mid-session -- free_space_install by going back
+# and picking a different disk, is_connected() by the NetworkScreen
+# itself succeeding.
+_SKIP_PREDICATES: dict[type, Callable[["SobarchApp"], bool]] = {
+    RescueScreen: lambda app: app.state.free_space_install,
+    NetworkScreen: lambda app: is_connected(),
+}
 
 
 class SobarchApp(App):
@@ -83,13 +97,8 @@ class SobarchApp(App):
         self.switch_screen(STEPS[self._step_index]())
 
     def _skip_current_step(self) -> bool:
-        # RescueScreen is skipped for free-space (dual-boot) installs:
-        # rescue media is disabled outright for those (screens/disk.py
-        # forces state.rescue_media False), so there's nothing left for
-        # that screen to ask about. The only conditional step today; a
-        # second one would want a per-STEPS-entry predicate instead of
-        # this if-chain.
-        return STEPS[self._step_index] is RescueScreen and self.state.free_space_install
+        predicate = _SKIP_PREDICATES.get(STEPS[self._step_index])
+        return predicate(self) if predicate else False
 
     def begin_install(self) -> None:
         self.switch_screen(ProgressScreen())

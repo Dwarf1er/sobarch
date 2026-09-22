@@ -42,6 +42,35 @@ echo "build-iso: fetching archiso profile source"
 git clone --depth 1 https://gitlab.archlinux.org/archlinux/archiso.git "$WORK_DIR/archiso"
 PROFILE="$WORK_DIR/archiso/configs/releng"
 
+# Every "Arch Linux" string a user actually sees before/at login --
+# confirmed by extracting the real profile and grepping it, not
+# guessed: these are plain static text in each file, never templated
+# from profiledef.sh at build time, so each one needs its own edit.
+# install_dir ("arch", the ISO's internal /arch/boot/... path) is left
+# alone deliberately: it's never displayed to a user, only referenced
+# internally by the boot APPEND/options lines, so changing it is pure
+# risk for zero visible benefit.
+echo "build-iso: rebranding boot text (Arch Linux -> Sobarch)"
+sed -i \
+    -e 's/iso_name="archlinux"/iso_name="sobarch"/' \
+    -e 's/iso_label="ARCH_/iso_label="SOBARCH_/' \
+    -e 's#iso_publisher="Arch Linux <https://archlinux.org>"#iso_publisher="Sobarch <https://github.com/Dwarf1er/sobarch>"#' \
+    -e 's/iso_application="Arch Linux Live\/Rescue DVD"/iso_application="Sobarch Installer"/' \
+    "$PROFILE/profiledef.sh"
+
+sed -i 's/MENU TITLE Arch Linux/MENU TITLE Sobarch/' "$PROFILE/syslinux/archiso_head.cfg"
+
+sed -i \
+    -e 's/Arch Linux install medium/Sobarch installer/g' \
+    -e 's/It allows you to install Arch Linux/It allows you to install Sobarch/g' \
+    "$PROFILE/syslinux/archiso_sys-linux.cfg"
+
+sed -i 's/title    Arch Linux install medium/title    Sobarch installer/' \
+    "$PROFILE/efiboot/loader/entries/01-archiso-linux.conf" \
+    "$PROFILE/efiboot/loader/entries/02-archiso-speech-linux.conf"
+
+echo "sobarch" > "$PROFILE/airootfs/etc/hostname"
+
 # The whole source tree (installer/, packages/, skel/, branding/,
 # scripts/), not a hand-picked subset within it: install_runner.py's own
 # post-archinstall build step reaches several paths by relative position
