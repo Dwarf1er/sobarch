@@ -52,6 +52,18 @@ SOBARCH_SKEL_BUILD_DIR_IN_TARGET = Path("/var/tmp/sobarch-skel-build")
 AUR_SYNC_DIR = Path(__file__).resolve().parent.parent.parent / "scripts" / "aur-sync"
 AUR_SYNC_SCRIPT_PATH_IN_TARGET = Path("/usr/local/lib/sobarch/aur-sync.sh")
 
+# Decision #20's ISO package cache, live-environment side: present only
+# on a real prebuilt-ISO install (build-iso.sh bakes it in), never on
+# the bootstrap.sh curl path. That decision's own "Alternatives
+# considered" flagged extending the cache into this arch-chroot build
+# step as a deliberate follow-up rather than a silent gap; staged into
+# the target below (arch-chroot has no access to the live environment's
+# own /opt/sobarch-cache, a different root entirely) and passed to
+# aur-sync.sh via --cache so the base-required packages it already
+# built once, at ISO-build time, aren't rebuilt here too.
+SOBARCH_CACHE_LIVE_PATH = Path("/opt/sobarch-cache")
+SOBARCH_CACHE_DIR_IN_TARGET = Path("/var/tmp/sobarch-cache")
+
 # Base-required per decision 3 (no official package exists for
 # either): must be present before first boot, same urgency tier as
 # sobarch-skel itself, not deferred to the post-login dispatcher the
@@ -202,7 +214,13 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
     bespoke build routine, so there's exactly one place that knows how
     to build a vendored package; aur-sync.sh itself creates and builds
     as its own unprivileged build user, so nothing here needs to run as
-    (or chown to) the newly created human account.
+    (or chown to) the newly created human account. On a real prebuilt-
+    ISO install, /opt/sobarch-cache already carries binaries for this
+    exact package set (decision #20) built once at ISO-build time; also
+    staged into the target and passed via --cache, so aur-sync.sh skips
+    makepkg for whichever of these it finds a matching version for
+    there, falling back to a real build for the rest (a stale cache, or
+    the plain bootstrap.sh path where no cache exists at all).
 
     sobarch-scripts is built here too, not just deployed as a raw file
     the way it was before real pacman version tracking existed for it:
@@ -237,11 +255,19 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
     for pkg in BASE_AUR_PACKAGES:
         shutil.copytree(REPO_ROOT / "packages" / "aur" / pkg, build_dir / "packages" / "aur" / pkg)
 
+    cache_dir = MOUNTPOINT / SOBARCH_CACHE_DIR_IN_TARGET.relative_to("/")
+    cache_args: list[str] = []
+    if SOBARCH_CACHE_LIVE_PATH.is_dir():
+        shutil.rmtree(cache_dir, ignore_errors=True)
+        shutil.copytree(SOBARCH_CACHE_LIVE_PATH, cache_dir)
+        cache_args = ["--cache", str(SOBARCH_CACHE_DIR_IN_TARGET)]
+
     returncode = _run_logged(
         [
             "arch-chroot", str(MOUNTPOINT),
             str(AUR_SYNC_SCRIPT_PATH_IN_TARGET),
             "--local", str(SOBARCH_SKEL_BUILD_DIR_IN_TARGET),
+            *cache_args,
             "sobarch-skel", "sobarch-scripts", "sobarch-limine-snapshots", *BASE_AUR_PACKAGES,
         ],
         log_file,
@@ -249,6 +275,8 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
     )
 
     shutil.rmtree(build_dir, ignore_errors=True)
+    if cache_args:
+        shutil.rmtree(cache_dir, ignore_errors=True)
     return returncode
 
 

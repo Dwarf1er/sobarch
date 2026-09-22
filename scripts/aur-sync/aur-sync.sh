@@ -3,13 +3,13 @@
 # packages locally, no AUR helper, no hosted binary repository (decision
 # 3). Two modes, same underlying logic either way:
 #
-#   aur-sync.sh [--local DIR] PKG...
+#   aur-sync.sh [--local DIR] [--cache DIR] PKG...
 #       Explicit mode: build/install exactly the named packages,
 #       whether or not they're currently installed. Used for a
 #       package's first-ever install (base-required packages during the
 #       install session itself, profile packages at first boot).
 #
-#   aur-sync.sh [--local DIR]
+#   aur-sync.sh [--local DIR] [--cache DIR]
 #       Sync mode (no package names): only touches package names that
 #       are ALREADY installed. This is what the pacman hook runs on
 #       every `Operation = Upgrade` transaction; it must never
@@ -22,6 +22,16 @@
 # same curl+tar mechanism bootstrap.sh uses, so the ongoing/first-boot
 # calls always see the actual current packages/aur/+packages/custom/
 # state, never a stale leftover checkout.
+#
+# --cache DIR points at a directory of already-built *.pkg.tar.*
+# files (decision #20's ISO package cache, staged in by the caller --
+# see install_runner.py's _build_and_install_base_packages): for each
+# target, a cache file whose own pkgname/pkgver matches or beats the
+# pinned .SRCINFO version is installed directly via `pacman -U`,
+# skipping makepkg entirely. Anything not found there falls straight
+# through to the normal build path below, unchanged. Never required;
+# omitted entirely on the bootstrap.sh curl path and the ongoing
+# pacman-hook/first-boot-profile calls, which always build from source.
 #
 # Hard scope limit: a package name is only ever acted on if it's
 # actually present under DIR's packages/aur/ or packages/custom/. This
@@ -58,10 +68,14 @@ export SOBARCH_AUR_SYNC_RUNNING=1
 echo "aur-sync: run started $(date -Iseconds)"
 
 repo_dir=""
-if [[ "${1:-}" == "--local" ]]; then
-    repo_dir="$2"
+cache_dir=""
+while [[ "${1:-}" == "--local" || "${1:-}" == "--cache" ]]; do
+    case "$1" in
+        --local) repo_dir="$2" ;;
+        --cache) cache_dir="$2" ;;
+    esac
     shift 2
-fi
+done
 explicit_packages=("$@")
 
 cleanup_paths=()
@@ -100,6 +114,11 @@ if [[ -z "$repo_dir" ]]; then
     cleanup_paths+=("$repo_dir")
 elif [[ ! -d "$repo_dir" ]]; then
     echo "aur-sync: --local $repo_dir does not exist" >&2
+    exit 1
+fi
+
+if [[ -n "$cache_dir" && ! -d "$cache_dir" ]]; then
+    echo "aur-sync: --cache $cache_dir does not exist" >&2
     exit 1
 fi
 
@@ -177,6 +196,29 @@ installed_version() {
     pacman -Q "$1" 2>/dev/null | awk '{print $2}' || true
 }
 
+# Looks for a pre-built package file for $1 in $cache_dir whose own
+# recorded version (via `pacman -Qp`, not the filename -- makepkg's
+# filename version encoding isn't worth re-deriving here) is at least
+# $2 (the pinned .SRCINFO version). Globbing by name prefix rather than
+# an exact filename: arch/compression-suffix aren't worth encoding here
+# either, since `pacman -Qp` already reads them out of the file itself.
+# Prints the matching path and returns 0, or returns 1 if nothing in
+# the cache satisfies $2 -- the caller falls through to a real build
+# either way, so this only ever saves time, never blocks correctness.
+cached_pkgfile() {
+    local name="$1" pinned="$2" f qname qver
+    [[ -n "$cache_dir" ]] || return 1
+    for f in "$cache_dir/$name"-*.pkg.tar.*; do
+        [[ -f "$f" ]] || continue
+        read -r qname qver < <(pacman -Qp "$f" 2>/dev/null)
+        [[ "$qname" == "$name" ]] || continue
+        (( $(vercmp "$qver" "$pinned") >= 0 )) || continue
+        printf '%s' "$f"
+        return 0
+    done
+    return 1
+}
+
 # depends/makedepends declared in .SRCINFO, stripped of version
 # constraints (e.g. "fuse2>=2.9.9" -> "fuse2") so they're plain names
 # pacman -S accepts. No arch-specific depends_x86_64-style variants are
@@ -240,27 +282,23 @@ ensure_makepkg_prereqs() {
 failures=()
 first_install=true
 
-# Built once, as a full copy of $repo_dir (not just each package's own
-# directory): sobarch-skel's PKGBUILD reaches skel via a
-# relative path outside its own package directory, so a package's
-# build must keep its real position in the repo tree, not be flattened
-# into an isolated per-package directory. A fresh mktemp -d per run,
-# not a fixed shared path: a separate concurrent aur-sync process (the
-# reentrancy guard above only catches the nested-hook case, not a
-# second, unrelated invocation) must never share, and so never race,
-# this run's build tree the way a fixed BUILD_ROOT once did (a
-# concurrent run's rm -rf wiping out an in-progress build/prepare()
-# step it had no business touching).
+# Built lazily, on the first target that actually needs a real build
+# (not unconditionally up front): a full copy of $repo_dir, as a whole
+# tree rather than just each package's own directory, since
+# sobarch-skel's PKGBUILD reaches skel via a relative path outside its
+# own package directory, so a package's build must keep its real
+# position in the repo tree, not be flattened into an isolated
+# per-package directory. A fresh mktemp -d per run, not a fixed shared
+# path: a separate concurrent aur-sync process (the reentrancy guard
+# above only catches the nested-hook case, not a second, unrelated
+# invocation) must never share, and so never race, this run's build
+# tree the way a fixed BUILD_ROOT once did (a concurrent run's rm -rf
+# wiping out an in-progress build/prepare() step it had no business
+# touching). Laziness matters specifically for --cache: a run where
+# every target is satisfied from the cache should never pay for
+# creating sobarch-build, installing base-devel, or cp -a'ing the whole
+# repo tree, since none of that is needed if nothing actually builds.
 build_root_repo=""
-if ((${#targets[@]})); then
-    ensure_build_user
-    ensure_makepkg_prereqs
-    BUILD_ROOT="$(mktemp -d /var/tmp/sobarch-aur-sync-build.XXXXXX)"
-    cleanup_paths+=("$BUILD_ROOT")
-    build_root_repo="$BUILD_ROOT/repo"
-    cp -a "$repo_dir" "$build_root_repo"
-    chown -R "$BUILD_USER:$BUILD_USER" "$BUILD_ROOT"
-fi
 
 for name in $(printf '%s\n' "${targets[@]}" | sort); do
     src="${pkg_dir[$name]}"
@@ -275,50 +313,75 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
         continue
     fi
 
-    echo "aur-sync: building $name (${installed:-not installed} -> $pinned)..."
+    build_dir=""
+    if cached="$(cached_pkgfile "$name" "$pinned")"; then
+        # Skips dependency pre-resolution and PGP-key import too: both
+        # exist only to satisfy makepkg's own build-time requirements,
+        # which don't apply here. `pacman -U` below still resolves any
+        # genuinely missing runtime deps itself, against the sync repos
+        # and whatever this same run has already installed -- the exact
+        # same two sources the manual -T/-S dance below exists to cover,
+        # so nothing is lost by skipping it for a cache hit.
+        echo "aur-sync: $name found in cache, skipping build (${installed:-not installed} -> $pinned)..."
+        pkgfiles=("$cached")
+    else
+        echo "aur-sync: building $name (${installed:-not installed} -> $pinned)..."
 
-    # Resolved as root, here, rather than via `makepkg --syncdeps`:
-    # that flag has makepkg itself invoke pacman, which would mean
-    # granting the unprivileged build user passwordless pacman/sudo
-    # rights just to build a package - a real privilege-escalation
-    # surface this project has no reason to open, since decision 3
-    # already rejects an AUR helper for the same class of concern.
-    #
-    # Filtered through `pacman -T` (deptest) rather than handed to
-    # `pacman -S` as-is: a dep can be satisfied locally by another
-    # vendored package's `provides` (quickgui-bin depends on
-    # `quickemu`, satisfied once quickemu-git, which provides it, is
-    # installed) without that name ever existing in any sync repo --
-    # `pacman -S quickemu` then fails outright with "target not
-    # found", since -S resolves targets against the sync repos, not
-    # what's already installed. `-T` reports only what's genuinely
-    # still unsatisfied, by either measure.
-    mapfile -t deps < <(build_deps "$src")
-    missing_deps=()
-    if ((${#deps[@]})); then
-        mapfile -t missing_deps < <(pacman -T "${deps[@]}")
+        # Resolved as root, here, rather than via `makepkg --syncdeps`:
+        # that flag has makepkg itself invoke pacman, which would mean
+        # granting the unprivileged build user passwordless pacman/sudo
+        # rights just to build a package - a real privilege-escalation
+        # surface this project has no reason to open, since decision 3
+        # already rejects an AUR helper for the same class of concern.
+        #
+        # Filtered through `pacman -T` (deptest) rather than handed to
+        # `pacman -S` as-is: a dep can be satisfied locally by another
+        # vendored package's `provides` (quickgui-bin depends on
+        # `quickemu`, satisfied once quickemu-git, which provides it, is
+        # installed) without that name ever existing in any sync repo --
+        # `pacman -S quickemu` then fails outright with "target not
+        # found", since -S resolves targets against the sync repos, not
+        # what's already installed. `-T` reports only what's genuinely
+        # still unsatisfied, by either measure.
+        mapfile -t deps < <(build_deps "$src")
+        missing_deps=()
+        if ((${#deps[@]})); then
+            mapfile -t missing_deps < <(pacman -T "${deps[@]}")
+        fi
+        if ((${#missing_deps[@]})) && ! pacman_locked -S --needed --noconfirm "${missing_deps[@]}"; then
+            echo "aur-sync: $name failed to install dependencies (${missing_deps[*]})" >&2
+            failures+=("$name (dependency install failed)")
+            continue
+        fi
+
+        if ! import_pgp_keys "$src"; then
+            echo "aur-sync: $name failed to import required PGP key(s)" >&2
+            failures+=("$name (PGP key import failed)")
+            continue
+        fi
+
+        # First real build this run: stand up the shared build root now
+        # (see its own comment above for why this stays lazy).
+        if [[ -z "$build_root_repo" ]]; then
+            ensure_build_user
+            ensure_makepkg_prereqs
+            BUILD_ROOT="$(mktemp -d /var/tmp/sobarch-aur-sync-build.XXXXXX)"
+            cleanup_paths+=("$BUILD_ROOT")
+            build_root_repo="$BUILD_ROOT/repo"
+            cp -a "$repo_dir" "$build_root_repo"
+            chown -R "$BUILD_USER:$BUILD_USER" "$BUILD_ROOT"
+        fi
+
+        build_dir="$build_root_repo/${src#"$repo_dir"/}"
+
+        if ! runuser -u "$BUILD_USER" -- bash -c "cd '$build_dir' && makepkg --noconfirm --needed --clean"; then
+            echo "aur-sync: $name failed to build" >&2
+            failures+=("$name (makepkg failed)")
+            continue
+        fi
+
+        pkgfiles=("$build_dir"/*.pkg.tar.*)
     fi
-    if ((${#missing_deps[@]})) && ! pacman_locked -S --needed --noconfirm "${missing_deps[@]}"; then
-        echo "aur-sync: $name failed to install dependencies (${missing_deps[*]})" >&2
-        failures+=("$name (dependency install failed)")
-        continue
-    fi
-
-    if ! import_pgp_keys "$src"; then
-        echo "aur-sync: $name failed to import required PGP key(s)" >&2
-        failures+=("$name (PGP key import failed)")
-        continue
-    fi
-
-    build_dir="$build_root_repo/${src#"$repo_dir"/}"
-
-    if ! runuser -u "$BUILD_USER" -- bash -c "cd '$build_dir' && makepkg --noconfirm --needed --clean"; then
-        echo "aur-sync: $name failed to build" >&2
-        failures+=("$name (makepkg failed)")
-        continue
-    fi
-
-    pkgfiles=("$build_dir"/*.pkg.tar.*)
 
     # install_runner.py's _deploy_aur_sync deploys this very script as a
     # raw bootstrap file at /usr/local/lib/sobarch/aur-sync.sh before
@@ -346,7 +409,7 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
         SNAP_PAC_SKIP=1 pacman_locked -U --noconfirm "${overwrite_args[@]}" "${pkgfiles[@]}" || install_result=$?
     fi
 
-    rm -rf "$build_dir"
+    [[ -n "$build_dir" ]] && rm -rf "$build_dir"
 
     if ((install_result != 0)); then
         echo "aur-sync: $name failed to install" >&2
