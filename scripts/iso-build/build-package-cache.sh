@@ -45,6 +45,15 @@ BUDGET_BYTES=$((1400 * 1024 * 1024))
 echo "build-package-cache: redirecting pacman CacheDir to $OUTPUT_DIR"
 sed -i "/^\[options\]/a CacheDir = $OUTPUT_DIR" /etc/pacman.conf
 
+# The container's stock pacman.conf ships multilib commented out (same
+# default template every plain Arch install starts with); base.json
+# enables it for the real *target* itself via mirror_config's
+# optional_repositories (archinstall's own pacman_conf.enable()), but
+# that has no effect on this container's own pacman -- steam/lib32-mesa
+# and anything else multilib-only need it enabled here too.
+echo "build-package-cache: enabling multilib"
+sed -i '/^#\[multilib\]/,/^#Include/ s/^#//' /etc/pacman.conf
+
 echo "build-package-cache: syncing package databases"
 pacman -Sy
 
