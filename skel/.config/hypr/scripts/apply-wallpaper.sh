@@ -95,7 +95,31 @@ if [[ "$wallpaper" == *.svg ]]; then
     path_to_apply="$rasterized"
 fi
 
+# hyprland.lua's own autostart launches `hyprpaper &` in the background
+# (one exec_cmd among several -- waybar, mako, hypridle, udiskie all
+# starting at the same moment) and `tinty init` (whose sobarch-waybar-css
+# hook is what runs this very script) as a separate, independently
+# scheduled exec_cmd right after. Nothing orders the two against each
+# other, so on a login busy enough to slow hyprpaper's own startup, this
+# script's first real run can hit hyprctl before hyprpaper's IPC socket
+# exists yet -- under `set -e`, that failure used to abort the whole
+# script outright, leaving every monitor with no wallpaper set until the
+# next full re-login or theme switch happened to run late enough to win
+# the race. Retried here instead, bounded to 2s (same shape as
+# sobarch-waybar-jsonc's own wait-for-old-process-exit hook in
+# config.toml): a real "hyprpaper isn't installed/running at all" case
+# still degrades to no wallpaper rather than hanging login, same as this
+# script's other `|| exit 0` guards above.
+set_wallpaper() {
+    local attempt
+    for attempt in {1..20}; do
+        hyprctl hyprpaper wallpaper "$1" >/dev/null 2>&1 && return 0
+        sleep 0.1
+    done
+    return 1
+}
+
 while read -r name; do
     [[ -z "$name" ]] && continue
-    hyprctl hyprpaper wallpaper "${name},${path_to_apply},cover" >/dev/null
+    set_wallpaper "${name},${path_to_apply},cover" || true
 done < <(hyprctl monitors | awk '/^Monitor / { print $2 }')
