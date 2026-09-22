@@ -51,6 +51,7 @@ for a complete example. Every field below is optional except `disk`,
 | `mirror_region` | `""` (automatic) | A country name from `archinstall`'s own mirror-status data. |
 | `rescue_media` | `true` | |
 | `ssh_enabled` | `false` | |
+| `encryption_password` | `""` (disabled) | Plaintext; a non-empty value LUKS-encrypts the root (btrfs) partition and unlocks with this passphrase at boot. The ESP and any rescue-media partitions are never encrypted. |
 | `git_name` / `git_email` | `""` | Both or neither. |
 | `install_everything` | `false` | |
 | `profiles` | `[]` | A list of profile slugs (`developer`, `gaming`, `creative`, `maker`, `virtualization`, `office`, `browsers-chat`, `system-tuning`, `input-method`). Each selected profile installs in full. |

@@ -118,6 +118,8 @@ def build_state(data: dict) -> WizardState:
         mirror_region=str(data.get("mirror_region", "")),
         rescue_media=bool(data.get("rescue_media", True)),
         ssh_enabled=bool(data.get("ssh_enabled", False)),
+        disk_encryption_enabled=bool(data.get("encryption_password")),
+        disk_encryption_password=str(data.get("encryption_password", "")),
         git_name=git_name,
         git_email=git_email,
         install_everything=bool(data.get("install_everything", False)),

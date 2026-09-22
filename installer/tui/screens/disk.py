@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
-from textual.widgets import Button, RadioButton, RadioSet, Static
+from textual.widgets import Button, Input, RadioButton, RadioSet, Static, Switch
 
 from disk_probe import DiskProbe, probe_disk
 from disks import DiskInfo, list_disks
@@ -35,10 +35,32 @@ class DiskScreen(WizardScreen):
                 for entry in self._entries:
                     yield RadioButton(self._label(entry))
 
+            state = self.sobarch_app.state
+            with Horizontal(classes="encryption-toggle-row"):
+                yield Switch(value=state.disk_encryption_enabled, id="encryption-toggle")
+                yield Static(" Encrypt the root partition (LUKS)", classes="field-label")
+
+            with Vertical(id="encryption-fields"):
+                yield Static("Encryption passphrase", classes="field-label")
+                yield Input(password=True, value=state.disk_encryption_password, id="encryption-password")
+
+                yield Static("Confirm passphrase", classes="field-label")
+                yield Input(password=True, value=state.disk_encryption_password, id="encryption-password-confirm")
+
             yield self.error_widget()
             with Horizontal(classes="button-row"):
                 yield Button("Back", flat=True, id="back")
                 yield Button("Continue", variant="primary", flat=True, id="continue")
+
+    def on_mount(self) -> None:
+        self._set_encryption_fields_visible(self.sobarch_app.state.disk_encryption_enabled)
+
+    def on_switch_changed(self, event: Switch.Changed) -> None:
+        if event.switch.id == "encryption-toggle":
+            self._set_encryption_fields_visible(event.value)
+
+    def _set_encryption_fields_visible(self, visible: bool) -> None:
+        self.query_one("#encryption-fields", Vertical).display = visible
 
     def _build_entries(self) -> list[_Entry]:
         # Free-space installs are UEFI/GPT-only (see disk_probe.py), so
@@ -75,11 +97,24 @@ class DiskScreen(WizardScreen):
             self.show_error("Choose a disk to continue.")
             return
 
+        encryption_enabled = self.query_one("#encryption-toggle", Switch).value
+        encryption_password = self.query_one("#encryption-password", Input).value
+        encryption_password_confirm = self.query_one("#encryption-password-confirm", Input).value
+        if encryption_enabled:
+            if not encryption_password:
+                self.show_error("Encryption passphrase cannot be empty.")
+                return
+            if encryption_password != encryption_password_confirm:
+                self.show_error("Encryption passphrases do not match.")
+                return
+
         entry = self._entries[index]
         updates = {
             "disk_device": entry.disk.path,
             "disk_size_bytes": entry.disk.size_bytes,
             "free_space_install": entry.free_space_install,
+            "disk_encryption_enabled": encryption_enabled,
+            "disk_encryption_password": encryption_password if encryption_enabled else "",
         }
         if entry.free_space_install:
             assert entry.probe is not None

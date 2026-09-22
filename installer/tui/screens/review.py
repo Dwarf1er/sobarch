@@ -41,6 +41,7 @@ class ReviewScreen(WizardScreen):
                 f"Timezone:   {state.timezone}",
                 f"Mirror:     {state.mirror_region or 'automatic'}",
                 f"Rescue ISO: {'yes' if state.rescue_media else 'no'}",
+                f"Encryption: {'LUKS (root partition)' if state.disk_encryption_enabled else 'disabled'}",
                 f"Profiles:   {_profiles_summary(state)}",
                 f"SSH:        {'enabled' if state.ssh_enabled else 'disabled'}",
                 f"Git config: {state.git_name + ' <' + state.git_email + '>' if state.git_name else 'skipped'}",

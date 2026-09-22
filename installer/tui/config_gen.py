@@ -183,6 +183,31 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
     btrfs["start"] = _mib_dict(btrfs["start"], btrfs_start_mib)
     btrfs["size"] = _mib_dict(btrfs["size"], root_size_mib)
 
+    if state.disk_encryption_enabled:
+        # LUKS on the root (btrfs) partition only -- referenced by its
+        # obj_id, the same indirection archinstall's own disk_encryption
+        # schema uses instead of a device path, since a "create"
+        # partition has no device path yet. The ESP (and any rescue
+        # partitions) are never in this list, so they stay unencrypted:
+        # required for a plain UEFI boot, and Limine's own native LUKS2
+        # unlock only ever needs to open the root partition itself.
+        # archinstall's own installer.py adds the mkinitcpio
+        # encrypt/sd-encrypt hook and the cryptdevice= kernel parameter
+        # automatically once this is set; nothing else here needs to.
+        base["disk_config"]["disk_encryption"] = {
+            "encryption_type": "luks",
+            "partitions": [btrfs["obj_id"]],
+            "lvm_volumes": [],
+        }
+        # Plaintext, same trust model as credentials["enc_password"]'s
+        # own plaintext input (decision #18): read straight from the
+        # TUI and never persisted anywhere except this output file.
+        # archinstall reads it as a top-level key merged in from
+        # whichever of --config/--creds carries it (lib/args.py's
+        # _parse_config()), so it lives in credentials.json alongside
+        # the other secret, not in base.json.
+        credentials["encryption_password"] = state.disk_encryption_password
+
     base["hostname"] = state.hostname
     base["locale_config"]["kb_layout"] = state.kb_layout
     base["locale_config"]["sys_lang"] = state.sys_lang
@@ -217,6 +242,11 @@ def write_configs(generated: GeneratedConfig, out_dir: Path) -> tuple[Path, Path
     credentials_path = out_dir / "credentials.json"
     base_path.write_text(json.dumps(generated.base, indent=4) + "\n")
     credentials_path.write_text(json.dumps(generated.credentials, indent=4) + "\n")
+    # credentials.json can now carry a plaintext LUKS passphrase
+    # (encryption_password) alongside the account's yescrypt hash;
+    # tighten it past the default umask-derived mode rather than leaving
+    # either readable to anyone but the invoking user.
+    credentials_path.chmod(0o600)
     return base_path, credentials_path
 
 

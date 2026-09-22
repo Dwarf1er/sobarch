@@ -9,6 +9,7 @@
     "mirror_region": "",
     "rescue_media": true,
     "ssh_enabled": false,
+    "encryption_password": "",
     "git_name": "",
     "git_email": "",
     "install_everything": false,

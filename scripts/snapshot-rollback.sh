@@ -1,6 +1,13 @@
 #!/bin/bash
 # Restore the root (@) subvolume to a previous Snapper snapshot.
 #
+# Disk encryption (Phase 22): rescue mode detects a LUKS-encrypted
+# <device> (`cryptsetup isLuks`) and opens it interactively
+# (`cryptsetup open`, prompting for the passphrase on the controlling
+# tty) before mounting, then closes it again on exit. --online mode
+# needs no such handling: findmnt already resolves to the mapper
+# device on a system that's already unlocked and running.
+#
 # Two modes:
 #
 #   snapshot-rollback.sh <device> <snapshot-number>
@@ -47,10 +54,11 @@
 #     e.g. snapshot-rollback.sh --online 6
 #
 # <device> is the BTRFS partition (not the whole disk, not /dev/nvme0n1
-# but its partition, e.g. /dev/nvme0n1p2). <snapshot-number> matches
-# the directory name under @snapshots/ (visible via `snapper -c root
-# list` on the installed system, or by inspecting @snapshots/ directly
-# from a rescue context).
+# but its partition, e.g. /dev/nvme0n1p2) -- or, on an encrypted
+# install, the LUKS partition wrapping it; this script opens it for
+# you. <snapshot-number> matches the directory name under @snapshots/
+# (visible via `snapper -c root list` on the installed system, or by
+# inspecting @snapshots/ directly from a rescue context once unlocked).
 
 set -euo pipefail
 
@@ -80,15 +88,35 @@ if [ "$ONLINE" = true ]; then
     fi
 fi
 
+# Rescue mode only: --online's $DEVICE already came from findmnt on a
+# live, unlocked system, so it's never itself a locked LUKS device
+# (cryptsetup isLuks correctly says no and this is a no-op there).
+MOUNT_DEVICE="$DEVICE"
+LUKS_MAPPER_NAME="sobarch-rollback"
+LUKS_OPENED_HERE=false
+if [ "$ONLINE" = false ] && cryptsetup isLuks "$DEVICE"; then
+    if cryptsetup status "$LUKS_MAPPER_NAME" >/dev/null 2>&1; then
+        echo "$LUKS_MAPPER_NAME is already open, reusing it."
+    else
+        echo "$DEVICE is LUKS-encrypted; enter its passphrase to unlock it."
+        cryptsetup open "$DEVICE" "$LUKS_MAPPER_NAME"
+        LUKS_OPENED_HERE=true
+    fi
+    MOUNT_DEVICE="/dev/mapper/$LUKS_MAPPER_NAME"
+fi
+
 MOUNT_POINT=$(mktemp -d)
 cleanup() {
     umount "$MOUNT_POINT" 2>/dev/null || true
     rmdir "$MOUNT_POINT" 2>/dev/null || true
+    if [ "$LUKS_OPENED_HERE" = true ]; then
+        cryptsetup close "$LUKS_MAPPER_NAME" 2>/dev/null || true
+    fi
 }
 trap cleanup EXIT
 
-echo "Mounting the top-level subvolume (subvolid=5) from $DEVICE..."
-mount -o subvolid=5 "$DEVICE" "$MOUNT_POINT"
+echo "Mounting the top-level subvolume (subvolid=5) from $MOUNT_DEVICE..."
+mount -o subvolid=5 "$MOUNT_DEVICE" "$MOUNT_POINT"
 
 SNAPSHOT_SRC="$MOUNT_POINT/@snapshots/$SNAPSHOT_NUM/snapshot"
 if [ ! -d "$SNAPSHOT_SRC" ]; then

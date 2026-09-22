@@ -136,6 +136,16 @@ Switch {
     height: auto;
 }
 
+.encryption-toggle-row {
+    height: auto;
+    margin-bottom: 1;
+}
+
+#encryption-fields {
+    height: auto;
+    margin-bottom: 1;
+}
+
 Collapsible {
     background: $background;
     border: round $surface;

@@ -38,6 +38,14 @@ class WizardState:
 
     rescue_media: bool = True
 
+    # Opt-in LUKS encryption of the root (btrfs) partition only -- the
+    # ESP always stays unencrypted (required for both a plain UEFI boot
+    # and Limine's own native LUKS2 unlock), and the rescue-media
+    # partitions (if any) are never encrypted either, same as the ESP.
+    # Off by default, same "optional component" treatment as SSH above.
+    disk_encryption_enabled: bool = False
+    disk_encryption_password: str = ""
+
     # SSH is disabled by default: an optional
     # component, not a base-install default. Kept separate from
     # profile_packages below since enabling it needs more than
