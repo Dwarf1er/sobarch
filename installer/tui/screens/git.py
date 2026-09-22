@@ -1,12 +1,9 @@
-import re
-
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Input, Static
 
 from screens.base import WizardScreen
-
-_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+from validators import EMAIL_RE
 
 
 class GitScreen(WizardScreen):
@@ -48,7 +45,7 @@ class GitScreen(WizardScreen):
         if not git_name or not git_email:
             self.show_error("Provide both name and email, or leave both blank to skip.")
             return
-        if not _EMAIL_RE.match(git_email):
+        if not EMAIL_RE.match(git_email):
             self.show_error("Email doesn't look valid.")
             return
 

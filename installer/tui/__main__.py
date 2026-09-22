@@ -24,6 +24,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from app import SobarchApp  # noqa: E402
+from unattended import run_unattended  # noqa: E402
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -41,11 +42,24 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Where 'Save configuration' writes base.json/credentials.json "
         "(default: /root/sobarch-install as root, ./sobarch-install-output otherwise).",
     )
+    parser.add_argument(
+        "--answer-file",
+        type=Path,
+        default=None,
+        help="Run unattended from this JSON answer file instead of the interactive "
+        "wizard (see installer/unattended-answer.example.json for the schema). "
+        "Combine with --dry-run to only generate/save the config without installing.",
+    )
     return parser.parse_args(argv)
 
 
 def main() -> None:
     args = parse_args()
+
+    if args.answer_file is not None:
+        output_dir = args.output_dir or SobarchApp.default_output_dir()
+        sys.exit(run_unattended(args.answer_file, output_dir, args.dry_run))
+
     app = SobarchApp(dry_run=args.dry_run, output_dir=args.output_dir)
     app.run()
 

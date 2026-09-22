@@ -1,0 +1,16 @@
+{
+    "disk": "largest",
+    "hostname": "workstation",
+    "username": "alice",
+    "password": "changeme",
+    "kb_layout": "us",
+    "sys_lang": "en_US.UTF-8",
+    "timezone": "UTC",
+    "mirror_region": "",
+    "rescue_media": true,
+    "ssh_enabled": false,
+    "git_name": "",
+    "git_email": "",
+    "install_everything": false,
+    "profiles": ["developer"]
+}

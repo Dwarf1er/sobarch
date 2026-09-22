@@ -100,6 +100,11 @@ target disk. It can also install into existing free space instead, for
 dual-boot alongside another OS (see the [Dual-Boot
 docs](https://sobarch.antoinepoulin.com/docs/installer/dual-boot/)).
 
+For scripted, no-prompts installs, pass `--answer-file` with a JSON
+file instead of using the interactive wizard (see the [Unattended
+Install
+docs](https://sobarch.antoinepoulin.com/docs/installer/unattended-install/)).
+
 ## Development
 
 After cloning, run `scripts/install-git-hooks.sh` once. It points git at

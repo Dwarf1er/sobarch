@@ -1,13 +1,9 @@
-import re
-
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Input, Static
 
 from screens.base import WizardScreen
-
-_HOSTNAME_RE = re.compile(r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$")
-_USERNAME_RE = re.compile(r"^[a-z_][a-z0-9_-]*$")
+from validators import HOSTNAME_RE, USERNAME_RE
 
 
 class AccountScreen(WizardScreen):
@@ -43,10 +39,10 @@ class AccountScreen(WizardScreen):
         password = self.query_one("#password", Input).value
         password_confirm = self.query_one("#password-confirm", Input).value
 
-        if not _HOSTNAME_RE.match(hostname):
+        if not HOSTNAME_RE.match(hostname):
             self.show_error("Hostname must be lowercase alphanumeric, hyphens allowed in the middle.")
             return
-        if not _USERNAME_RE.match(username):
+        if not USERNAME_RE.match(username):
             self.show_error("Username must start with a lowercase letter or underscore.")
             return
         if not password:
