@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
-# Builds a local pacman repo carrying every package the prebuilt ISO
-# wants cached (official + packages/aur/ + packages/custom/), so a real
-# install resolves them from the ISO's own airootfs instead of the
-# network. Reuses aur-sync.sh unmodified for the AUR/custom half --
+# Builds a local pacman repo carrying the base-required packages (see
+# list-packages.py -- official + the AUR/custom packages
+# install_runner.py already builds synchronously before first boot), so
+# a real install resolves them from the ISO's own airootfs instead of
+# the network. Optional software profiles are out of scope (decision
+# #20's addendum: an every-profile cache measured 3.25GB against
+# GitHub's real 2GiB release-asset limit) and still install over the
+# network at first boot, same as any other install path.
+#
+# Reuses aur-sync.sh unmodified for the AUR/custom half --
 # it stays the only thing that builds/installs vendored packages
 # (decision #3) -- by redirecting pacman's own CacheDir rather than
 # teaching aur-sync.sh a new flag.
@@ -81,11 +87,29 @@ total_size() {
     find "$OUTPUT_DIR" -maxdepth 1 -name '*.pkg.tar.*' -printf '%s\n' | awk '{s+=$1} END{print s+0}'
 }
 
+# Finds the single largest .pkg.tar.* file without piping through
+# `sort | head` -- under `set -o pipefail`, `head -1` closing the pipe
+# early sends SIGPIPE back up through `sort`, which pipefail then
+# treats as a real failure (exit 141) and aborts the whole script. A
+# plain bash loop over every file never closes a pipe early, so there's
+# nothing for pipefail to trip on.
+largest_pkg() {
+    local f largest="" largest_size=-1 sz
+    while IFS= read -r -d '' f; do
+        sz="$(stat -c%s "$f")"
+        if ((sz > largest_size)); then
+            largest_size=$sz
+            largest="$f"
+        fi
+    done < <(find "$OUTPUT_DIR" -maxdepth 1 -name '*.pkg.tar.*' -print0)
+    printf '%s' "$largest"
+}
+
 size="$(total_size)"
 if ((size > BUDGET_BYTES)); then
     echo "build-package-cache: cache is ${size} bytes, over budget (${BUDGET_BYTES}); pruning largest packages"
     while ((size > BUDGET_BYTES)); do
-        largest="$(du -b "$OUTPUT_DIR"/*.pkg.tar.* | sort -rn | head -1 | cut -f2)"
+        largest="$(largest_pkg)"
         [[ -n "$largest" ]] || break
         echo "build-package-cache: dropping $(basename "$largest") from the cache (still resolvable live, over network)"
         rm -f "$largest"

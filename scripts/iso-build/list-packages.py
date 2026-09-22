@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
-"""Enumerates every package the prebuilt-ISO package cache needs to
-build/cache, across the three sources that between them define the
-full install-time package surface: installer/archinstall/base.json's
-`packages` array (base-required, official only), profiles_data.py's
-PROFILES (optional, mixed official/AUR), and
-scripts/aur-sync/base-required-packages.txt (base-required AUR
-packages). No existing script aggregates all three; profiles_data.py's
-own all_packages()/split_by_source() already do the official/AUR split
-for the PROFILES side, reused here rather than re-implemented.
+"""Enumerates the packages the prebuilt-ISO package cache needs to
+build/cache: base-required only, not any optional profile. A real CI
+run measured the full every-profile cache at 3.25GB and still growing
+before it even finished building, against GitHub's real 2GiB-per-
+release-asset limit (confirmed against GitHub's own docs) -- pruning
+that down to fit would gut most of the large profiles anyway (Steam's
+multilib deps, Blender, OBS, LibreOffice, Brave are each sizeable on
+their own), so decision #20 was revised to base-required-only rather
+than spend real CI time/bandwidth building packages that just get
+thrown away. See docs/DECISIONS.md decision #20's addendum.
+
+Sources: installer/archinstall/base.json's `packages` array (official)
+and scripts/aur-sync/base-required-packages.txt (AUR), plus the
+packages installer/tui/install_runner.py always builds regardless of
+base-required-packages.txt (sobarch-skel/sobarch-scripts/
+sobarch-limine-snapshots).
 
 Usage: list-packages.py --official | --aur
 Prints one package name per line, sorted, deduplicated.
@@ -15,25 +22,16 @@ Prints one package name per line, sorted, deduplicated.
 
 import argparse
 import json
-import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-
-# profiles_data.py lives in installer/tui/ and is only importable with
-# that directory on sys.path (normally done by installer/tui/__main__.py
-# itself); this script is a standalone CI entry point outside that
-# package, so it does the same insert by hand.
-sys.path.insert(0, str(REPO_ROOT / "installer" / "tui"))
-
-from profiles_data import all_packages, split_by_source  # noqa: E402
 
 BASE_JSON = REPO_ROOT / "installer" / "archinstall" / "base.json"
 BASE_AUR_PACKAGES_FILE = REPO_ROOT / "scripts" / "aur-sync" / "base-required-packages.txt"
 
 # Built unconditionally on every install (install_runner.py's
-# _build_and_install_base_packages), regardless of profile selection or
-# base-required-packages.txt, so the ISO cache always carries them too.
+# _build_and_install_base_packages), regardless of base-required-packages.txt,
+# so the ISO cache always carries them too.
 ALWAYS_BUILT_PACKAGES = ("sobarch-skel", "sobarch-scripts", "sobarch-limine-snapshots")
 
 
@@ -47,14 +45,11 @@ def _read_base_aur_packages() -> set[str]:
 
 
 def official_packages() -> list[str]:
-    base_official = set(json.loads(BASE_JSON.read_text())["packages"])
-    profile_official, _ = split_by_source(set(all_packages()))
-    return sorted(base_official | set(profile_official))
+    return sorted(json.loads(BASE_JSON.read_text())["packages"])
 
 
 def aur_packages() -> list[str]:
-    _, profile_aur = split_by_source(set(all_packages()))
-    return sorted(_read_base_aur_packages() | set(profile_aur) | set(ALWAYS_BUILT_PACKAGES))
+    return sorted(_read_base_aur_packages() | set(ALWAYS_BUILT_PACKAGES))
 
 
 def main() -> None:
