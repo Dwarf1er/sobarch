@@ -37,16 +37,18 @@ OUTPUT_DIR="$2"
 mkdir -p "$OUTPUT_DIR"
 OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 
-# Conservative estimate, not a measured figure: GitHub's per-release-asset
-# limit has long been ~2GiB, and package files (already zstd-compressed)
-# gain little from squashfs's own compression on top, so budgeting the
-# cache directory's raw size as a stand-in for its contribution to the
-# final ISO is a reasonable approximation without a full trial mkarchiso
-# run. BUDGET_BYTES leaves headroom for the releng+sobarch base system
-# itself (kernel, desktop, installer/ checkout) on top of the cache.
-# Recalibrate both numbers against a real build's actual output size and
-# GitHub's current documented limit once one exists.
-BUDGET_BYTES=$((1400 * 1024 * 1024))
+# Calibrated against a real measured build (2026-09-22), not a guess:
+# that run's base-required cache was 705MiB (under the old 1400MiB
+# budget, so it pruned nothing) and the final ISO came out to 2249MiB --
+# 201MiB over GitHub's real 2GiB (2048MiB) release-asset limit. That
+# means the fixed overhead alone (releng's base live system, kernel,
+# this repo's own checkout) is ~1544MiB (2249 - 705), the dominant cost,
+# not the cache. Targeting a total ISO size of ~1950MiB (~100MiB margin
+# for month-to-month drift in kernel/base-package sizes) leaves about
+# 400MiB of actual cache budget. See decision #20's addendum for the
+# full numbers and the (unexplored) alternative of a leaner archiso base
+# profile instead of cutting the cache this much.
+BUDGET_BYTES=$((400 * 1024 * 1024))
 
 echo "build-package-cache: redirecting pacman CacheDir to $OUTPUT_DIR"
 sed -i "/^\[options\]/a CacheDir = $OUTPUT_DIR" /etc/pacman.conf
