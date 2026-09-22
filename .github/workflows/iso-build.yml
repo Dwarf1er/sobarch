@@ -66,6 +66,11 @@ jobs:
         # notes-embedded SHA256 either -- GitHub computes and displays a
         # SHA256 digest for every release asset natively, next to it on
         # the release page.
+        # gh normally infers the target repo from the current directory's
+        # git remote, which fails outright once the script cd's into
+        # $RUNNER_TEMP/iso (not a git repo at all, not even nested inside
+        # one) -- explicit --repo sidesteps that git-based auto-detection
+        # entirely rather than relying on staying inside the checkout.
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -74,5 +79,6 @@ jobs:
           iso="$(find . -maxdepth 1 -name '*.iso')"
           tag="iso-$(date -u +%Y.%m.%d)"
           gh release create "$tag" "$iso" "$iso.sig" \
+              --repo "$GITHUB_REPOSITORY" \
               --title "sobarch $tag" \
               --notes "Monthly prebuilt installer ISO. Verify against sobarch-iso-signing.asc in this repo (see README.md)."
