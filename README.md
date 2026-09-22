@@ -105,6 +105,27 @@ file instead of using the interactive wizard (see the [Unattended
 Install
 docs](https://sobarch.antoinepoulin.com/docs/installer/unattended-install/)).
 
+**Faster alternative:** a monthly-built ISO with the installer and every
+package pre-cached is published on the [Releases
+page](https://github.com/Dwarf1er/sobarch/releases), letting a real
+install resolve packages from local disk instead of downloading
+everything. Boot it the same way as the official ISO; everything else
+above still applies. This doesn't replace the bootstrap command above,
+which stays the primary, always-current path.
+
+Each release is signed with a project-dedicated key (fingerprint
+`9CC2 2D5E C575 F128 628E  A8F6 AFC1 54B3 F842 8676`), whose public key
+is [`sobarch-iso-signing.asc`](sobarch-iso-signing.asc) in this repo —
+import it once, then verify the same way as the official Arch ISO's own
+`.sig` files:
+
+    gpg --import sobarch-iso-signing.asc
+    gpg --verify sobarch-YYYY.MM.DD-x86_64.iso.sig sobarch-YYYY.MM.DD-x86_64.iso
+
+GitHub also shows each release asset's own SHA256 digest directly on the
+[Releases page](https://github.com/Dwarf1er/sobarch/releases), for a
+plain comparison without `gpg`.
+
 ## Development
 
 After cloning, run `scripts/install-git-hooks.sh` once. It points git at

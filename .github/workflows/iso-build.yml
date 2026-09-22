@@ -1,0 +1,78 @@
+name: ISO build
+
+# Monthly prebuilt ISO: Arch's own releng profile, layered with the
+# installer and a prebuilt package cache (scripts/iso-build/), published
+# as a GitHub Release. Second install path alongside bootstrap.sh's curl
+# flow (decision #6's addendum, decision #20); never replaces it.
+#
+# A scheduled workflow's failure already emails the repo's maintainers by
+# default -- no separate notification step needed for that "must fail
+# loudly, not silently" requirement.
+#
+# Requires a repo secret SOBARCH_ISO_GPG_PRIVATE_KEY: an ASCII-armored,
+# passphrase-less GPG private key dedicated to this project, generated
+# and added by the maintainer -- there is no existing signing key in this
+# repo to reuse.
+
+on:
+  schedule:
+    # A few days after Arch's own monthly ISO (first Tuesday-ish of the
+    # month), so upstream releng has already settled for the month.
+    - cron: '0 6 5 * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Install build dependencies
+        run: pacman -Sy --needed --noconfirm archiso git rsync python gnupg github-cli
+
+      - name: Build package cache
+        run: scripts/iso-build/build-package-cache.sh "$GITHUB_WORKSPACE" "$RUNNER_TEMP/cache"
+
+      - name: Build ISO
+        run: scripts/iso-build/build-iso.sh "$GITHUB_WORKSPACE" "$RUNNER_TEMP/cache" "$RUNNER_TEMP/iso"
+
+      - name: Sign ISO
+        # Same artifact shape as the official Arch ISO's own .sig files
+        # (a binary detached signature, gpg --verify against it) -- not
+        # the same key-distribution mechanism, which is WKD against
+        # archlinux.org's own domain, real infrastructure this project
+        # doesn't have. sobarch-iso-signing.asc (committed to the repo)
+        # is the simpler, single-maintainer-appropriate equivalent.
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.SOBARCH_ISO_GPG_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/iso"
+          iso="$(find . -maxdepth 1 -name '*.iso')"
+
+          gpg --batch --import <<< "$GPG_PRIVATE_KEY"
+          gpg --batch --yes --detach-sign "$iso"
+
+      - name: Publish release
+        # sobarch-iso-signing.asc isn't re-uploaded here: it doesn't
+        # change month to month, so the one copy already committed to
+        # the repo is the canonical one. No separate checksum file or
+        # notes-embedded SHA256 either -- GitHub computes and displays a
+        # SHA256 digest for every release asset natively, next to it on
+        # the release page.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/iso"
+          iso="$(find . -maxdepth 1 -name '*.iso')"
+          tag="iso-$(date -u +%Y.%m.%d)"
+          gh release create "$tag" "$iso" "$iso.sig" \
+              --title "sobarch $tag" \
+              --notes "Monthly prebuilt installer ISO. Verify against sobarch-iso-signing.asc in this repo (see README.md)."

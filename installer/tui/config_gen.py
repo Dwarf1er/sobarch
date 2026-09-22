@@ -219,6 +219,28 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
         # named region live, from the same mirror-status data the TUI
         # offered this name from), so an empty list here is enough.
         base["mirror_config"]["mirror_regions"] = {state.mirror_region: []}
+
+    # Opportunistic, not ISO-detection: a plain filesystem-presence check
+    # for a local package repo, baked in only by the prebuilt-ISO build
+    # (scripts/iso-build/), never by the bootstrap.sh curl path. Keeps
+    # the TUI agnostic about how it reached disk (decision #6) -- this
+    # is inert wherever that path doesn't exist. SigLevel "Never
+    # TrustAll" is safe here specifically because the repo never leaves
+    # the image it's baked into. archinstall applies this to the live
+    # environment's own pacman.conf (Installer.set_mirrors) before
+    # pacstrap runs, so it also speeds up archinstall's own package
+    # install, not just this project's post-install steps.
+    sobarch_cache_db = Path("/opt/sobarch-cache/sobarch-cache.db.tar.gz")
+    if sobarch_cache_db.exists():
+        base["mirror_config"]["custom_repositories"] = [
+            {
+                "name": "sobarch-cache",
+                "url": "file:///opt/sobarch-cache",
+                "sign_check": "Never",
+                "sign_option": "TrustAll",
+            }
+        ]
+
     base["app_config"]["bluetooth_config"]["enabled"] = hardware.bluetooth_detected
 
     extra_packages = {pkg for pkg in (hardware.cpu_microcode_pkg, *hardware.gpu_packages) if pkg}
