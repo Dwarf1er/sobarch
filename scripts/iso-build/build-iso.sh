@@ -31,9 +31,16 @@ pacman -Sy --noconfirm --needed archiso git
 WORK_DIR="$(mktemp -d /var/tmp/sobarch-iso-build.XXXXXX)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
-echo "build-iso: fetching releng profile"
-git clone --depth 1 https://gitlab.archlinux.org/archlinux/releng.git "$WORK_DIR/releng"
-PROFILE="$WORK_DIR/releng"
+# The releng profile isn't its own repo -- it ships inside the archiso
+# project itself, at configs/releng/ (confirmed by extracting the real
+# archiso-90-1-any.pkg.tar.zst package and checking its file list; the
+# archiso package's own pacman -Si URL field is
+# gitlab.archlinux.org/archlinux/archiso, not .../releng, which is a
+# different, unrelated repo -- that mismatch is what "missing
+# profiledef.sh" actually meant).
+echo "build-iso: fetching archiso profile source"
+git clone --depth 1 https://gitlab.archlinux.org/archlinux/archiso.git "$WORK_DIR/archiso"
+PROFILE="$WORK_DIR/archiso/configs/releng"
 
 # The whole source tree (installer/, packages/, skel/, branding/,
 # scripts/), not a hand-picked subset within it: install_runner.py's own
