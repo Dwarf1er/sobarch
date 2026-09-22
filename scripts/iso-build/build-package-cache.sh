@@ -78,6 +78,15 @@ echo "build-package-cache: building/installing vendored AUR+custom packages"
 mapfile -t aur_pkgs < <(python3 "$(dirname "$0")/list-packages.py" --aur)
 "$REPO_DIR/scripts/aur-sync/aur-sync.sh" --local "$REPO_DIR" "${aur_pkgs[@]}"
 
+# Pacman's CacheDir also holds the detached .sig files it downloads
+# alongside signature-verified packages -- these match the *.pkg.tar.*
+# glob too (named <pkg>.pkg.tar.zst.sig), so they must be removed
+# explicitly, first, before the general cleanup below filters by that
+# same glob. repo-add refuses to write the database at all if it's
+# handed even one non-package file, so leaving these in silently broke
+# every run, not just that one package.
+find "$OUTPUT_DIR" -maxdepth 1 -type f -name '*.sig' -delete
+
 # Only actual package files matter for the repo/budget below; pacman's
 # CacheDir also holds sync-db copies for some setups, which repo-add has
 # no use for.
@@ -106,6 +115,7 @@ largest_pkg() {
 }
 
 size="$(total_size)"
+echo "build-package-cache: raw cache size before any pruning: $((size / 1024 / 1024)) MiB"
 if ((size > BUDGET_BYTES)); then
     echo "build-package-cache: cache is ${size} bytes, over budget (${BUDGET_BYTES}); pruning largest packages"
     while ((size > BUDGET_BYTES)); do

@@ -35,17 +35,37 @@ echo "build-iso: fetching releng profile"
 git clone --depth 1 https://gitlab.archlinux.org/archlinux/releng.git "$WORK_DIR/releng"
 PROFILE="$WORK_DIR/releng"
 
-# The full checkout, not a hand-picked subset: install_runner.py's own
+# The whole source tree (installer/, packages/, skel/, branding/,
+# scripts/), not a hand-picked subset within it: install_runner.py's own
 # post-archinstall build step reaches several paths by relative position
-# in the repo tree (packages/custom/sobarch-skel, packages/aur/<pkg> for
+# in that tree (packages/custom/sobarch-skel, packages/aur/<pkg> for
 # each base-required AUR package, skel/, branding/, installer/firstboot/,
 # scripts/aur-sync/ -- see install_runner.py's own staging list), the
 # same shape bootstrap.sh's tarball fetch already gives at runtime.
-# Copying the whole tree here means that relationship never needs to be
+# Copying it wholesale means that relationship never needs to be
 # re-enumerated or kept in sync by hand as install_runner.py evolves.
+#
+# What IS excluded is project-meta content the installer genuinely never
+# touches at install time (docs, the website, CI/dev-tooling config) plus
+# gitignored local build litter (checked directly against this repo:
+# packages/custom/sobarch-skel/pkg/ alone was 18MB of leftover `makepkg`
+# output on a dev machine -- actions/checkout never produces this in CI,
+# but excluding it defensively costs nothing and matters if this script
+# is ever run against a real local checkout instead).
 echo "build-iso: layering sobarch checkout into airootfs"
 mkdir -p "$PROFILE/airootfs/root/sobarch"
-rsync -a --exclude='.git' "$REPO_DIR/" "$PROFILE/airootfs/root/sobarch/"
+rsync -a \
+    --exclude='.git' \
+    --exclude='.github' \
+    --exclude='.githooks' \
+    --exclude='website' \
+    --exclude='docs' \
+    --exclude='pkg' \
+    --exclude='src' \
+    --exclude='*.pkg.tar.*' \
+    --exclude='__pycache__' \
+    --exclude='*.pyc' \
+    "$REPO_DIR/" "$PROFILE/airootfs/root/sobarch/"
 
 echo "build-iso: layering package cache into airootfs"
 mkdir -p "$PROFILE/airootfs/opt/sobarch-cache"
@@ -80,4 +100,17 @@ fi
 
 iso_name="sobarch-$(date -u +%Y.%m.%d)-x86_64.iso"
 cp "$built_iso" "$OUTPUT_DIR/$iso_name"
-echo "build-iso: wrote $OUTPUT_DIR/$iso_name"
+
+# GitHub's real per-release-asset limit is 2GiB (confirmed against
+# GitHub's own docs, decision #20's addendum) -- logged loudly here
+# rather than only discovered later when `gh release create` rejects
+# the upload, since that failure mode gives no indication of how close
+# or far over the real number was.
+iso_size="$(stat -c%s "$OUTPUT_DIR/$iso_name")"
+iso_size_mib=$((iso_size / 1024 / 1024))
+echo "build-iso: wrote $OUTPUT_DIR/$iso_name ($iso_size_mib MiB)"
+if ((iso_size > 2 * 1024 * 1024 * 1024)); then
+    echo "build-iso: WARNING -- ISO is ${iso_size_mib} MiB, over GitHub's 2GiB release-asset limit" >&2
+elif ((iso_size > 1800 * 1024 * 1024)); then
+    echo "build-iso: WARNING -- ISO is ${iso_size_mib} MiB, close to GitHub's 2GiB release-asset limit" >&2
+fi
