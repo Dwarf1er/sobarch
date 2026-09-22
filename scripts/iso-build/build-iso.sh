@@ -26,6 +26,22 @@ OUTPUT_DIR="$3"
 mkdir -p "$OUTPUT_DIR"
 OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 
+# Single canonical build timestamp, captured once and reused for every
+# date this script embeds. releng's own profiledef.sh (confirmed by
+# reading it directly) computes both iso_version and iso_label as
+# `date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" ...` -- honoring
+# SOURCE_DATE_EPOCH when set, falling back to wall-clock `now`
+# otherwise. Exporting it here means mkarchiso's own sourcing of
+# profiledef.sh picks it up automatically; the release filename below
+# reuses this exact same value instead of calling `date` a second,
+# independent time after mkarchiso finishes. Without this, a long build
+# (minutes of squashfs compression) that happens to straddle midnight
+# UTC would leave the ISO's own internal iso_version/iso_label
+# disagreeing with the filename this script publishes the release
+# under.
+SOURCE_DATE_EPOCH="$(date -u +%s)"
+export SOURCE_DATE_EPOCH
+
 pacman -Sy --noconfirm --needed archiso git
 
 WORK_DIR="$(mktemp -d /var/tmp/sobarch-iso-build.XXXXXX)"
@@ -134,7 +150,7 @@ if [[ -z "$built_iso" ]]; then
     exit 1
 fi
 
-iso_name="sobarch-$(date -u +%Y.%m.%d)-x86_64.iso"
+iso_name="sobarch-$(date -u --date="@$SOURCE_DATE_EPOCH" +%Y.%m.%d)-x86_64.iso"
 cp "$built_iso" "$OUTPUT_DIR/$iso_name"
 
 # GitHub's real per-release-asset limit is 2GiB (confirmed against
