@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source "$HOME/.config/hypr/scripts/notify-progress.sh"
+
 # md-chip (U+F061A): same icon system-menu.sh's own "Firmware" entry uses.
 TITLE=$'\U000F061A'"  sobarch: firmware"
 
@@ -30,11 +32,21 @@ choice=$(printf "%s\n" \
 
 case "$choice" in
     "${ICON_UPDATE}  Check for Updates")
-        notify_on_fail fwupdmgr refresh
+        id=$(notify_progress normal "$TITLE" "Refreshing firmware metadata..." 0 persist)
+        if out=$(fwupdmgr refresh 2>&1); then
+            notify_progress normal "$TITLE" "Firmware metadata refreshed." "$id" >/dev/null
+        else
+            notify_progress critical "$TITLE" "$out" "$id" >/dev/null
+        fi
         fwupdmgr get-updates 2>&1 | fuzzel --dmenu --hide-prompt --prompt ""
         ;;
     "${ICON_INSTALL}  Install Updates")
-        notify_on_fail fwupdmgr update -y
+        id=$(notify_progress normal "$TITLE" "Installing firmware updates..." 0 persist)
+        if out=$(fwupdmgr update -y 2>&1); then
+            notify_progress normal "$TITLE" "Firmware updates installed." "$id" >/dev/null
+        else
+            notify_progress critical "$TITLE" "$out" "$id" >/dev/null
+        fi
         ;;
     "${ICON_DEVICES}  List Devices")
         fwupdmgr get-devices 2>&1 | fuzzel --dmenu --hide-prompt --prompt ""

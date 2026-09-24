@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source "$HOME/.config/hypr/scripts/confirm.sh"
+source "$HOME/.config/hypr/scripts/notify-progress.sh"
 
 # md-bluetooth (U+F00AF), reused from system-menu.sh's "Bluetooth" entry
 TITLE=$'\U000F00AF'"  sobarch: bluetooth"
@@ -34,7 +35,9 @@ case "$choice" in
         bluetoothctl power on
         bluetoothctl agent NoInputNoOutput
         bluetoothctl default-agent
+        id=$(notify_progress normal "$TITLE" "Scanning for Bluetooth devices..." 0 persist)
         bluetoothctl --timeout 8 scan on >/dev/null 2>&1
+        notify_progress normal "$TITLE" "Scan complete." "$id" >/dev/null
         mac=$(bluetoothctl devices | sed -E 's/^Device ([0-9A-F:]+) (.*)$/\2\t\1/' | sort -f | fuzzel --dmenu --with-nth=1 --prompt "connect: " | cut -f2)
         [ -n "$mac" ] || exit 0
         notify_on_fail bluetoothctl pair "$mac"

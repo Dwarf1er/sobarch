@@ -31,6 +31,8 @@
 # distinction fuzzel's flat dmenu list can actually make.
 set -euo pipefail
 
+source "$HOME/.config/hypr/scripts/notify-progress.sh"
+
 DATA_FILE="/usr/share/sobarch/profiles.txt"
 AUR_SYNC="/usr/local/lib/sobarch/aur-sync.sh"
 
@@ -76,7 +78,7 @@ choice=$(
 )
 [[ -n "${choice:-}" && -n "${pkg_is_aur[$choice]:-}" ]] || exit 0
 
-notify-send "$TITLE" "Installing $choice..."
+id=$(notify_progress normal "$TITLE" "Installing $choice..." 0 persist)
 
 if [[ "${pkg_is_aur[$choice]}" == 1 ]]; then
     result=0
@@ -87,8 +89,8 @@ else
 fi
 
 if ((result != 0)); then
-    notify-send -u critical "$TITLE" \
-        "$choice failed to install; check /var/log/sobarch/aur-sync.log and pacman's own log."
+    notify_progress critical "$TITLE" \
+        "$choice failed to install; check /var/log/sobarch/aur-sync.log and pacman's own log." "$id" >/dev/null
 else
-    notify-send "$TITLE" "$choice installed."
+    notify_progress normal "$TITLE" "$choice installed." "$id" >/dev/null
 fi

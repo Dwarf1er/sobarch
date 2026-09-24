@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source "$HOME/.config/hypr/scripts/notify-progress.sh"
+
 # md-wifi_strength_4: same icon system-menu.sh's own "Network" entry uses.
 TITLE=$'\U000F0928'"  sobarch: network"
 
@@ -23,7 +25,10 @@ choice=$(printf "%s\n" \
 
 case "$choice" in
     "󰤨  Wi-Fi Networks")
-        ssid=$(nmcli -e no -t -f SSID dev wifi list --rescan yes | awk 'NF && !seen[$0]++' | fuzzel --dmenu --prompt "wifi: ")
+        id=$(notify_progress normal "$TITLE" "Scanning for Wi-Fi networks..." 0 persist)
+        networks=$(nmcli -e no -t -f SSID dev wifi list --rescan yes | awk 'NF && !seen[$0]++')
+        notify_progress normal "$TITLE" "Scan complete." "$id" >/dev/null
+        ssid=$(printf '%s\n' "$networks" | fuzzel --dmenu --prompt "wifi: ")
         [ -n "$ssid" ] || exit 0
         if nmcli -e no -t -f NAME connection show | grep -qxF "$ssid"; then
             notify_on_fail nmcli connection up "$ssid"

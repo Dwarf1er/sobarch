@@ -39,6 +39,7 @@ trap 'hyprctl reload >/dev/null 2>&1 || true; rm -f "$empty_file"' EXIT
 # walkthrough had touched so far came back zero-length on reboot.
 source /usr/local/lib/sobarch/durable-replace.sh
 source "$HOME/.config/hypr/scripts/confirm.sh"
+source "$HOME/.config/hypr/scripts/notify-progress.sh"
 
 APPLY_SKEL="/usr/local/lib/sobarch/apply-skel.sh"
 BUILD_TINTY_TEMPLATES="/usr/local/lib/sobarch/build-tinty-templates.sh"
@@ -138,11 +139,12 @@ if ! $review_only; then
         # (aur-sync.sh), not just a fast repo-package bump: worth a
         # notification before pkexec even starts, since otherwise this
         # is silent the whole time it runs.
-        notify-send "$TITLE" "Refreshing ${to_refresh[*]}..."
+        id=$(notify_progress normal "$TITLE" "Refreshing ${to_refresh[*]}..." 0 persist)
         if ! pkexec "$AUR_SYNC" "${to_refresh[@]}"; then
-            notify-send "$TITLE" \
-                "Refreshing ${to_refresh[*]} failed (offline?); continuing with the currently installed version(s)."
+            notify_progress normal "$TITLE" \
+                "Refreshing ${to_refresh[*]} failed (offline?); continuing with the currently installed version(s)." "$id" >/dev/null
         elif [[ -x "$LIMINE_THEME_SETUP" && -x "$LY_THEME_SETUP" && -x "$PLYMOUTH_SETUP" ]]; then
+            notify_progress normal "$TITLE" "Refreshed ${to_refresh[*]}." "$id" >/dev/null
             # Re-applies boot/greeter/splash theming from whatever
             # branding sobarch-skel just refreshed to. Limine/ly/
             # Plymouth have no "reload" of their own (a bootloader
@@ -159,6 +161,14 @@ if ! $review_only; then
                 notify-send "$TITLE" \
                     "Refreshing boot/greeter/splash theming failed; limine.conf, ly's config.ini, or the Plymouth theme may be stale until the next Update Config run."
             fi
+        else
+            # Succeeded, but the three theming scripts aren't all
+            # present/executable (sobarch-scripts not yet updated to a
+            # version that ships them, say) -- still has to replace the
+            # persistent "Refreshing..." notification above, or it would
+            # be left on screen indefinitely since it was given no
+            # expiry timeout.
+            notify_progress normal "$TITLE" "Refreshed ${to_refresh[*]}." "$id" >/dev/null
         fi
     fi
     if ! "$APPLY_SKEL"; then
