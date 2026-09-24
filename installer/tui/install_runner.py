@@ -10,6 +10,7 @@ its own module, independent of the Screen that drives it, so at least
 its config-generation half stays covered by the same tests as the rest
 of config_gen.py."""
 
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -186,6 +187,44 @@ def _run_logged(cmd: list[str], log_file, on_output: OutputCallback, **kwargs) -
     return process.wait()
 
 
+def _strip_live_only_sobarch_cache_repo() -> None:
+    """config_gen.py's "sobarch-cache" custom_repositories entry (added
+    only on a real prebuilt-ISO install, decision #20) is meant to stay
+    confined to the live environment -- config_gen.py's own comment: "the
+    repo never leaves the image it's baked into" -- pointing at
+    /opt/sobarch-cache, a path baked into the ISO's airootfs that never
+    exists on the installed target, not even reachable from an
+    arch-chroot into it (unlike SOBARCH_CACHE_DIR_IN_TARGET above, a
+    separate copy this module stages itself for its own use).
+
+    archinstall's own guided.py flow calls Installer.set_mirrors() twice
+    with that same mirror_config, though: once for the live environment
+    (on_target=False) and once for the target (on_target=True,
+    unconditionally, confirmed against archinstall 4.4's
+    lib/installer.py) -- so the identical [sobarch-cache] section this
+    project only ever wanted on the live side also lands in the target's
+    own /etc/pacman.conf. Left in place, every `pacman -Sy`/`-Syu` on
+    the real installed system -- this module's own in-chroot pacman
+    calls below included -- fails trying to sync a database file at a
+    path nothing ever staged onto disk (confirmed: a real run hit
+    "sobarch-cache.db failed to download... Could not open file
+    /opt/sobarch-cache/sobarch-cache.db"). Stripped here, right after
+    archinstall finishes and before this module's own pacman use;
+    matches the exact block MirrorConfiguration.repositories_config()
+    writes (archinstall 4.4's lib/models/mirrors.py) so it can't
+    misfire against unrelated pacman.conf content, and is a no-op
+    wherever the bootstrap.sh curl path never added the entry at all."""
+    pacman_conf = MOUNTPOINT / "etc/pacman.conf"
+    text = pacman_conf.read_text()
+    stripped = re.sub(
+        r"\n*\[sobarch-cache\]\nSigLevel = Never TrustAll\nServer = file:///opt/sobarch-cache\n",
+        "\n",
+        text,
+    )
+    if stripped != text:
+        pacman_conf.write_text(stripped)
+
+
 def _deploy_aur_sync(log_file, on_output: OutputCallback) -> int:
     """Deploys aur-sync.sh onto the target as a raw file, permanently:
     the one unavoidable bootstrap step, needed right away by
@@ -309,6 +348,8 @@ def run_install(
             raise InstallError(f"archinstall exited with status {returncode}", log_path)
 
         on_output("archinstall finished. Running post-install configuration...")
+
+        _strip_live_only_sobarch_cache_repo()
 
         on_output("Deploying the AUR sync mechanism...")
         returncode = _deploy_aur_sync(log_file, on_output)
