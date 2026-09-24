@@ -9,8 +9,14 @@ TITLE=$'⚙'"  sobarch: default app"
 
 app_dirs=(/usr/share/applications "$HOME/.local/share/applications")
 
-mimetype=$(grep -h '^MimeType=' "${app_dirs[@]}"/*.desktop 2>/dev/null \
-    | cut -d= -f2- | tr ';' '\n' | awk 'NF' | sort -u \
+# Looping per-dir rather than a single "${app_dirs[@]}"/*.desktop glob:
+# a glob suffix on an array expansion only attaches to the last element,
+# silently dropping every earlier directory (passed to grep as a bare
+# path, "Is a directory", swallowed by 2>/dev/null) and leaving the menu
+# empty whenever the last dir doesn't happen to cover it.
+mimetype=$(for dir in "${app_dirs[@]}"; do
+    grep -h '^MimeType=' "$dir"/*.desktop 2>/dev/null
+done | cut -d= -f2- | tr ';' '\n' | awk 'NF' | sort -u \
     | fuzzel --dmenu --prompt "mimetype: ")
 [ -n "$mimetype" ] || exit 0
 
