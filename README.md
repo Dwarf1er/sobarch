@@ -104,6 +104,9 @@ For scripted, no-prompts installs, pass `--answer-file` with a JSON
 file instead of using the interactive wizard (see the [Unattended
 Install
 docs](https://sobarch.antoinepoulin.com/docs/installer/unattended-install/)).
+Booting that path over the network instead of from a USB drive is also
+possible, see the [PXE Netboot
+docs](https://sobarch.antoinepoulin.com/docs/installer/pxe-netboot/).
 
 **Faster alternative:** a monthly-built ISO with the installer and the
 base system's packages pre-cached is published on the [Releases

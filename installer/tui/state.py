@@ -26,6 +26,12 @@ class WizardState:
     hostname: str = ""
     username: str = ""
     password: str = ""
+    # Set instead of `password` only by the unattended path (unattended.py),
+    # when the answer file supplies an already-hashed `password_hash`
+    # rather than plaintext -- see decision #18's addendum. Empty means
+    # "hash `password` normally" (config_gen.py); the interactive wizard
+    # never sets this itself.
+    password_hash: str = ""
 
     kb_layout: str = "us"
     sys_lang: str = "en_US.UTF-8"
@@ -69,4 +75,9 @@ class WizardState:
     profile_packages: dict[str, list[str]] = field(default_factory=dict)
 
     def is_complete(self) -> bool:
-        return bool(self.disk_device and self.hostname and self.username and self.password)
+        return bool(
+            self.disk_device
+            and self.hostname
+            and self.username
+            and (self.password or self.password_hash)
+        )

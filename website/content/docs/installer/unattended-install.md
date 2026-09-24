@@ -29,22 +29,25 @@ works straight from the one-line install command:
 
 The answer file itself has to already be on the machine (e.g. staged
 onto a USB stick, or fetched by hand with `curl` before running the
-above) — there's no network fetch of it built in yet. That arrives with
-PXE support, planned once sobarch has its own installer ISO to netboot.
+above). There's no first-party network fetch of the answer file itself
+built in yet, but PXE-netbooting straight into this same
+`--answer-file` invocation is already possible today by chaining a
+small operator-hosted wrapper script; see [PXE Netboot](../pxe-netboot/).
 
 ## Answer file
 
 See
 [`installer/unattended-answer.example.json`](https://github.com/Dwarf1er/sobarch/blob/master/installer/unattended-answer.example.json)
 for a complete example. Every field below is optional except `disk`,
-`hostname`, `username`, and `password`.
+`hostname`, `username`, and exactly one of `password`/`password_hash`.
 
 | Field | Default | Notes |
 |---|---|---|
 | `disk` | *(required)* | `"largest"`, or an exact device path (e.g. `/dev/nvme0n1`). |
 | `hostname` | *(required)* | Same validation as the interactive Account screen. |
 | `username` | *(required)* | Same validation as the interactive Account screen. |
-| `password` | *(required)* | Plaintext; hashed the same way the interactive wizard hashes it, before it ever reaches `archinstall`'s own config. |
+| `password` | *(one of `password`/`password_hash` required)* | Plaintext; hashed the same way the interactive wizard hashes it, before it ever reaches `archinstall`'s own config. |
+| `password_hash` | *(one of `password`/`password_hash` required)* | A pre-hashed value (`archinstall`'s own `crypt_yescrypt()` format) instead of plaintext, so a shared answer file never carries a readable password. Setting both, or neither, is an error. |
 | `kb_layout` | `"us"` | |
 | `sys_lang` | `"en_US.UTF-8"` | |
 | `timezone` | `"UTC"` | |
@@ -65,5 +68,9 @@ for a complete example. Every field below is optional except `disk`,
   review screen exists for.
 - **Per-package profile selection.** `profiles` selects whole profiles
   only, not individual packages within one.
-- **Fetching the answer file over the network, or PXE.** Both are
-  planned once sobarch has its own installer ISO to netboot.
+- **A first-party network fetch of the answer file.** PXE-netbooting
+  into this same `--answer-file` path is already possible (see
+  [PXE Netboot](../pxe-netboot/)), but today it's done by chaining a
+  small wrapper script the PXE operator hosts themselves, not by
+  passing a URL straight to `--answer-file` or the answer file
+  auto-fetching itself.

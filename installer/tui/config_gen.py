@@ -247,7 +247,10 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
     base["packages"] = sorted(set(base["packages"]) | extra_packages)
 
     credentials["users"][0]["username"] = state.username
-    credentials["users"][0]["enc_password"] = crypt_yescrypt(state.password)
+    # password_hash (unattended-only, see decision #18's addendum) skips
+    # this hashing step entirely -- it's already a valid enc_password
+    # value, produced by the same crypt_yescrypt() call ahead of time.
+    credentials["users"][0]["enc_password"] = state.password_hash or crypt_yescrypt(state.password)
 
     return GeneratedConfig(
         base=base,

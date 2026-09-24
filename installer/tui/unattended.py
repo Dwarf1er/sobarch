@@ -16,10 +16,15 @@ mirroring every screen:
   real use case yet for picking individual packages out of a profile
   without a human present to do it.
 
-No network fetch of the answer file here (that arrives with PXE, once
-sobarch has its own installer ISO to netboot -- see docs/DECISIONS.md
-decision #18): __main__.py takes --answer-file as a local path, staged
-on the live ISO however the operator got it there.
+No network fetch of the answer file here: __main__.py takes
+--answer-file as a local path, staged on the live ISO however the
+operator got it there. PXE-netbooting the official installer artifacts
+straight into this path is documented (website/content/docs/installer/
+pxe-netboot.md), by chaining a PXE-side wrapper script into the same
+bootstrap.sh --answer-file invocation a human would otherwise type; a
+first-party fetch of the answer file itself over the network (so one
+PXE menu entry doesn't need an operator-hosted wrapper script) is still
+not built -- see docs/DECISIONS.md decision #18.
 """
 
 import json
@@ -43,7 +48,7 @@ from profiles_data import PROFILES
 from state import WizardState
 from validators import EMAIL_RE, HOSTNAME_RE, USERNAME_RE
 
-_REQUIRED_FIELDS = ("disk", "hostname", "username", "password")
+_REQUIRED_FIELDS = ("disk", "hostname", "username")
 _SLUG_TO_PROFILE = {profile.slug: profile for profile in PROFILES}
 
 
@@ -89,6 +94,11 @@ def build_state(data: dict) -> WizardState:
     if missing:
         raise UnattendedConfigError(f"answer file is missing required field(s): {', '.join(missing)}")
 
+    password = str(data.get("password", ""))
+    password_hash = str(data.get("password_hash", ""))
+    if bool(password) == bool(password_hash):
+        raise UnattendedConfigError("answer file must set exactly one of 'password' or 'password_hash'")
+
     hostname = str(data["hostname"])
     if not HOSTNAME_RE.match(hostname):
         raise UnattendedConfigError(f"invalid hostname: {hostname!r}")
@@ -111,7 +121,8 @@ def build_state(data: dict) -> WizardState:
         disk_size_bytes=disk_size_bytes,
         hostname=hostname,
         username=username,
-        password=str(data["password"]),
+        password=password,
+        password_hash=password_hash,
         kb_layout=str(data.get("kb_layout", "us")),
         sys_lang=str(data.get("sys_lang", "en_US.UTF-8")),
         timezone=str(data.get("timezone", "UTC")),
