@@ -31,12 +31,13 @@ DHCP server, if you don't already have TFTP/DHCP infrastructure. A
 classic `dnsmasq` (DHCP+TFTP) plus a plain HTTP server works just as
 well if you do.
 
-## Boot artifacts: use the official Arch ISO
+## Boot artifacts: either ISO works
 
-Extract the boot artifacts from the [official Arch Linux
-ISO](https://archlinux.org/download/), not sobarch's own prebuilt ISO.
-Mount or extract it (`bsdtar -xf archlinux-x86_64.iso arch/`, or a loop
-mount) and copy out:
+Extract the boot artifacts from either the [official Arch Linux
+ISO](https://archlinux.org/download/) or sobarch's own [prebuilt
+monthly ISO](https://github.com/Dwarf1er/sobarch/releases); both use
+the same archiso layout. Mount or extract the chosen ISO (`bsdtar -xf
+<iso> arch/`, or a loop mount) and copy out:
 
 - `arch/boot/x86_64/vmlinuz-linux`
 - `arch/boot/x86_64/initramfs-linux.img`
@@ -53,19 +54,17 @@ PXE-netbooted archiso setup makes, sobarch-specific or not: you're
 trusting the transport (your own local network), not re-deriving
 Arch's own signature chain over it.
 
-Sobarch's own [prebuilt monthly
-ISO](https://github.com/Dwarf1er/sobarch/releases) uses the exact same
-archiso layout internally, so the same extraction recipe works against
-it too, with one real limitation: its `.automated_script.sh` is
-hardcoded to launch the interactive TUI unconditionally, ignoring any
-kernel command-line hook. Netbooting it gets you the pre-cached package
-set, but still lands in the interactive wizard, not an unattended
-install. **Use the official ISO for unattended PXE installs today.**
+Sobarch's own ISO's `.automated_script.sh` checks for the same
+`script=` kernel parameter the official ISO's does (see below), only
+falling back to auto-launching the interactive TUI when it's absent,
+so it works for unattended PXE installs too, with the added benefit of
+its pre-cached package set. Prefer it unless you have a specific reason
+to want an unmodified official image.
 
 ## Chaining into an unattended install
 
-The official ISO's own `.automated_script.sh` already does the one
-thing PXE-driven automation needs: on login, it checks for a `script=`
+Either ISO's `.automated_script.sh` already does the one thing
+PXE-driven automation needs: on login, it checks for a `script=`
 kernel parameter, fetches whatever URL it names, and runs it. Add it to
 the same command line as above:
 

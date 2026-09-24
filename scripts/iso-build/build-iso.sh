@@ -134,10 +134,62 @@ echo "build-iso: adding python/python-textual to the profile package list"
 # how the current releng profile's root autologin works before relying
 # on it; if it's changed, this needs a systemd getty@tty1 drop-in or
 # equivalent instead.
-echo "build-iso: wiring auto-launch of the installer TUI"
+#
+# This used to overwrite that file outright with a bare TUI launch,
+# which silently dropped the stock script=<url> kernel-cmdline handling
+# releng's own .automated_script.sh provides (fetch and exec a script,
+# the hook PXE-driven unattended installs chain into, see
+# website/content/docs/installer/pxe-netboot.md). That forced anyone
+# doing an unattended PXE install to fall back to the vanilla Arch ISO
+# instead of sobarch's own faster, pre-cached one. script_cmdline()/the
+# script= branch below are copied verbatim from releng's
+# .automated_script.sh (confirmed against archlinux/archiso's master
+# branch); only the final dispatch is sobarch's own, falling back to
+# the TUI solely when no script= was given, never on a failed fetch.
+echo "build-iso: wiring auto-launch of the installer TUI (with a script= PXE override)"
 cat > "$PROFILE/airootfs/root/.automated_script.sh" <<'SCRIPT'
 #!/usr/bin/env bash
-python3 /root/sobarch/installer/tui/__main__.py < /dev/tty
+
+script_cmdline() {
+    local param
+    for param in $(</proc/cmdline); do
+        case "${param}" in
+            script=*)
+                echo "${param#*=}"
+                return 0
+                ;;
+        esac
+    done
+}
+
+automated_script() {
+    local script rt
+    script="$(script_cmdline)"
+    if [[ -n "${script}" && ! -x /tmp/startup_script ]]; then
+        if [[ "${script}" =~ ^((http|https|ftp|tftp)://) ]]; then
+            printf '%s: downloading %s\n' "$0" "${script}"
+            systemd-run --pty --quiet -p Wants=network-online.target -p After=network-online.target \
+                curl "${script}" --location --retry-connrefused --retry 10 --fail -s -o /tmp/startup_script
+            rt=$?
+        else
+            cp "${script}" /tmp/startup_script
+            rt=$?
+        fi
+        if [[ ${rt} -eq 0 ]]; then
+            chmod +x /tmp/startup_script
+            printf '%s: executing automated script\n' "$0"
+            /tmp/startup_script
+        fi
+    fi
+}
+
+if [[ $(tty) == "/dev/tty1" ]]; then
+    if [[ -n "$(script_cmdline)" ]]; then
+        automated_script
+    else
+        python3 /root/sobarch/installer/tui/__main__.py < /dev/tty
+    fi
+fi
 SCRIPT
 chmod +x "$PROFILE/airootfs/root/.automated_script.sh"
 
