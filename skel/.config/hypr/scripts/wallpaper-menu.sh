@@ -39,7 +39,7 @@ choice=$(for f in "${files[@]}"; do
     name="${name%.*}"
     name="${name//[-_]/ }"
     printf "%s\t%s\0icon\x1f%s,image-x-generic\n" "$name" "$f" "$f"
-done | sort -f | fuzzel --dmenu --with-nth=1 --line-height=64 --prompt "wallpaper: ")
+done | sort -f | fuzzel --dmenu --with-nth=1 --line-height=40 --prompt "wallpaper: ")
 [[ -n "${choice:-}" ]] || exit 0
 
 pretty="${choice%%$'\t'*}"
