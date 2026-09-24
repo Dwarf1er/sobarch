@@ -34,12 +34,20 @@ fi
 # renders an actual thumbnail; --line-height is bumped well past
 # fuzzel's default for this menu specifically (other menus stay at the
 # default) since the thumbnail is unrecognizable at normal row height.
+# --minimal-lines (sizes the window to min(lines, actual entry count)
+# instead of always reserving fuzzel.ini's full lines=8) isn't just a
+# sizing nicety here: confirmed directly, an SVG icon (unlike a PNG)
+# left in the *unused* leftover row space below a short entry list
+# renders a second, oversized, mispositioned copy of itself -- a real
+# fuzzel rendering bug, reproduced with a single-SVG-entry list
+# matching this menu's actual real-world case, gone entirely once no
+# empty leftover rows exist to trigger it.
 choice=$(for f in "${files[@]}"; do
     name="$(basename "$f")"
     name="${name%.*}"
     name="${name//[-_]/ }"
     printf "%s\t%s\0icon\x1f%s,image-x-generic\n" "$name" "$f" "$f"
-done | sort -f | fuzzel --dmenu --with-nth=1 --line-height=40 --prompt "wallpaper: ")
+done | sort -f | fuzzel --dmenu --with-nth=1 --line-height=40 --minimal-lines --prompt "wallpaper: ")
 [[ -n "${choice:-}" ]] || exit 0
 
 pretty="${choice%%$'\t'*}"
