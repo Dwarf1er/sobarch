@@ -26,13 +26,20 @@ fi
 
 # Pretty name (extension stripped, dashes/underscores turned into
 # spaces) shown in the picker, tab-separated from the real path
-# (hidden via --with-nth) for the actual selection.
+# (hidden via --with-nth) for the actual selection. The \0icon\x1f
+# suffix is fuzzel's own extended dmenu protocol (rofi's), and is
+# stripped before the tab-separated text is ever returned on stdin --
+# confirmed directly, it doesn't leak into $choice below. Pointing it
+# at the wallpaper's own file (real image, not an icon-theme name)
+# renders an actual thumbnail; --line-height is bumped well past
+# fuzzel's default for this menu specifically (other menus stay at the
+# default) since the thumbnail is unrecognizable at normal row height.
 choice=$(for f in "${files[@]}"; do
     name="$(basename "$f")"
     name="${name%.*}"
     name="${name//[-_]/ }"
-    printf "%s\t%s\n" "$name" "$f"
-done | sort -f | fuzzel --dmenu --with-nth=1 --prompt "wallpaper: ")
+    printf "%s\t%s\0icon\x1f%s,image-x-generic\n" "$name" "$f" "$f"
+done | sort -f | fuzzel --dmenu --with-nth=1 --line-height=64 --prompt "wallpaper: ")
 [[ -n "${choice:-}" ]] || exit 0
 
 pretty="${choice%%$'\t'*}"
