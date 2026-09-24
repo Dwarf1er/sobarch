@@ -38,6 +38,7 @@ trap 'hyprctl reload >/dev/null 2>&1 || true; rm -f "$empty_file"' EXIT
 # desktop froze mid-update, was force shut down, and every file the
 # walkthrough had touched so far came back zero-length on reboot.
 source /usr/local/lib/sobarch/durable-replace.sh
+source "$HOME/.config/hypr/scripts/confirm.sh"
 
 APPLY_SKEL="/usr/local/lib/sobarch/apply-skel.sh"
 BUILD_TINTY_TEMPLATES="/usr/local/lib/sobarch/build-tinty-templates.sh"
@@ -234,6 +235,7 @@ for f in "${conflicts[@]}"; do
                 break
                 ;;
             "[U] Use new")
+                confirm "Overwrite $rel with the new version?" || continue
                 durable_replace "$mode" "$new" "$original"
                 durable_replace "$mode" "$new" "$baseline"
                 rm -f "$f"
@@ -275,6 +277,7 @@ for f in "${conflicts[@]}"; do
                 break
                 ;;
             "[A] Use new for all remaining")
+                confirm "Use new for all remaining conflicts?" || continue
                 use_new_for_rest=true
                 durable_replace "$mode" "$new" "$original"
                 durable_replace "$mode" "$new" "$baseline"

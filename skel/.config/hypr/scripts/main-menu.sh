@@ -13,6 +13,8 @@
 # commands. Reusing them directly needs no separate themed GUI tool
 # and no package to vendor for it at all.
 
+source "$HOME/.config/hypr/scripts/confirm.sh"
+
 choice=$(printf "%s\n" \
     "󰘮  System" \
     "󰢻  Sobarch" \
@@ -37,10 +39,10 @@ case "$choice" in
 
         case "$power_choice" in
             "󰌾  Lock") exec hyprlock ;;
-            "󰍃  Logout") exec hyprctl dispatch 'hl.dsp.exit()' ;;
-            "󰒲  Suspend") exec systemctl suspend ;;
-            "󰜉  Reboot") exec systemctl reboot ;;
-            "󰤂  Shutdown") exec systemctl poweroff ;;
+            "󰍃  Logout") confirm "Log out now?" && exec hyprctl dispatch exit ;;
+            "󰒲  Suspend") confirm "Suspend now?" && exec systemctl suspend ;;
+            "󰜉  Reboot") confirm "Reboot now?" && exec systemctl reboot ;;
+            "󰤂  Shutdown") confirm "Shut down now?" && exec systemctl poweroff ;;
         esac
         ;;
 esac

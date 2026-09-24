@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source "$HOME/.config/hypr/scripts/confirm.sh"
+
 # md-bluetooth (U+F00AF), reused from system-menu.sh's "Bluetooth" entry
 TITLE=$'\U000F00AF'"  sobarch: bluetooth"
 
@@ -46,7 +48,7 @@ case "$choice" in
         case "$action" in
             "󰌷  Connect") notify_on_fail bluetoothctl connect "$mac" ;;
             "󰌸  Disconnect") notify_on_fail bluetoothctl disconnect "$mac" ;;
-            "󰆴  Remove") notify_on_fail bluetoothctl remove "$mac" ;;
+            "󰆴  Remove") confirm "Remove $mac?" && notify_on_fail bluetoothctl remove "$mac" ;;
         esac
         ;;
     "󰂲  Disconnect")
