@@ -31,13 +31,13 @@ source /usr/local/lib/sobarch/durable-replace.sh
 # Runs as root via pkexec, same as the first-boot units notify-user.sh
 # was written for: a desktop notification back into the invoking user's
 # session needs the same runuser dance, not just an echo to a log
-# nobody's watching mid-refresh. 󰑐 (nf-md-refresh) matches
+# nobody's watching mid-refresh. 󱊞 (nf-md-usb_flash_drive) matches
 # setup-menu.sh's own "Refresh Rescue ISO" entry icon. Success/failure
 # themselves stay refresh-rescue-menu.sh's job (it already reports
 # both once pkexec returns); these are just the in-progress steps of
 # what is otherwise a silent multi-minute download+write with nothing
 # to show for it until the very end.
-GLYPH=$'\U000F0450'
+GLYPH="󱊞"
 source /usr/local/lib/sobarch/notify-user.sh
 
 RESCUE_DEV="$(blkid -L RESCUE)" || {
