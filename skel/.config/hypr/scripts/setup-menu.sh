@@ -1,20 +1,18 @@
 #!/bin/bash
 
-# md-web (U+F059F). Held in a variable rather than pasted as a literal
-# glyph (unlike this menu's other entries) since it sits in Unicode's
-# private-use area and can't be typed/reviewed reliably as a plain
-# character in a diff.
-ICON_DOCS=$'\U000F059F'
-
+# "Refresh Rescue ISO" uses md-usb_flash_drive rather than md-refresh
+# (which "Update Config" already carries): both used to render the
+# same circular-arrow glyph despite being unrelated actions,
+# indistinguishable at a glance in this same list.
 choice=$(printf "%s\n" \
     "󰑐  Update Config" \
     "󰢪  Review Conflicts" \
     "󰏔  Install" \
     "󰉦  Themes" \
     "󰸉  Wallpaper" \
-    $'⚙'"  Default Apps" \
-    "󰑐  Refresh Rescue ISO" \
-    "${ICON_DOCS}  Docs" \
+    "󰢻  Default Apps" \
+    "󱊞  Refresh Rescue ISO" \
+    "󰖟  Docs" \
     | fuzzel --dmenu --prompt "sobarch: ")
 
 case "$choice" in
@@ -23,7 +21,7 @@ case "$choice" in
     "󰏔  Install") exec bash "$HOME/.config/hypr/scripts/setup-package-menu.sh" ;;
     "󰉦  Themes") exec bash "$HOME/.config/hypr/scripts/themes-menu.sh" ;;
     "󰸉  Wallpaper") exec bash "$HOME/.config/hypr/scripts/wallpaper-menu.sh" ;;
-    $'⚙'"  Default Apps") exec bash "$HOME/.config/hypr/scripts/mimetype-menu.sh" ;;
-    "󰑐  Refresh Rescue ISO") exec bash "$HOME/.config/hypr/scripts/refresh-rescue-menu.sh" ;;
-    "${ICON_DOCS}  Docs") exec xdg-open "https://sobarch.antoinepoulin.com" ;;
+    "󰢻  Default Apps") exec bash "$HOME/.config/hypr/scripts/mimetype-menu.sh" ;;
+    "󱊞  Refresh Rescue ISO") exec bash "$HOME/.config/hypr/scripts/refresh-rescue-menu.sh" ;;
+    "󰖟  Docs") exec xdg-open "https://sobarch.antoinepoulin.com" ;;
 esac

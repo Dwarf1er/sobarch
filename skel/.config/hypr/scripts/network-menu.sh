@@ -3,7 +3,7 @@
 source "$HOME/.config/hypr/scripts/notify-progress.sh"
 
 # md-wifi_strength_4: same icon system-menu.sh's own "Network" entry uses.
-TITLE=$'\U000F0928'"  sobarch: network"
+TITLE="󰤨  sobarch: network"
 
 # notify_on_fail runs an nmcli action and, only if it fails, surfaces
 # its own stderr as a critical notification (nmcli puts error text on
@@ -14,79 +14,95 @@ notify_on_fail() {
     [ -n "$err" ] && notify-send -u critical "$TITLE" "$err"
 }
 
-choice=$(printf "%s\n" \
+# Loops back to this same picker after every action instead of exiting,
+# so e.g. checking Wi-Fi networks then toggling Wi-Fi doesn't need the
+# keybind re-invoked each time. Only an empty selection (Escape) breaks
+# out.
+while choice=$(printf "%s\n" \
     "󰤨  Wi-Fi Networks" \
-    "⏻  Toggle Wi-Fi" \
+    "󰐥  Toggle Wi-Fi" \
     "󰖪  Disconnect" \
     "󰅙  Forget Network" \
     "󰆏  Copy IP Address" \
     "󰐲  Share Wi-Fi QR" \
-    | fuzzel --dmenu --prompt "network: ")
-
-case "$choice" in
-    "󰤨  Wi-Fi Networks")
-        id=$(notify_progress normal "$TITLE" "Scanning for Wi-Fi networks..." 0 persist)
-        networks=$(nmcli -e no -t -f SSID dev wifi list --rescan yes | awk 'NF && !seen[$0]++')
-        notify_progress normal "$TITLE" "Scan complete." "$id" >/dev/null
-        ssid=$(printf '%s\n' "$networks" | fuzzel --dmenu --prompt "wifi: ")
-        [ -n "$ssid" ] || exit 0
-        if nmcli -e no -t -f NAME connection show | grep -qxF "$ssid"; then
-            notify_on_fail nmcli connection up "$ssid"
-        else
-            pass=$(fuzzel --dmenu --password --prompt "password: ")
-            notify_on_fail nmcli dev wifi connect "$ssid" password "$pass"
-        fi
-        ;;
-    "⏻  Toggle Wi-Fi")
-        if [ "$(nmcli radio wifi)" = "enabled" ]; then
-            notify_on_fail nmcli radio wifi off
-        else
-            notify_on_fail nmcli radio wifi on
-        fi
-        ;;
-    "󰖪  Disconnect")
-        dev=$(nmcli -t -f DEVICE,TYPE dev status | awk -F: '$2=="wifi"{print $1; exit}')
-        [ -n "$dev" ] && notify_on_fail nmcli dev disconnect "$dev"
-        ;;
-    "󰅙  Forget Network")
-        name=$(nmcli -e no -t -f NAME connection show | sort -f | fuzzel --dmenu --prompt "forget: ")
-        [ -n "$name" ] && notify_on_fail nmcli connection delete "$name"
-        ;;
-    "󰆏  Copy IP Address")
-        dev=$(nmcli -t -f DEVICE,STATE dev status | awk -F: '$2=="connected"{print $1; exit}')
-        [ -n "$dev" ] && nmcli -t -f IP4.ADDRESS dev show "$dev" | cut -d: -f2 | cut -d/ -f1 | wl-copy
-        ;;
-    "󰐲  Share Wi-Fi QR")
-        conn=$(nmcli -t -f NAME,TYPE connection show --active | awk -F: '$2=="802-11-wireless"{print $1; exit}')
-        [ -n "$conn" ] || exit 0
-        ssid=$(nmcli -g 802-11-wireless.ssid connection show "$conn")
-        psk=$(nmcli -s -g 802-11-wireless-security.psk connection show "$conn")
-        if [ -n "$psk" ]; then
-            payload="WIFI:T:WPA;S:${ssid};P:${psk};;"
-        else
-            payload="WIFI:T:nopass;S:${ssid};;"
-        fi
-        # Rendered as ASCII directly in a fuzzel pane instead of imv/PNG,
-        # to match the small centered floating look fuzzel gets for free
-        # (a wlroots layer-shell surface, unlike a real window, which
-        # would need its own float+size+center window rule and would
-        # still tile/fullscreen by default). --width is fuzzel's own
-        # *estimate* of character count (fuzzel.ini(5)), not a measurement
-        # of the actual rendered line, so it doesn't land exactly on the
-        # real column count for this font; "cols-2" is a fudge factor
-        # found by testing against one real SSID/password pair, not
-        # derived from a formula, and only confirmed for that QR size --
-        # if a much longer/shorter SSID+password (different QR version)
-        # ever looks off-center again, this is the first thing to
-        # re-check. horizontal-pad also only pads one side (a fuzzel
-        # quirk, not configurable), hence the single leading space
-        # prepended to every line instead of using the pad itself.
-        qr_text=$(qrencode -t UTF8 "$payload" | sed 's/^/ /')
-        cols=$(head -1 <<<"$qr_text" | wc -L)
-        rows=$(wc -l <<<"$qr_text")
-        fuzzel --dmenu --hide-prompt \
-            --horizontal-pad=0 --vertical-pad=3 \
-            --line-height=18 --letter-spacing=0 \
-            --width=$((cols - 2)) --lines="$rows" <<<"$qr_text"
-        ;;
-esac
+    | fuzzel --dmenu --prompt "network: " --lines=6 --line-height=23)
+    [ -n "$choice" ]
+do
+    case "$choice" in
+        "󰤨  Wi-Fi Networks")
+            id=$(notify_progress normal "$TITLE" "Scanning for Wi-Fi networks..." 0 persist)
+            # SSID may itself contain a colon in rare cases, so the
+            # split takes the last two fields as signal/security and
+            # rejoins everything before that as the SSID, rather than
+            # assuming SSID is exactly field 1.
+            networks=$(nmcli -e no -t -f SSID,SIGNAL,SECURITY dev wifi list --rescan yes | awk -F: '
+                NF < 3 { next }
+                {
+                    security = $NF
+                    signal = $(NF - 1)
+                    ssid = $1
+                    for (i = 2; i <= NF - 2; i++) ssid = ssid ":" $i
+                    if (ssid == "" || seen[ssid]++) next
+                    printf "%-22s %3s%%  %s\t%s\n", ssid, signal, (security == "" ? "Open" : security), ssid
+                }')
+            notify_progress normal "$TITLE" "Scan complete." "$id" >/dev/null
+            line=$(printf '%s\n' "$networks" | fuzzel --dmenu --with-nth=1 --prompt "wifi: " --width=45)
+            [ -n "$line" ] || continue
+            ssid="${line##*$'\t'}"
+            if nmcli -e no -t -f NAME connection show | grep -qxF "$ssid"; then
+                notify_on_fail nmcli connection up "$ssid"
+            else
+                pass=$(fuzzel --dmenu --password --prompt "password: ")
+                notify_on_fail nmcli dev wifi connect "$ssid" password "$pass"
+            fi
+            ;;
+        "󰐥  Toggle Wi-Fi")
+            if [ "$(nmcli radio wifi)" = "enabled" ]; then
+                notify_on_fail nmcli radio wifi off
+            else
+                notify_on_fail nmcli radio wifi on
+            fi
+            ;;
+        "󰖪  Disconnect")
+            dev=$(nmcli -t -f DEVICE,TYPE dev status | awk -F: '$2=="wifi"{print $1; exit}')
+            [ -n "$dev" ] && notify_on_fail nmcli dev disconnect "$dev"
+            ;;
+        "󰅙  Forget Network")
+            name=$(nmcli -e no -t -f NAME connection show | sort -f | fuzzel --dmenu --prompt "forget: ")
+            [ -n "$name" ] && notify_on_fail nmcli connection delete "$name"
+            ;;
+        "󰆏  Copy IP Address")
+            dev=$(nmcli -t -f DEVICE,STATE dev status | awk -F: '$2=="connected"{print $1; exit}')
+            [ -n "$dev" ] && nmcli -t -f IP4.ADDRESS dev show "$dev" | cut -d: -f2 | cut -d/ -f1 | wl-copy
+            ;;
+        "󰐲  Share Wi-Fi QR")
+            conn=$(nmcli -t -f NAME,TYPE connection show --active | awk -F: '$2=="802-11-wireless"{print $1; exit}')
+            [ -n "$conn" ] || continue
+            ssid=$(nmcli -g 802-11-wireless.ssid connection show "$conn")
+            psk=$(nmcli -s -g 802-11-wireless-security.psk connection show "$conn")
+            if [ -n "$psk" ]; then
+                payload="WIFI:T:WPA;S:${ssid};P:${psk};;"
+            else
+                payload="WIFI:T:nopass;S:${ssid};;"
+            fi
+            # Rendered as ASCII directly in a fuzzel pane instead of
+            # imv/PNG, to match the small centered floating look fuzzel
+            # gets for free (a wlroots layer-shell surface, unlike a
+            # real window, which would need its own float+size+center
+            # window rule and would still tile/fullscreen by default).
+            # --mesg (with --mesg-mode=expand, which sizes the window to
+            # the message instead of wrapping it) replaces the old
+            # --width/--lines character-count fudge factor entirely:
+            # fuzzel measures its own message text directly instead of
+            # this script guessing at column counts, so it can't drift
+            # out of alignment for a different SSID/password length or
+            # QR version the way the old estimate could.
+            # --minimal-lines drops the empty dmenu list area below the
+            # message, since this picker has no real entries -- it's
+            # message-only, dismissed with any key.
+            qr_text=$(qrencode -t UTF8 "$payload" | sed 's/^/ /')
+            fuzzel --dmenu --hide-prompt --minimal-lines \
+                --mesg="$qr_text" --mesg-mode=expand </dev/null
+            ;;
+    esac
+done

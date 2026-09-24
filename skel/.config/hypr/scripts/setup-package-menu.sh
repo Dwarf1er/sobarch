@@ -39,7 +39,7 @@ AUR_SYNC="/usr/local/lib/sobarch/aur-sync.sh"
 # md-package_down: same icon setup-menu.sh's own "Install" entry uses,
 # and the same one install-profile-packages.sh's first-boot
 # notifications use for the same "installing a package" concept.
-TITLE=$'\U000F03D4'"  sobarch: install package"
+TITLE="󰏔  sobarch: install package"
 
 if [[ ! -r "$DATA_FILE" ]]; then
     notify-send -u critical "$TITLE" "$DATA_FILE not found; is sobarch-skel installed?"

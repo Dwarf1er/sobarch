@@ -15,19 +15,29 @@
 
 source "$HOME/.config/hypr/scripts/confirm.sh"
 
+# md-power-settings: same icon this menu's own Power entry already
+# carries.
+TITLE="󰐦  sobarch: power"
+
+# --lines/--line-height match this list's real entry count (5) instead
+# of fuzzel.ini's global lines=8/line-height=22, which reserved room for
+# three rows nothing was ever going to fill. Window keeps its usual
+# overall size; the real entries stretch to fill it instead of leaving
+# dead space below "Apps". Same fix applied to the Power submenu below
+# (also 5 entries).
 choice=$(printf "%s\n" \
+    "󰀻  Apps" \
     "󰘮  System" \
     "󰢻  Sobarch" \
     "󰌌  Keybinds" \
     "󰐦  Power" \
-    "󰀻  Apps" \
-    | fuzzel --dmenu --prompt "sobarch: ")
+    | fuzzel --dmenu --prompt "sobarch: " --lines=5 --line-height=27)
 
 case "$choice" in
+    "󰀻  Apps") exec fuzzel ;;
     "󰘮  System") exec bash "$HOME/.config/hypr/scripts/system-menu.sh" ;;
     "󰢻  Sobarch") exec bash "$HOME/.config/hypr/scripts/setup-menu.sh" ;;
     "󰌌  Keybinds") exec bash "$HOME/.config/hypr/scripts/keybinds-menu.sh" ;;
-    "󰀻  Apps") exec fuzzel ;;
     "󰐦  Power")
         power_choice=$(printf "%s\n" \
             "󰌾  Lock" \
@@ -35,14 +45,14 @@ case "$choice" in
             "󰒲  Suspend" \
             "󰜉  Reboot" \
             "󰤂  Shutdown" \
-            | fuzzel --dmenu --prompt "power: ")
+            | fuzzel --dmenu --prompt "power: " --lines=5 --line-height=27)
 
         case "$power_choice" in
-            "󰌾  Lock") exec hyprlock ;;
-            "󰍃  Logout") confirm "Log out now?" && exec hyprctl dispatch exit ;;
-            "󰒲  Suspend") confirm "Suspend now?" && exec systemctl suspend ;;
-            "󰜉  Reboot") confirm "Reboot now?" && exec systemctl reboot ;;
-            "󰤂  Shutdown") confirm "Shut down now?" && exec systemctl poweroff ;;
+            "󰌾  Lock") hyprlock || notify-send -u critical "$TITLE" "Failed to lock screen." ;;
+            "󰍃  Logout") confirm "Log out now?" && { hyprctl dispatch exit || notify-send -u critical "$TITLE" "Failed to log out."; } ;;
+            "󰒲  Suspend") confirm "Suspend now?" && { systemctl suspend || notify-send -u critical "$TITLE" "Failed to suspend."; } ;;
+            "󰜉  Reboot") confirm "Reboot now?" && { systemctl reboot || notify-send -u critical "$TITLE" "Failed to reboot."; } ;;
+            "󰤂  Shutdown") confirm "Shut down now?" && { systemctl poweroff || notify-send -u critical "$TITLE" "Failed to shut down."; } ;;
         esac
         ;;
 esac

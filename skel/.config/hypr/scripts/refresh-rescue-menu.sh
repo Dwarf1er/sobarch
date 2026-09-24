@@ -17,10 +17,9 @@ set -euo pipefail
 
 REFRESH_RESCUE_ISO="/usr/local/lib/sobarch/refresh-rescue-iso.sh"
 
-# md-refresh: same icon setup-menu.sh's own "Refresh Rescue ISO" entry
-# uses, and the same one refresh-rescue-iso.sh's own root-side progress
-# notifications use for its in-progress steps.
-TITLE=$'\U000F0450'"  sobarch: refresh rescue iso"
+# md-usb_flash_drive: same icon setup-menu.sh's own "Refresh Rescue ISO"
+# entry uses.
+TITLE="󱊞  sobarch: refresh rescue iso"
 
 notify-send "$TITLE" "Fetching a current Arch ISO; this can take a while..."
 

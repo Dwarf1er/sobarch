@@ -52,7 +52,7 @@ BASELINE_DIR="$HOME/.local/state/sobarch/skel-baseline"
 
 # md-refresh: same icon setup-menu.sh's own "Update Config" entry uses
 # (also, pre-existing in setup-menu.sh, "Refresh Rescue ISO"'s).
-TITLE=$'\U000F0450'"  sobarch: update config"
+TITLE="󰑐  sobarch: update config"
 
 review_only=false
 [[ "${1:-}" == "--review" ]] && review_only=true

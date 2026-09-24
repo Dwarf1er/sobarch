@@ -11,7 +11,7 @@
 # way; apply-wallpaper.sh is the one that tells them apart.
 set -euo pipefail
 
-TITLE=$'\U000F0E09'"  sobarch: wallpaper"
+TITLE="󰸉  sobarch: wallpaper"
 BACKGROUNDS_DIR="$HOME/.local/share/backgrounds"
 CURRENT_FILE="$HOME/.config/sobarch/current-wallpaper"
 
