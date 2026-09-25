@@ -1,7 +1,9 @@
 #!/bin/bash
 
-# md-cog_outline: same icon setup-menu.sh's own "Default Apps" entry uses.
-TITLE="󰢻  sobarch: default app"
+ICONS="$HOME/.config/sobarch/icons"
+
+# apps: same icon setup-menu.sh's own "Default Apps" entry uses.
+TITLE="sobarch: default app"
 
 app_dirs=(/usr/share/applications "$HOME/.local/share/applications")
 
@@ -32,24 +34,24 @@ application/vnd.openxmlformats-officedocument.wordprocessingml.document
 application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
 application/vnd.openxmlformats-officedocument.presentationml.presentation"
 
-# Category icon, by prefix/exact match; falls back to a generic file
-# glyph for anything not covered.
+# Category icon slug (under $ICONS), by prefix/exact match; falls back
+# to a generic file icon for anything not covered.
 icon_for() {
     case "$1" in
-        text/*) printf '󰧮' ;;
-        application/pdf) printf '󰈦' ;;
-        image/*) printf '󰺰' ;;
-        video/*) printf '󰸬' ;;
-        audio/*) printf '󰸪' ;;
+        text/*) printf 'file-text' ;;
+        application/pdf) printf 'file-type-pdf' ;;
+        image/*) printf 'photo' ;;
+        video/*) printf 'movie' ;;
+        audio/*) printf 'music' ;;
         application/zip|application/x-7z-compressed|application/x-tar|application/gzip|application/x-bzip*|application/x-rar*|application/x-xz)
-            printf '󰞹' ;;
-        application/json) printf '󰘦' ;;
-        inode/directory) printf '󰉖' ;;
-        x-scheme-handler/*) printf '󰖟' ;;
-        application/msword|*wordprocessingml*) printf '󱀾' ;;
-        application/vnd.ms-excel|*spreadsheetml*) printf '󱀭' ;;
-        application/vnd.ms-powerpoint|*presentationml*) printf '󱀵' ;;
-        *) printf '󰈤' ;;
+            printf 'file-zip' ;;
+        application/json) printf 'json' ;;
+        inode/directory) printf 'folder' ;;
+        x-scheme-handler/*) printf 'world' ;;
+        application/msword|*wordprocessingml*) printf 'file-type-doc' ;;
+        application/vnd.ms-excel|*spreadsheetml*) printf 'file-type-xls' ;;
+        application/vnd.ms-powerpoint|*presentationml*) printf 'file-type-ppt' ;;
+        *) printf 'file' ;;
     esac
 }
 
@@ -58,19 +60,26 @@ while IFS= read -r mt; do
     [ -n "$mt" ] && remaining["$mt"]=1
 done <<<"$all_mimetypes"
 
-ordered_lines=""
-for mt in $common_order; do
-    if [ -n "${remaining[$mt]:-}" ]; then
-        ordered_lines+="$(icon_for "$mt")  $mt"$'\t'"$mt"$'\n'
-        unset "remaining[$mt]"
-    fi
-done
-rest=$(printf '%s\n' "${!remaining[@]}" | sort)
-while IFS= read -r mt; do
-    [ -n "$mt" ] && ordered_lines+="$(icon_for "$mt")  $mt"$'\t'"$mt"$'\n'
-done <<<"$rest"
-
-line=$(printf '%s' "$ordered_lines" | fuzzel --dmenu --with-nth=1 --prompt "mimetype: ")
+# Decorated (icon-marker-carrying) lines are streamed straight into
+# fuzzel below rather than built up in a bash variable first: a bash
+# variable can't hold an embedded NUL byte, so accumulating them (as
+# the old plain-glyph version of this script did) would silently
+# truncate every line at its first icon marker -- same NUL-byte
+# constraint themes-menu.sh's own comment documents.
+line=$(
+    {
+        for mt in $common_order; do
+            if [ -n "${remaining[$mt]:-}" ]; then
+                printf '%s\t%s\0icon\x1f%s\n' "$mt" "$mt" "$ICONS/$(icon_for "$mt").svg"
+                unset "remaining[$mt]"
+            fi
+        done
+        rest=$(printf '%s\n' "${!remaining[@]}" | sort)
+        while IFS= read -r mt; do
+            [ -n "$mt" ] && printf '%s\t%s\0icon\x1f%s\n' "$mt" "$mt" "$ICONS/$(icon_for "$mt").svg"
+        done <<<"$rest"
+    } | fuzzel --dmenu --with-nth=1 --prompt "mimetype: "
+)
 [ -n "$line" ] || exit 0
 mimetype="${line##*$'\t'}"
 
@@ -106,7 +115,7 @@ app_name="${line%%$'\t'*}"
 app_id="${line##*$'\t'}"
 
 if xdg-mime default "$app_id" "$mimetype"; then
-    notify-send "$TITLE" "$mimetype now opens with $app_name."
+    notify-send -i "$ICONS/apps.svg" "$TITLE" "$mimetype now opens with $app_name."
 else
-    notify-send -u critical "$TITLE" "Failed to set $app_name as default for $mimetype."
+    notify-send -u critical -i "$ICONS/apps.svg" "$TITLE" "Failed to set $app_name as default for $mimetype."
 fi

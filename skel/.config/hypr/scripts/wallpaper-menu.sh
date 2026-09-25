@@ -11,7 +11,8 @@
 # way; apply-wallpaper.sh is the one that tells them apart.
 set -euo pipefail
 
-TITLE="󰸉  sobarch: wallpaper"
+ICONS="$HOME/.config/sobarch/icons"
+TITLE="sobarch: wallpaper"
 BACKGROUNDS_DIR="$HOME/.local/share/backgrounds"
 CURRENT_FILE="$HOME/.config/sobarch/current-wallpaper"
 
@@ -20,7 +21,7 @@ files=("$BACKGROUNDS_DIR"/*)
 shopt -u nullglob
 
 if [[ ${#files[@]} -eq 0 ]]; then
-    notify-send -u critical "$TITLE" "No files in $BACKGROUNDS_DIR to pick from."
+    notify-send -u critical -i "$ICONS/photo.svg" "$TITLE" "No files in $BACKGROUNDS_DIR to pick from."
     exit 1
 fi
 
@@ -57,7 +58,7 @@ mkdir -p "$(dirname "$CURRENT_FILE")"
 printf "%s" "$path" >"$CURRENT_FILE"
 
 if "$HOME/.config/hypr/scripts/apply-wallpaper.sh"; then
-    notify-send "$TITLE" "Applied $pretty."
+    notify-send -i "$ICONS/photo.svg" "$TITLE" "Applied $pretty."
 else
-    notify-send -u critical "$TITLE" "Failed to apply $pretty."
+    notify-send -u critical -i "$ICONS/photo.svg" "$TITLE" "Failed to apply $pretty."
 fi

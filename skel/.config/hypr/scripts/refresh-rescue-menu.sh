@@ -16,19 +16,20 @@
 set -euo pipefail
 
 REFRESH_RESCUE_ISO="/usr/local/lib/sobarch/refresh-rescue-iso.sh"
+ICONS="$HOME/.config/sobarch/icons"
 
-# md-usb_flash_drive: same icon setup-menu.sh's own "Refresh Rescue ISO"
-# entry uses.
-TITLE="󱊞  sobarch: refresh rescue iso"
+# device-usb: same icon setup-menu.sh's own "Refresh Rescue ISO" entry
+# uses.
+TITLE="sobarch: refresh rescue iso"
 
-notify-send "$TITLE" "Fetching a current Arch ISO; this can take a while..."
+notify-send -i "$ICONS/device-usb.svg" "$TITLE" "Fetching a current Arch ISO; this can take a while..."
 
 result=0
 pkexec "$REFRESH_RESCUE_ISO" || result=$?
 
 if ((result != 0)); then
-    notify-send -u critical "$TITLE" \
+    notify-send -u critical -i "$ICONS/device-usb.svg" "$TITLE" \
         "Refresh failed partway through; the rescue media may be in a mixed state. Check journalctl for pkexec's output."
 else
-    notify-send "$TITLE" "Rescue ISO refreshed."
+    notify-send -i "$ICONS/device-usb.svg" "$TITLE" "Rescue ISO refreshed."
 fi

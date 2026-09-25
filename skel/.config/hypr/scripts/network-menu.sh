@@ -2,8 +2,10 @@
 
 source "$HOME/.config/hypr/scripts/notify-progress.sh"
 
-# md-wifi_strength_4: same icon system-menu.sh's own "Network" entry uses.
-TITLE="󰤨  sobarch: network"
+ICONS="$HOME/.config/sobarch/icons"
+
+# wifi: same icon system-menu.sh's own "Network" entry uses.
+TITLE="sobarch: network"
 
 # notify_on_fail runs an nmcli action and, only if it fails, surfaces
 # its own stderr as a critical notification (nmcli puts error text on
@@ -11,26 +13,28 @@ TITLE="󰤨  sobarch: network"
 notify_on_fail() {
     local err
     err=$("$@" 2>&1 >/dev/null)
-    [ -n "$err" ] && notify-send -u critical "$TITLE" "$err"
+    [ -n "$err" ] && notify-send -u critical -i "$ICONS/wifi.svg" "$TITLE" "$err"
 }
 
 # Loops back to this same picker after every action instead of exiting,
 # so e.g. checking Wi-Fi networks then toggling Wi-Fi doesn't need the
 # keybind re-invoked each time. Only an empty selection (Escape) breaks
-# out.
-while choice=$(printf "%s\n" \
-    "󰤨  Wi-Fi Networks" \
-    "󰐥  Toggle Wi-Fi" \
-    "󰖪  Disconnect" \
-    "󰅙  Forget Network" \
-    "󰆏  Copy IP Address" \
-    "󰐲  Share Wi-Fi QR" \
-    | fuzzel --dmenu --prompt "network: " --lines=6 --line-height=23)
+# out. --minimal-lines added since every row now carries an icon (see
+# wallpaper-menu.sh's own comment on the empty-leftover-row
+# icon-duplication bug this avoids).
+while choice=$(printf '%s\0icon\x1f%s\n' \
+    "Wi-Fi Networks" "$ICONS/wifi.svg" \
+    "Toggle Wi-Fi" "$ICONS/power.svg" \
+    "Disconnect" "$ICONS/wifi-off.svg" \
+    "Forget Network" "$ICONS/trash.svg" \
+    "Copy IP Address" "$ICONS/clipboard.svg" \
+    "Share Wi-Fi QR" "$ICONS/qrcode.svg" \
+    | fuzzel --dmenu --prompt "network: " --lines=6 --line-height=23 --minimal-lines)
     [ -n "$choice" ]
 do
     case "$choice" in
-        "󰤨  Wi-Fi Networks")
-            id=$(notify_progress normal "$TITLE" "Scanning for Wi-Fi networks..." 0 persist)
+        "Wi-Fi Networks")
+            id=$(notify_progress normal "$TITLE" "Scanning for Wi-Fi networks..." 0 persist "$ICONS/wifi.svg")
             # SSID may itself contain a colon in rare cases, so the
             # split takes the last two fields as signal/security and
             # rejoins everything before that as the SSID, rather than
@@ -45,7 +49,7 @@ do
                     if (ssid == "" || seen[ssid]++) next
                     printf "%-22s %3s%%  %s\t%s\n", ssid, signal, (security == "" ? "Open" : security), ssid
                 }')
-            notify_progress normal "$TITLE" "Scan complete." "$id" >/dev/null
+            notify_progress normal "$TITLE" "Scan complete." "$id" "" "$ICONS/wifi.svg" >/dev/null
             line=$(printf '%s\n' "$networks" | fuzzel --dmenu --with-nth=1 --prompt "wifi: " --width=45)
             [ -n "$line" ] || continue
             ssid="${line##*$'\t'}"
@@ -56,26 +60,26 @@ do
                 notify_on_fail nmcli dev wifi connect "$ssid" password "$pass"
             fi
             ;;
-        "󰐥  Toggle Wi-Fi")
+        "Toggle Wi-Fi")
             if [ "$(nmcli radio wifi)" = "enabled" ]; then
                 notify_on_fail nmcli radio wifi off
             else
                 notify_on_fail nmcli radio wifi on
             fi
             ;;
-        "󰖪  Disconnect")
+        "Disconnect")
             dev=$(nmcli -t -f DEVICE,TYPE dev status | awk -F: '$2=="wifi"{print $1; exit}')
             [ -n "$dev" ] && notify_on_fail nmcli dev disconnect "$dev"
             ;;
-        "󰅙  Forget Network")
+        "Forget Network")
             name=$(nmcli -e no -t -f NAME connection show | sort -f | fuzzel --dmenu --prompt "forget: ")
             [ -n "$name" ] && notify_on_fail nmcli connection delete "$name"
             ;;
-        "󰆏  Copy IP Address")
+        "Copy IP Address")
             dev=$(nmcli -t -f DEVICE,STATE dev status | awk -F: '$2=="connected"{print $1; exit}')
             [ -n "$dev" ] && nmcli -t -f IP4.ADDRESS dev show "$dev" | cut -d: -f2 | cut -d/ -f1 | wl-copy
             ;;
-        "󰐲  Share Wi-Fi QR")
+        "Share Wi-Fi QR")
             conn=$(nmcli -t -f NAME,TYPE connection show --active | awk -F: '$2=="802-11-wireless"{print $1; exit}')
             [ -n "$conn" ] || continue
             ssid=$(nmcli -g 802-11-wireless.ssid connection show "$conn")

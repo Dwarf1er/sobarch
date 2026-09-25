@@ -50,9 +50,10 @@ PLYMOUTH_SETUP="/usr/local/lib/sobarch/plymouth-setup.sh"
 SKEL_SRC="/usr/share/sobarch/skel"
 BASELINE_DIR="$HOME/.local/state/sobarch/skel-baseline"
 
-# md-refresh: same icon setup-menu.sh's own "Update Config" entry uses
-# (also, pre-existing in setup-menu.sh, "Refresh Rescue ISO"'s).
-TITLE="󰑐  sobarch: update config"
+ICONS="$HOME/.config/sobarch/icons"
+
+# refresh: same icon setup-menu.sh's own "Update Config" entry uses.
+TITLE="sobarch: update config"
 
 review_only=false
 [[ "${1:-}" == "--review" ]] && review_only=true
@@ -158,7 +159,7 @@ if ! $review_only; then
             # successful refresh rather than trying to detect whether
             # branding/ itself was part of it.
             if ! pkexec bash -c "'$LIMINE_THEME_SETUP' && '$LY_THEME_SETUP' && '$PLYMOUTH_SETUP'"; then
-                notify-send "$TITLE" \
+                notify-send -i "$ICONS/refresh.svg" "$TITLE" \
                     "Refreshing boot/greeter/splash theming failed; limine.conf, ly's config.ini, or the Plymouth theme may be stale until the next Update Config run."
             fi
         else
@@ -172,7 +173,7 @@ if ! $review_only; then
         fi
     fi
     if ! "$APPLY_SKEL"; then
-        notify-send -u critical "$TITLE" "apply-skel.sh failed; check its output for details."
+        notify-send -u critical -i "$ICONS/refresh.svg" "$TITLE" "apply-skel.sh failed; check its output for details."
         exit 1
     fi
 
@@ -183,7 +184,7 @@ if ! $review_only; then
     # every scheme has to be rebuilt here or theme switching keeps
     # using the stale, previously-built output.
     if ! "$BUILD_TINTY_TEMPLATES"; then
-        notify-send -u critical "$TITLE" \
+        notify-send -u critical -i "$ICONS/refresh.svg" "$TITLE" \
             "Rebuilding tinty theme templates failed; run 'tinty build' on ~/.config/sobarch/tinty-templates/* manually to retry."
     fi
 fi
@@ -192,9 +193,9 @@ mapfile -t conflicts < <(find "$HOME" -name '*.sobarch-new' 2>/dev/null | sort)
 
 if ((${#conflicts[@]} == 0)); then
     if $review_only; then
-        notify-send "$TITLE" "No pending conflicts."
+        notify-send -i "$ICONS/refresh.svg" "$TITLE" "No pending conflicts."
     else
-        notify-send "$TITLE" "Config synced; no conflicts."
+        notify-send -i "$ICONS/refresh.svg" "$TITLE" "Config synced; no conflicts."
     fi
     exit 0
 fi
@@ -303,5 +304,5 @@ for f in "${conflicts[@]}"; do
     done
 done
 
-notify-send "$TITLE" \
+notify-send -i "$ICONS/refresh.svg" "$TITLE" \
     "$resolved conflict(s) resolved, $skipped left for review (Sobarch -> Review Conflicts)."

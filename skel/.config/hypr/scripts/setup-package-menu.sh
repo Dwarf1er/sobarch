@@ -35,14 +35,13 @@ source "$HOME/.config/hypr/scripts/notify-progress.sh"
 
 DATA_FILE="/usr/share/sobarch/profiles.txt"
 AUR_SYNC="/usr/local/lib/sobarch/aur-sync.sh"
+ICONS="$HOME/.config/sobarch/icons"
 
-# md-package_down: same icon setup-menu.sh's own "Install" entry uses,
-# and the same one install-profile-packages.sh's first-boot
-# notifications use for the same "installing a package" concept.
-TITLE="󰏔  sobarch: install package"
+# download: same icon setup-menu.sh's own "Install" entry uses.
+TITLE="sobarch: install package"
 
 if [[ ! -r "$DATA_FILE" ]]; then
-    notify-send -u critical "$TITLE" "$DATA_FILE not found; is sobarch-skel installed?"
+    notify-send -u critical -i "$ICONS/download.svg" "$TITLE" "$DATA_FILE not found; is sobarch-skel installed?"
     exit 1
 fi
 
@@ -67,7 +66,7 @@ mapfile -t names < <(
 )
 
 if ((${#names[@]} == 0)); then
-    notify-send "$TITLE" "Every known package is already installed."
+    notify-send -i "$ICONS/download.svg" "$TITLE" "Every known package is already installed."
     exit 0
 fi
 
@@ -78,7 +77,7 @@ choice=$(
 )
 [[ -n "${choice:-}" && -n "${pkg_is_aur[$choice]:-}" ]] || exit 0
 
-id=$(notify_progress normal "$TITLE" "Installing $choice..." 0 persist)
+id=$(notify_progress normal "$TITLE" "Installing $choice..." 0 persist "$ICONS/download.svg")
 
 if [[ "${pkg_is_aur[$choice]}" == 1 ]]; then
     result=0
@@ -90,7 +89,7 @@ fi
 
 if ((result != 0)); then
     notify_progress critical "$TITLE" \
-        "$choice failed to install; check /var/log/sobarch/aur-sync.log and pacman's own log." "$id" >/dev/null
+        "$choice failed to install; check /var/log/sobarch/aur-sync.log and pacman's own log." "$id" "" "$ICONS/download.svg" >/dev/null
 else
-    notify_progress normal "$TITLE" "$choice installed." "$id" >/dev/null
+    notify_progress normal "$TITLE" "$choice installed." "$id" "" "$ICONS/download.svg" >/dev/null
 fi

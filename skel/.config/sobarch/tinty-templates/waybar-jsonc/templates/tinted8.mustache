@@ -45,12 +45,9 @@
   },
 
   "network": {
-    "format-wifi": "{icon}",
-    "format-ethernet": "󰈀",
-    "format-disconnected": "󰤭",
-    "format-icons": {
-      "wifi": ["󰤟", "󰤢", "󰤥", "󰤨"]
-    },
+    "format-wifi": " ",
+    "format-ethernet": " ",
+    "format-disconnected": " ",
     "tooltip-format-wifi": "{essid} ({signalStrength}%)",
     "tooltip-format-ethernet": "{ifname}",
     "tooltip-format-disconnected": "Disconnected",
@@ -58,9 +55,9 @@
   },
 
   "bluetooth": {
-    "format": "󰂯",
-    "format-disabled": "󰂲",
-    "format-connected": "󰂱 {num_connections}",
+    "format": " ",
+    "format-disabled": " ",
+    "format-connected": " {num_connections}",
     "tooltip-format": "{controller_alias}",
     "tooltip-format-connected": "{controller_alias}\n{device_enumerate}",
     "on-click": "bash ~/.config/hypr/scripts/bluetooth-menu.sh"
@@ -75,16 +72,8 @@
   },
 
   "battery": {
-    "format": "{icon}  {capacity}%",
-    "format-icons": {
-      "charging": [
-        "󰢜","󰂆","󰂇","󰂈","󰢝","󰂉","󰢞","󰂊","󰂋","󰂅"
-      ],
-      "default": [
-        "󰁺","󰁻","󰁼","󰁽","󰁾","󰁿","󰂀","󰂁","󰂂","󰁹"
-      ]
-    },
-    "format-full": "Charged ",
+    "format": "{capacity}%",
+    "format-full": "Charged",
     "interval": 5,
     "states": {
       "warning": 20,

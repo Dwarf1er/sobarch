@@ -8,11 +8,13 @@
 # it themes; nothing extra to do here beyond the apply itself.
 set -euo pipefail
 
-# md-format_color_fill: same icon setup-menu.sh's own "Themes" entry uses.
-TITLE="󰉦  sobarch: themes"
+ICONS="$HOME/.config/sobarch/icons"
+
+# palette: same icon setup-menu.sh's own "Themes" entry uses.
+TITLE="sobarch: themes"
 
 if ! command -v tinty >/dev/null 2>&1; then
-    notify-send -u critical "$TITLE" \
+    notify-send -u critical -i "$ICONS/palette.svg" "$TITLE" \
         "tinty isn't installed (Sobarch -> Update Config, to fetch base-required packages)."
     exit 1
 fi
@@ -121,7 +123,7 @@ pretty="${line%%$'\t'*}"
 raw="${line#*$'\t'}"
 
 if tinty apply "$raw"; then
-    notify-send "$TITLE" "Applied $pretty."
+    notify-send -i "$ICONS/palette.svg" "$TITLE" "Applied $pretty."
 else
-    notify-send -u critical "$TITLE" "Failed to apply $pretty."
+    notify-send -u critical -i "$ICONS/palette.svg" "$TITLE" "Failed to apply $pretty."
 fi

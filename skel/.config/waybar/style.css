@@ -102,6 +102,26 @@ tooltip {
     transition: all 0.2s ease;
 }
 
+/* Icon-carrying modules (battery/network/bluetooth/custom-dnd/
+   custom-system) reserve extra left padding and paint their icon as a
+   background image instead of a Nerd Font glyph in the label text --
+   waybar has no built-in per-module icon-file field (confirmed against
+   upstream: open feature requests #944/#1330, never implemented), so a
+   background-image keyed off the module's own state class is the only
+   way to show a real icon file here. Paths are relative to this file
+   (~/.config/waybar/style.css), not absolute: GTK CSS has no $HOME/~
+   expansion, and a hardcoded /home/<user>/... path would break for any
+   username but the one this file happened to be authored under. */
+#battery,
+#network,
+#bluetooth,
+#custom-system {
+    background-repeat: no-repeat;
+    background-position: 14px center;
+    background-size: 16px 16px;
+    padding-left: 32px;
+}
+
 /* Do Not Disturb (collapses to zero width when inactive) */
 #custom-dnd {
     color: @base08;
@@ -114,30 +134,57 @@ tooltip {
 
 #custom-dnd.active {
     background: alpha(@base08, 0.14);
-    padding: 6px 14px;
+    background-image: url("../sobarch/icons/bell-off.svg");
+    background-repeat: no-repeat;
+    background-position: 14px center;
+    background-size: 16px 16px;
+    padding: 6px 14px 6px 32px;
     margin: 6px 3px;
 }
 
 /* Individual module colors */
 #battery {
     color: @base0B;
-    background: alpha(@base0B, 0.12);
+    background-color: alpha(@base0B, 0.12);
+    background-image: url("../sobarch/icons/battery.svg");
+}
+
+#battery.charging {
+    background-image: url("../sobarch/icons/battery-charging.svg");
 }
 
 #battery.warning {
     color: @base0A;
-    background: alpha(@base0A, 0.14);
+    background-color: alpha(@base0A, 0.14);
+    background-image: url("../sobarch/icons/battery-2.svg");
 }
 
 #battery.critical {
     color: @base08;
-    background: alpha(@base08, 0.16);
+    background-color: alpha(@base08, 0.16);
+    background-image: url("../sobarch/icons/battery-1.svg");
     animation: blink 1s linear infinite alternate;
+}
+
+/* Charging takes priority over a low-charge icon when both classes are
+   present at once (charging from a low state): listed after
+   .warning/.critical so its background-image wins the cascade. */
+#battery.charging.warning,
+#battery.charging.critical {
+    background-image: url("../sobarch/icons/battery-charging.svg");
 }
 
 #custom-system {
     color: @base0D;
-    background: alpha(@base0D, 0.12);
+    background-color: alpha(@base0D, 0.12);
+}
+
+#custom-system.unmuted {
+    background-image: url("../sobarch/icons/volume-2.svg");
+}
+
+#custom-system.muted {
+    background-image: url("../sobarch/icons/volume-off.svg");
 }
 
 /* Language/Keyboard layout (collapses to zero width when fcitx5 isn't installed) */
@@ -161,22 +208,37 @@ tooltip {
 
 #network {
     color: @base0B;
-    background: alpha(@base0B, 0.12);
+    background-color: alpha(@base0B, 0.12);
+}
+
+#network.wifi {
+    background-image: url("../sobarch/icons/wifi.svg");
+}
+
+#network.ethernet {
+    background-image: url("../sobarch/icons/plug.svg");
 }
 
 #network.disconnected {
     color: alpha(@base05, 0.5);
-    background: alpha(@base05, 0.06);
+    background-color: alpha(@base05, 0.06);
+    background-image: url("../sobarch/icons/wifi-off.svg");
 }
 
 #bluetooth {
     color: @base0E;
-    background: alpha(@base0E, 0.12);
+    background-color: alpha(@base0E, 0.12);
+    background-image: url("../sobarch/icons/bluetooth.svg");
+}
+
+#bluetooth.connected {
+    background-image: url("../sobarch/icons/bluetooth-connected.svg");
 }
 
 #bluetooth.disabled {
     color: alpha(@base05, 0.5);
-    background: alpha(@base05, 0.06);
+    background-color: alpha(@base05, 0.06);
+    background-image: url("../sobarch/icons/bluetooth-off.svg");
 }
 
 /* Animations */

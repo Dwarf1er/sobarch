@@ -16,13 +16,16 @@
 # user's own session, calling notify-send directly like every other
 # menu script here already does, so none of that is needed.
 #
-# Usage: id=$(notify_progress URGENCY TITLE BODY [REPLACE_ID] [PERSIST])
+# Usage: id=$(notify_progress URGENCY TITLE BODY [REPLACE_ID] [PERSIST] [ICON])
 # PERSIST (any non-empty value) sets no expiry timeout, for the
 # "in progress" call; omit it on the follow-up call that replaces it,
-# so the final result uses the normal auto-expiring timeout.
+# so the final result uses the normal auto-expiring timeout. ICON, if
+# given, is a path passed straight to notify-send -i.
 notify_progress() {
-    local urgency="$1" title="$2" body="$3" replace_id="${4:-0}" persist="${5:-}"
+    local urgency="$1" title="$2" body="$3" replace_id="${4:-0}" persist="${5:-}" icon="${6:-}"
     local ttl_args=()
     [ -n "$persist" ] && ttl_args=(-t 0)
-    notify-send -p -r "$replace_id" -u "$urgency" "${ttl_args[@]}" "$title" "$body"
+    local icon_args=()
+    [ -n "$icon" ] && icon_args=(-i "$icon")
+    notify-send -p -r "$replace_id" -u "$urgency" "${ttl_args[@]}" "${icon_args[@]}" "$title" "$body"
 }

@@ -118,3 +118,350 @@ name = "sobarch-fastfetch"
 themes-dir = "colors"
 write-to-file = ["~/.config/fastfetch/config.jsonc"]
 supported-systems = ["base16", "base24", "tinted8"]
+
+# Tabler-icons (MIT, https://github.com/tabler/tabler-icons) SVGs, one
+# item per icon since tinty renders exactly one file per scheme per
+# item -- see TABLER-ICONS-LICENSE.txt alongside the templates.
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-apps"
+name = "sobarch-icon-apps"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/apps.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-settings"
+name = "sobarch-icon-settings"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/settings.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-package"
+name = "sobarch-icon-package"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/package.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-keyboard"
+name = "sobarch-icon-keyboard"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/keyboard.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-power"
+name = "sobarch-icon-power"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/power.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-lock"
+name = "sobarch-icon-lock"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/lock.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-logout"
+name = "sobarch-icon-logout"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/logout.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-moon"
+name = "sobarch-icon-moon"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/moon.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-refresh"
+name = "sobarch-icon-refresh"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/refresh.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-volume-2"
+name = "sobarch-icon-volume-2"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/volume-2.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-volume-off"
+name = "sobarch-icon-volume-off"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/volume-off.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-volume"
+name = "sobarch-icon-volume"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/volume.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-microphone-off"
+name = "sobarch-icon-microphone-off"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/microphone-off.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-microphone"
+name = "sobarch-icon-microphone"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/microphone.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-device-speaker"
+name = "sobarch-icon-device-speaker"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/device-speaker.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-bluetooth"
+name = "sobarch-icon-bluetooth"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/bluetooth.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-bluetooth-off"
+name = "sobarch-icon-bluetooth-off"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/bluetooth-off.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-bluetooth-connected"
+name = "sobarch-icon-bluetooth-connected"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/bluetooth-connected.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-trash"
+name = "sobarch-icon-trash"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/trash.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-cpu"
+name = "sobarch-icon-cpu"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/cpu.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-download"
+name = "sobarch-icon-download"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/download.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-wifi"
+name = "sobarch-icon-wifi"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/wifi.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-wifi-off"
+name = "sobarch-icon-wifi-off"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/wifi-off.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-clipboard"
+name = "sobarch-icon-clipboard"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/clipboard.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-qrcode"
+name = "sobarch-icon-qrcode"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/qrcode.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-git-merge"
+name = "sobarch-icon-git-merge"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/git-merge.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-palette"
+name = "sobarch-icon-palette"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/palette.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-photo"
+name = "sobarch-icon-photo"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/photo.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-book"
+name = "sobarch-icon-book"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/book.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-device-usb"
+name = "sobarch-icon-device-usb"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/device-usb.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-file-text"
+name = "sobarch-icon-file-text"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/file-text.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-file-type-pdf"
+name = "sobarch-icon-file-type-pdf"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/file-type-pdf.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-movie"
+name = "sobarch-icon-movie"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/movie.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-music"
+name = "sobarch-icon-music"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/music.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-file-zip"
+name = "sobarch-icon-file-zip"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/file-zip.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-json"
+name = "sobarch-icon-json"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/json.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-folder"
+name = "sobarch-icon-folder"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/folder.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-world"
+name = "sobarch-icon-world"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/world.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-file-type-doc"
+name = "sobarch-icon-file-type-doc"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/file-type-doc.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-file-type-xls"
+name = "sobarch-icon-file-type-xls"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/file-type-xls.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-file-type-ppt"
+name = "sobarch-icon-file-type-ppt"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/file-type-ppt.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-file"
+name = "sobarch-icon-file"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/file.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-plug"
+name = "sobarch-icon-plug"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/plug.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-bell-off"
+name = "sobarch-icon-bell-off"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/bell-off.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-battery"
+name = "sobarch-icon-battery"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/battery.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-battery-1"
+name = "sobarch-icon-battery-1"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/battery-1.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-battery-2"
+name = "sobarch-icon-battery-2"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/battery-2.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-battery-charging"
+name = "sobarch-icon-battery-charging"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/battery-charging.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-devices"
+name = "sobarch-icon-devices"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/devices.svg"]
+supported-systems = ["base16", "base24", "tinted8"]

@@ -15,44 +15,46 @@
 
 source "$HOME/.config/hypr/scripts/confirm.sh"
 
-# md-power-settings: same icon this menu's own Power entry already
-# carries.
-TITLE="󰐦  sobarch: power"
+ICONS="$HOME/.config/sobarch/icons"
+TITLE="sobarch: power"
 
 # --lines/--line-height match this list's real entry count (5) instead
 # of fuzzel.ini's global lines=8/line-height=22, which reserved room for
 # three rows nothing was ever going to fill. Window keeps its usual
 # overall size; the real entries stretch to fill it instead of leaving
 # dead space below "Apps". Same fix applied to the Power submenu below
-# (also 5 entries).
-choice=$(printf "%s\n" \
-    "󰀻  Apps" \
-    "󰘮  System" \
-    "󰢻  Sobarch" \
-    "󰌌  Keybinds" \
-    "󰐦  Power" \
-    | fuzzel --dmenu --prompt "sobarch: " --lines=5 --line-height=27)
+# (also 5 entries). --minimal-lines added on top since every row now
+# carries an icon: an empty leftover row below a short list renders a
+# duplicated, mispositioned icon copy (see wallpaper-menu.sh's own
+# comment on this same fuzzel bug).
+choice=$(printf '%s\0icon\x1f%s\n' \
+    "Apps" "$ICONS/apps.svg" \
+    "System" "$ICONS/settings.svg" \
+    "Sobarch" "$ICONS/package.svg" \
+    "Keybinds" "$ICONS/keyboard.svg" \
+    "Power" "$ICONS/power.svg" \
+    | fuzzel --dmenu --prompt "sobarch: " --lines=5 --line-height=27 --minimal-lines)
 
 case "$choice" in
-    "󰀻  Apps") exec fuzzel ;;
-    "󰘮  System") exec bash "$HOME/.config/hypr/scripts/system-menu.sh" ;;
-    "󰢻  Sobarch") exec bash "$HOME/.config/hypr/scripts/setup-menu.sh" ;;
-    "󰌌  Keybinds") exec bash "$HOME/.config/hypr/scripts/keybinds-menu.sh" ;;
-    "󰐦  Power")
-        power_choice=$(printf "%s\n" \
-            "󰌾  Lock" \
-            "󰍃  Logout" \
-            "󰒲  Suspend" \
-            "󰜉  Reboot" \
-            "󰤂  Shutdown" \
-            | fuzzel --dmenu --prompt "power: " --lines=5 --line-height=27)
+    "Apps") exec fuzzel ;;
+    "System") exec bash "$HOME/.config/hypr/scripts/system-menu.sh" ;;
+    "Sobarch") exec bash "$HOME/.config/hypr/scripts/setup-menu.sh" ;;
+    "Keybinds") exec bash "$HOME/.config/hypr/scripts/keybinds-menu.sh" ;;
+    "Power")
+        power_choice=$(printf '%s\0icon\x1f%s\n' \
+            "Lock" "$ICONS/lock.svg" \
+            "Logout" "$ICONS/logout.svg" \
+            "Suspend" "$ICONS/moon.svg" \
+            "Reboot" "$ICONS/refresh.svg" \
+            "Shutdown" "$ICONS/power.svg" \
+            | fuzzel --dmenu --prompt "power: " --lines=5 --line-height=27 --minimal-lines)
 
         case "$power_choice" in
-            "󰌾  Lock") hyprlock || notify-send -u critical "$TITLE" "Failed to lock screen." ;;
-            "󰍃  Logout") confirm "Log out now?" && { hyprctl dispatch exit || notify-send -u critical "$TITLE" "Failed to log out."; } ;;
-            "󰒲  Suspend") confirm "Suspend now?" && { systemctl suspend || notify-send -u critical "$TITLE" "Failed to suspend."; } ;;
-            "󰜉  Reboot") confirm "Reboot now?" && { systemctl reboot || notify-send -u critical "$TITLE" "Failed to reboot."; } ;;
-            "󰤂  Shutdown") confirm "Shut down now?" && { systemctl poweroff || notify-send -u critical "$TITLE" "Failed to shut down."; } ;;
+            "Lock") hyprlock || notify-send -u critical -i "$ICONS/power.svg" "$TITLE" "Failed to lock screen." ;;
+            "Logout") confirm "Log out now?" && { hyprctl dispatch exit || notify-send -u critical -i "$ICONS/power.svg" "$TITLE" "Failed to log out."; } ;;
+            "Suspend") confirm "Suspend now?" && { systemctl suspend || notify-send -u critical -i "$ICONS/power.svg" "$TITLE" "Failed to suspend."; } ;;
+            "Reboot") confirm "Reboot now?" && { systemctl reboot || notify-send -u critical -i "$ICONS/power.svg" "$TITLE" "Failed to reboot."; } ;;
+            "Shutdown") confirm "Shut down now?" && { systemctl poweroff || notify-send -u critical -i "$ICONS/power.svg" "$TITLE" "Failed to shut down."; } ;;
         esac
         ;;
 esac
