@@ -138,10 +138,10 @@ write-to-file = ["~/.config/sobarch/icons/settings.svg"]
 supported-systems = ["base16", "base24", "tinted8"]
 
 [[items]]
-path = "~/.config/sobarch/tinty-templates/icon-package"
-name = "sobarch-icon-package"
+path = "~/.config/sobarch/tinty-templates/icon-siot"
+name = "sobarch-icon-siot"
 themes-dir = "colors"
-write-to-file = ["~/.config/sobarch/icons/package.svg"]
+write-to-file = ["~/.config/sobarch/icons/siot.svg"]
 supported-systems = ["base16", "base24", "tinted8"]
 
 [[items]]

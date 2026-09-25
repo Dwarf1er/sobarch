@@ -30,7 +30,7 @@ TITLE="sobarch: power"
 choice=$(printf '%s\0icon\x1f%s\n' \
     "Apps" "$ICONS/apps.svg" \
     "System" "$ICONS/settings.svg" \
-    "Sobarch" "$ICONS/package.svg" \
+    "Sobarch" "$ICONS/siot.svg" \
     "Keybinds" "$ICONS/keyboard.svg" \
     "Power" "$ICONS/power.svg" \
     | fuzzel --dmenu --prompt "sobarch: " --lines=5 --line-height=27 --minimal-lines)
