@@ -40,7 +40,7 @@ most of the fish/zsh conveniences (autosuggestions, syntax
 highlighting, history search) without swapping the default shell.
 Nothing stops you from switching to zsh or fish yourself; it's just
 not what ships or gets reconciled by [Updating Your
-Config](../../desktop/updating-config/).
+Config](../../desktop/updating-system/).
 
 ## I'm stuck. Where do I get help?
 

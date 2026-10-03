@@ -24,7 +24,7 @@
 # (install_runner.py's CHROOT_SETUP_SCRIPTS, right after
 # limine-theme-setup.sh), and later, packaged as
 # /usr/local/lib/sobarch/plymouth-setup.sh by sobarch-scripts, re-run
-# by update-config-menu.sh whenever sobarch-skel refreshes so an
+# by update-system-menu.sh whenever sobarch-skel refreshes so an
 # already-installed system picks up branding changes too. Nothing here
 # depends on being inside a fresh chroot specifically (no
 # archinstall-only env vars), and every write below already overwrites

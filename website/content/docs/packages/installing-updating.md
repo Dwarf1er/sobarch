@@ -33,6 +33,11 @@ packages current the same way it keeps official ones current: a
 package just doesn't get re-checked until some upgrade actually
 happens.
 
+For a one-click version of the whole thing, **Super → Sobarch →
+Update System** runs `pacman -Syu`, then the same sync, then your
+[config merge](../../desktop/updating-system/), with progress
+notifications. Raw `pacman -Syu` keeps working unchanged.
+
 If a vendored package fails to build or install during that
 automatic sync, you get a critical desktop notification listing which
 packages failed, since the hook runs without a terminal you'd

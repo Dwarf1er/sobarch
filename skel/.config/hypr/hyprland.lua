@@ -50,7 +50,7 @@ hl.on("hyprland.start", function()
 	hl.exec_cmd("xdg-user-dirs-update")
 	-- `tinty-git` is base-required (always installed), but `command -v`
 	-- guards anyway: an already-installed system only picks up a newly
-	-- base-required package once its "Update Config" flow runs, and a
+	-- base-required package once its "Update System" flow runs, and a
 	-- package build can always fail. `tinty list` is empty until `tinty
 	-- install` has cloned/built the scheme and template repos declared
 	-- in config.toml; nothing else in sobarch ever runs that, so it's

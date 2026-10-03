@@ -15,7 +15,7 @@ TITLE="sobarch: themes"
 
 if ! command -v tinty >/dev/null 2>&1; then
     notify-send -u critical -i "$ICONS/palette.svg" "$TITLE" \
-        "tinty isn't installed (Sobarch -> Update Config, to fetch base-required packages)."
+        "tinty isn't installed (Sobarch -> Update System, to fetch base-required packages)."
     exit 1
 fi
 

@@ -36,7 +36,7 @@ dispatcher: `systemctl start --no-block sobarch-firstboot-packages.service`.
 
 [Boot & Login Theming](../../desktop/boot-theming/) covers what should
 be showing at each stage. Running
-[Update Config](../../desktop/updating-config/) re-applies all three
+[Update System](../../desktop/updating-system/) re-applies all three
 unconditionally, which is the quickest way to rule out a one-off
 glitch before digging further.
 
@@ -44,7 +44,7 @@ glitch before digging further.
 
 Run `hyprctl reload` directly. Hyprland's own config watcher can miss
 an atomic file replace (the kind [Updating Your
-Config](../../desktop/updating-config/)'s merge does), so a change
+Config](../../desktop/updating-system/)'s merge does), so a change
 landing on disk doesn't always mean it's been picked up yet.
 
 ## A vendored package fails to build

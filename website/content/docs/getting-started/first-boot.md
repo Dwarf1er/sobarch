@@ -16,8 +16,8 @@ completed step never repeats:
   case a laptop's WiFi radio comes up soft-blocked by firmware.
 - **Skel deployment.** Your account's dotfiles are populated from
   sobarch's defaults. This is the same mechanism that later powers
-  **Update Config** from the desktop menu; see
-  [Updating Your Config](../../desktop/updating-config/) for how it
+  **Update System** from the desktop menu; see
+  [Updating Your System](../../desktop/updating-system/) for how it
   merges changes without clobbering your edits.
 - **Optional profile packages.** Whatever software profiles you picked
   during install get installed now, not during the install session

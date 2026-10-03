@@ -1,5 +1,5 @@
 +++
-title = "Updating Your Config"
+title = "Updating Your System"
 description = "How dotfile updates get merged into your $HOME without clobbering your edits."
 weight = 60
 template = "docs/page.html"
@@ -25,14 +25,27 @@ a genuine conflict: the new version is dropped next to it as
 
 ## Running it yourself
 
-From the desktop: **Super → Sobarch → Update Config**. Before merging,
-it refreshes the `sobarch-skel`/`sobarch-scripts` packages themselves
-via the [package sync mechanism](../../packages/installing-updating/)
-and re-applies [boot and login theming](../boot-theming/), so branding
-changes ship through this same command as config changes. It then
-rebuilds your tinty templates, runs the merge described above, and
-walks you through any conflicts interactively: **K**eep yours, **U**se
-the new version, view the **D**iff, **E**dit, or **S**kip for now.
+From the desktop: **Super → Sobarch → Update System**. It brings the
+whole system current in one run, with a progress notification
+throughout:
+
+1. `pacman -Syu` updates official packages.
+2. The [package sync mechanism](../../packages/installing-updating/)
+   updates vendored AUR/custom packages.
+3. If `sobarch-skel` changed, [boot and login theming](../boot-theming/)
+   is re-applied, so branding changes ship through this same command
+   as config changes.
+4. Your tinty templates are rebuilt and the merge described above
+   runs, walking you through any conflicts interactively: **K**eep
+   yours, **U**se the new version, view the **D**iff, **E**dit, or
+   **S**kip for now.
+
+You'll be asked to authenticate once for the package steps. If the
+update fails (offline, or a package conflict that needs a terminal),
+you get a notification saying which half failed, and the config merge
+still runs against whatever is already installed. Running `pacman -Syu`
+yourself from a terminal still works exactly as before; the pacman
+hook keeps vendored packages current in that case too.
 
 If you'd rather just revisit conflicts left over from a previous run
 without re-checking everything else, use **Review Conflicts** instead.

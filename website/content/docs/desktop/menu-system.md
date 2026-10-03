@@ -18,13 +18,13 @@ Pressing `Super` on its own opens a `fuzzel` picker:
 | Entry | What it opens |
 | --- | --- |
 | **System** | Audio, network, and Bluetooth (also reachable directly via `Super+A`, `Super+N`, `Super+Shift+B`, and from waybar's own status module), plus firmware (`fwupdmgr`: check for updates, install updates, list devices; also reachable via `Super+Shift+F`). |
-| **Sobarch** | **Update Config** / **Review Conflicts** (see [Updating Your Config](../updating-config/)), **Install** (see [Software Profiles](../../installer/software-profiles/)), **Themes** (see [Theming](../theming/)), **Wallpaper** (see [Wallpaper](../wallpaper/)), **Refresh Rescue ISO** (see [Rescue Media](../../installer/rescue-media/)), and **Docs**, which opens this site. |
+| **Sobarch** | **Update System** / **Review Conflicts** (see [Updating Your System](../updating-system/)), **Install** (see [Software Profiles](../../installer/software-profiles/)), **Themes** (see [Theming](../theming/)), **Wallpaper** (see [Wallpaper](../wallpaper/)), **Refresh Rescue ISO** (see [Rescue Media](../../installer/rescue-media/)), and **Docs**, which opens this site. |
 | **Keybinds** | A read-only cheat sheet of every bind; see [Keybindings](../keybindings/). |
 | **Power** | Lock, Logout, Suspend, Reboot, Shutdown; see the table below. |
 | **Apps** | The regular application list, one level in. |
 
 <figure class="figure">
-  <img class="img-fluid rounded shadow-sm" src="/images/desktop/menu-system-sobarch.webp" width="1366" height="768" alt="The Sobarch submenu, listing Update Config, Install, Themes, Wallpaper, Refresh Rescue ISO, and Docs">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/menu-system-sobarch.webp" width="1366" height="768" alt="The Sobarch submenu, listing Update System, Install, Themes, Wallpaper, Refresh Rescue ISO, and Docs">
 </figure>
 
 ## Power

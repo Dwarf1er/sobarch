@@ -11,7 +11,7 @@ toc = true
 
 Three things get themed outside the desktop session itself, each set
 up once during install and re-applied automatically by
-[Update Config](../updating-config/) whenever `sobarch-skel`/
+[Update System](../updating-system/) whenever `sobarch-skel`/
 `sobarch-scripts` refreshes, so branding changes ship the same way
 config changes do:
 

@@ -27,7 +27,7 @@
 # raw-copied into the target and run inside arch-chroot at install time
 # (install_runner.py's CHROOT_SETUP_SCRIPTS), and later, packaged as
 # /usr/local/lib/sobarch/limine-theme-setup.sh by sobarch-scripts,
-# re-run by update-config-menu.sh (via pkexec) whenever sobarch-skel
+# re-run by update-system-menu.sh (via pkexec) whenever sobarch-skel
 # refreshes so an already-installed system picks up branding changes
 # too. Nothing here depends on being inside a fresh chroot specifically
 # (no archinstall-only env vars), and the block-replace logic below is

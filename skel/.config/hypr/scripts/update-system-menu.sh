@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-# Exposes apply-skel.sh (installed at /usr/local/lib/sobarch/apply-skel.sh
-# by the first-boot hook, decision 11) as a user-invoked action: refresh
-# sobarch-skel, run the diff3 reconciliation, then walk any resulting
-# conflicts interactively so nothing is left silently unresolved.
+# The "Update System" action: a full `pacman -Syu`, then aur-sync.sh in
+# sync mode for vendored AUR/custom packages, then (via
+# apply-skel.sh, installed at /usr/local/lib/sobarch/apply-skel.sh by
+# the first-boot hook, decision 11) the diff3 skel reconciliation, then
+# an interactive walk through any resulting conflicts so nothing is
+# left silently unresolved. Additive: a raw `pacman -Syu` from a
+# terminal still works on its own, with the pacman hook as its safety
+# net for vendored packages (decision #3).
 #
 # Runs as the logged-in user throughout (apply-skel.sh must, since it
 # writes into $HOME); the one privileged step (refreshing the
@@ -52,20 +56,60 @@ BASELINE_DIR="$HOME/.local/state/sobarch/skel-baseline"
 
 ICONS="$HOME/.config/sobarch/icons"
 
-# refresh: same icon setup-menu.sh's own "Update Config" entry uses.
-TITLE="sobarch: update config"
+# refresh: same icon setup-menu.sh's own "Update System" entry uses.
+TITLE="sobarch: update system"
 
 review_only=false
 [[ "${1:-}" == "--review" ]] && review_only=true
 
+# Re-applies boot/greeter/splash theming from whatever branding
+# sobarch-skel is currently at. Limine/ly/Plymouth have no "reload" of
+# their own (a bootloader menu, a greeter, and an initramfs-baked
+# splash, none of which are running right now), so this is what makes
+# limine.conf/ly's config.ini/the Plymouth theme ever change on an
+# already-installed system at all -- otherwise they're install-time-
+# only. All three scripts already no-op cheaply when nothing changed,
+# so it runs whenever sobarch-skel was refreshed rather than trying to
+# detect whether branding/ itself was part of it.
+reapply_theming() {
+    [[ -x "$LIMINE_THEME_SETUP" && -x "$LY_THEME_SETUP" && -x "$PLYMOUTH_SETUP" ]] || return 0
+    if ! pkexec bash -c "'$LIMINE_THEME_SETUP' && '$LY_THEME_SETUP' && '$PLYMOUTH_SETUP'"; then
+        notify-send -i "$ICONS/refresh.svg" "$TITLE" \
+            "Refreshing boot/greeter/splash theming failed; limine.conf, ly's config.ini, or the Plymouth theme may be stale until the next Update System run."
+    fi
+}
+
 if ! $review_only; then
+    # Full system update first: official packages, then vendored
+    # AUR/custom ones, in one pkexec (one password prompt, not two).
+    # --noconfirm because there's no terminal to answer prompts in. The
+    # exit codes distinguish which half failed. Neither failure aborts
+    # the rest of this script: skel reconciliation below only needs
+    # whatever sobarch-skel is already installed, the same
+    # continue-on-failure posture the targeted refresh further down
+    # already takes.
+    skel_before="$(pacman -Q sobarch-skel 2>/dev/null || true)"
+    id=$(notify_progress normal "$TITLE" "Updating system packages (pacman -Syu)..." 0 persist)
+    rc=0
+    pkexec bash -c "pacman -Syu --noconfirm || exit 10; '$AUR_SYNC' || exit 11" || rc=$?
+    case "$rc" in
+        0) notify_progress normal "$TITLE" "System packages up to date." "$id" >/dev/null ;;
+        10) notify_progress critical "$TITLE" \
+            "pacman -Syu failed (offline, or a conflict that needs a terminal); continuing with config sync only." "$id" >/dev/null ;;
+        11) notify_progress critical "$TITLE" \
+            "Official packages updated, but syncing vendored AUR/custom packages failed; see /var/log/sobarch/aur-sync.log." "$id" >/dev/null ;;
+        *) notify_progress critical "$TITLE" \
+            "System update didn't run (authentication cancelled?); continuing with config sync only." "$id" >/dev/null ;;
+    esac
+    [[ "$(pacman -Q sobarch-skel 2>/dev/null || true)" != "$skel_before" ]] && reapply_theming
+
     # aur-sync.sh's own version check (pinned .SRCINFO vs installed)
     # needs no root at all -- only the rebuild/install it performs
     # once one is actually pending does. pkexec always prompts for
     # authentication before the command even runs, though, regardless
     # of whether it then finds nothing to do -- the overwhelmingly
     # common case here, since these packages change far less often than
-    # "Update Config" gets clicked. Checked here, unprivileged, first,
+    # "Update System" gets clicked. Checked here, unprivileged, first,
     # so a no-op run never has to ask for a password just to discover
     # that. Same GitHub master branch aur-sync.sh's own fetch reads
     # from, just one small file per package instead of the whole repo
@@ -144,32 +188,9 @@ if ! $review_only; then
         if ! pkexec "$AUR_SYNC" "${to_refresh[@]}"; then
             notify_progress normal "$TITLE" \
                 "Refreshing ${to_refresh[*]} failed (offline?); continuing with the currently installed version(s)." "$id" >/dev/null
-        elif [[ -x "$LIMINE_THEME_SETUP" && -x "$LY_THEME_SETUP" && -x "$PLYMOUTH_SETUP" ]]; then
-            notify_progress normal "$TITLE" "Refreshed ${to_refresh[*]}." "$id" >/dev/null
-            # Re-applies boot/greeter/splash theming from whatever
-            # branding sobarch-skel just refreshed to. Limine/ly/
-            # Plymouth have no "reload" of their own (a bootloader
-            # menu, a greeter, and an initramfs-baked splash, none of
-            # which are running right now), so this is what makes
-            # limine.conf/ly's config.ini/the Plymouth theme ever
-            # change on an already-installed system at all -- otherwise
-            # they're install-time-only, as an earlier pass here
-            # originally left them. All three scripts already no-op
-            # cheaply when nothing changed, so this runs on every
-            # successful refresh rather than trying to detect whether
-            # branding/ itself was part of it.
-            if ! pkexec bash -c "'$LIMINE_THEME_SETUP' && '$LY_THEME_SETUP' && '$PLYMOUTH_SETUP'"; then
-                notify-send -i "$ICONS/refresh.svg" "$TITLE" \
-                    "Refreshing boot/greeter/splash theming failed; limine.conf, ly's config.ini, or the Plymouth theme may be stale until the next Update Config run."
-            fi
         else
-            # Succeeded, but the three theming scripts aren't all
-            # present/executable (sobarch-scripts not yet updated to a
-            # version that ships them, say) -- still has to replace the
-            # persistent "Refreshing..." notification above, or it would
-            # be left on screen indefinitely since it was given no
-            # expiry timeout.
             notify_progress normal "$TITLE" "Refreshed ${to_refresh[*]}." "$id" >/dev/null
+            reapply_theming
         fi
     fi
     if ! "$APPLY_SKEL"; then
@@ -195,7 +216,7 @@ if ((${#conflicts[@]} == 0)); then
     if $review_only; then
         notify-send -i "$ICONS/refresh.svg" "$TITLE" "No pending conflicts."
     else
-        notify-send -i "$ICONS/refresh.svg" "$TITLE" "Config synced; no conflicts."
+        notify-send -i "$ICONS/refresh.svg" "$TITLE" "System updated; no conflicts."
     fi
     exit 0
 fi

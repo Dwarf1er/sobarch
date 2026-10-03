@@ -52,5 +52,5 @@ require("extras.web")
 ```
 
 `local.lua` isn't tracked by sobarch's dotfiles or touched by
-[Updating Your Config](../../desktop/updating-config/), so it's safe
+[Updating Your System](../../desktop/updating-system/), so it's safe
 to leave absent or customize freely.
