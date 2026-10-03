@@ -10,9 +10,9 @@ toc = true
 +++
 
 Every install gets automatic BTRFS snapshots via Snapper + `snap-pac`,
-set up almost entirely by `archinstall` itself: package installs,
-Snapper's config, and the systemd timers all happen as part of the
-same install run. Snapshots are root-only; personal file backup is a
+set up as part of the install run itself: `archinstall` installs the
+packages and Snapper's timers, and a short post-install step trims
+the config to the retention below and takes an initial snapshot. Snapshots are root-only; personal file backup is a
 separate concern, left to your own tools.
 
 Retention is tuned tighter than Snapper's defaults: daily snapshots, 5
@@ -57,7 +57,9 @@ directly, not the `snapper rollback` subcommand (which sobarch's disk
 layout isn't meant to be used with). It supports two modes:
 
 - From a **live ISO or rescue chroot**: the only mode that always
-  works, even if the installed system can't boot at all.
+  works, even if the installed system can't boot at all. On a
+  LUKS-encrypted install it prompts for the passphrase to unlock the
+  disk first.
 - **`--online`**, run directly on the currently booted system, no live
   media needed.
 

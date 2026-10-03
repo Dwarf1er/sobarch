@@ -11,8 +11,11 @@ toc = true
 
 The installer offers profiles for common use cases: Developer, Gaming,
 Creative, Maker/3D Printing, Virtualization, Office, Browsers & Chat,
-System Tuning, and Input Method. Each one can be taken as a whole, or
-expanded to hand-pick individual packages.
+System Tuning, and Input Method. In the installer's Software step, the profiles
+are listed on the left and the selected profile's packages on the
+right; check the ones you want, or press `a` to toggle every package
+in the profile at once. There's also an "Install everything" toggle
+for every profile in full.
 
 Picking a profile doesn't install anything during the install session
 itself. Selected packages are installed after first boot instead, so

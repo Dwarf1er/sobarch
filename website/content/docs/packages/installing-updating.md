@@ -9,16 +9,19 @@ lead = "A plain build-and-install script handles vendored packages, triggered au
 toc = true
 +++
 
-Vendored AUR and custom packages are built and installed with a plain
-`git clone` + `makepkg -si` per package, the same thing an AUR helper
-would do under the hood, just without the standing ability to build
-*any* AUR package unreviewed.
+Vendored AUR and custom packages are built with plain `makepkg` (as a
+dedicated unprivileged `sobarch-build` user, never as root) and
+installed with `pacman -U`, the same thing an AUR helper would do under
+the hood, just without the standing ability to build *any* AUR package
+unreviewed. The script fetches the current repository snapshot first, so
+it always sees the packages as they are now.
 
 ## Installing one on demand
 
 From the desktop: **Super → Sobarch → Install**. This flattens every
 [software profile](../../installer/software-profiles/)'s packages into
-one deduped, individually-installable list and installs whichever one
+one deduped, individually-installable list (anything already installed
+is left out) and installs whichever one
 you pick: official-repo packages via `pacman`, AUR/custom packages
 through the same sync mechanism described below.
 
@@ -28,7 +31,9 @@ There's no separate timer or background polling for vendored
 packages. A pacman hook fires on every package upgrade
 (`pacman -Syu`), re-running the sync script, which diffs pinned
 package versions against what's actually installed and rebuilds
-anything behind. In practice: a normal `pacman -Syu` keeps vendored
+anything behind. It only ever touches vendored packages that are
+already installed, so it never installs a profile package you didn't
+pick. In practice: a normal `pacman -Syu` keeps vendored
 packages current the same way it keeps official ones current: a
 package just doesn't get re-checked until some upgrade actually
 happens.

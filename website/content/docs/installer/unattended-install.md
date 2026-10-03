@@ -10,7 +10,7 @@ toc = true
 +++
 
 The installer can run with no prompts at all, driven by a JSON answer
-file instead of the interactive TUI screens. This is the same
+file instead of the interactive TUI. This is the same
 `archinstall`-driven pipeline either way: an unattended run generates
 and applies the exact same config an interactive run would, it just
 skips asking a human for it.
@@ -20,7 +20,7 @@ skips asking a human for it.
     python3 installer/tui/__main__.py --answer-file answer.json
 
 Add `--dry-run` to only generate and save the config (same as
-"Save configuration" in the interactive wizard) without touching a
+"Save configuration" in the interactive installer) without touching a
 disk, and `--output-dir` to change where it's written. Since
 `bootstrap.sh` forwards its own arguments through to the TUI, this also
 works straight from the one-line install command:
@@ -44,8 +44,8 @@ for a complete example. Every field below is optional except `disk`,
 | Field | Default | Notes |
 |---|---|---|
 | `disk` | *(required)* | `"largest"`, or an exact device path (e.g. `/dev/nvme0n1`). |
-| `hostname` | *(required)* | Same validation as the interactive Account screen. |
-| `username` | *(required)* | Same validation as the interactive Account screen. |
+| `hostname` | *(required)* | Same validation as the interactive Account step. |
+| `username` | *(required)* | Same validation as the interactive Account step. |
 | `password` | *(one of `password`/`password_hash` required)* | Plaintext; hashed the same way the interactive wizard hashes it, before it ever reaches `archinstall`'s own config. |
 | `password_hash` | *(one of `password`/`password_hash` required)* | A pre-hashed value (`archinstall`'s own `crypt_yescrypt()` format) instead of plaintext, so a shared answer file never carries a readable password. Setting both, or neither, is an error. |
 | `kb_layout` | `"us"` | |
@@ -56,7 +56,7 @@ for a complete example. Every field below is optional except `disk`,
 | `ssh_enabled` | `false` | |
 | `encryption_password` | `""` (disabled) | Plaintext; a non-empty value LUKS-encrypts the root (btrfs) partition and unlocks with this passphrase at boot. The ESP and any rescue-media partitions are never encrypted. |
 | `git_name` / `git_email` | `""` | Both or neither. |
-| `install_everything` | `false` | |
+| `install_everything` | `false` | Installs every profile in full, same as the Software step's "Install everything" toggle. |
 | `profiles` | `[]` | A list of profile slugs (`developer`, `gaming`, `creative`, `maker`, `virtualization`, `office`, `browsers-chat`, `system-tuning`, `input-method`). Each selected profile installs in full. |
 
 ## What's deliberately not supported yet
@@ -65,7 +65,7 @@ for a complete example. Every field below is optional except `disk`,
   supported; `disk` always wipes the target. Reusing an existing EFI
   System Partition or a detected free-space gap (see
   [Dual-Boot](../dual-boot/)) involves judgment calls the interactive
-  review screen exists for.
+  installer's Disk step exists for.
 - **Per-package profile selection.** `profiles` selects whole profiles
   only, not individual packages within one.
 - **A first-party network fetch of the answer file.** PXE-netbooting

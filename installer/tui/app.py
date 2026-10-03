@@ -1,57 +1,21 @@
-"""The install wizard's App: owns the shared WizardState, steps
-screens forward/backward by index (not by the screen stack, see
-screens/base.py), and lazily detects hardware once it's actually
-needed."""
+"""The installer App: owns the shared WizardState, detects hardware
+lazily once it's actually needed, and shows the single MainScreen."""
 
 import os
-from collections.abc import Callable
 from pathlib import Path
 
 from textual.app import App
 
 from hardware import HardwareInfo, detect_hardware
-from network import is_connected
-from screens.account import AccountScreen
-from screens.disk import DiskScreen
-from screens.git import GitScreen
-from screens.localization import LocalizationScreen
-from screens.network import NetworkScreen
-from screens.profiles import ProfilesScreen
-from screens.progress import ProgressScreen
-from screens.rescue import RescueScreen
-from screens.review import ReviewScreen
-from screens.ssh import SshScreen
-from screens.welcome import WelcomeScreen
+from main_screen import MainScreen
 from state import WizardState
 from theme import ONEDARK_THEME
-
-STEPS = [
-    WelcomeScreen,
-    NetworkScreen,
-    DiskScreen,
-    AccountScreen,
-    LocalizationScreen,
-    RescueScreen,
-    ProfilesScreen,
-    SshScreen,
-    GitScreen,
-    ReviewScreen,
-]
-
-# One predicate per conditionally-skipped step, checked fresh every
-# time (never cached the way get_hardware() is): unlike hardware, both
-# of these can change mid-session -- free_space_install by going back
-# and picking a different disk, is_connected() by the NetworkScreen
-# itself succeeding.
-_SKIP_PREDICATES: dict[type, Callable[["SobarchApp"], bool]] = {
-    RescueScreen: lambda app: app.state.free_space_install,
-    NetworkScreen: lambda app: is_connected(),
-}
 
 
 class SobarchApp(App):
     CSS_PATH = "styles.tcss"
     TITLE = "sobarch installer"
+    ENABLE_COMMAND_PALETTE = False
 
     def __init__(self, dry_run: bool = False, output_dir: Path | None = None) -> None:
         super().__init__()
@@ -59,7 +23,6 @@ class SobarchApp(App):
         self.dry_run = dry_run
         self.output_dir = output_dir or self.default_output_dir()
         self._hardware: HardwareInfo | None = None
-        self._step_index = 0
 
     @staticmethod
     def default_output_dir() -> Path:
@@ -70,35 +33,9 @@ class SobarchApp(App):
     def on_mount(self) -> None:
         self.register_theme(ONEDARK_THEME)
         self.theme = "onedark"
-        self.push_screen(STEPS[0]())
+        self.push_screen(MainScreen())
 
     def get_hardware(self) -> HardwareInfo:
         if self._hardware is None:
             self._hardware = detect_hardware()
         return self._hardware
-
-    def wizard_advance(self, updates: dict) -> None:
-        for key, value in updates.items():
-            setattr(self.state, key, value)
-
-        self._step_index += 1
-        if self._step_index >= len(STEPS):
-            self._step_index = len(STEPS) - 1
-        elif self._skip_current_step():
-            self._step_index += 1
-        self.switch_screen(STEPS[self._step_index]())
-
-    def wizard_back(self) -> None:
-        if self._step_index == 0:
-            return
-        self._step_index -= 1
-        if self._step_index > 0 and self._skip_current_step():
-            self._step_index -= 1
-        self.switch_screen(STEPS[self._step_index]())
-
-    def _skip_current_step(self) -> bool:
-        predicate = _SKIP_PREDICATES.get(STEPS[self._step_index])
-        return predicate(self) if predicate else False
-
-    def begin_install(self) -> None:
-        self.switch_screen(ProgressScreen())

@@ -29,7 +29,8 @@ toc = true
 
 ## NVIDIA-specific setup
 
-On detected NVIDIA hardware, the installer additionally handles what
+On hardware using a proprietary NVIDIA driver (the first two tiers
+above; `nouveau` needs none of this), the installer additionally handles what
 package installation alone can't: DRM modesetting, early module
 loading in the initramfs, and enabling the suspend/hibernate services
 proprietary NVIDIA needs. NVIDIA-specific Hyprland environment

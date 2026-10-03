@@ -37,8 +37,8 @@ throughout:
    as config changes.
 4. Your tinty templates are rebuilt and the merge described above
    runs, walking you through any conflicts interactively: **K**eep
-   yours, **U**se the new version, view the **D**iff, **E**dit, or
-   **S**kip for now.
+   yours, **U**se the new version, view the **D**iff, **E**dit, **S**kip for now, or use the new
+   version for **A**ll remaining conflicts.
 
 You'll be asked to authenticate once for the package steps. If the
 update fails (offline, or a package conflict that needs a terminal),

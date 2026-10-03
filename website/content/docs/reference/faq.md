@@ -30,8 +30,9 @@ never shrinks an existing partition for you). See
 
 ## Is my disk encrypted?
 
-No, the installer doesn't offer disk encryption. See
-[Security](../security/) for what is and isn't covered.
+Optionally. The installer's Disk step has a toggle that LUKS-encrypts
+the root partition, unlocked with a passphrase at boot; it's off by
+default. See [Security](../security/) for what is and isn't covered.
 
 ## Why bash instead of zsh or fish?
 

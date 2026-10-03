@@ -5,20 +5,40 @@ weight = 10
 template = "docs/page.html"
 
 [extra]
-lead = "The installer is a plain Python TUI (python-textual) that walks disk, account, and locale setup before handing off to archinstall."
+lead = "The installer is a plain Python TUI (python-textual) with disk, account, and locale setup on one screen, before handing off to archinstall."
 toc = true
 +++
 
-The TUI walks through:
+The TUI is one screen. A bordered **Steps** list on the left holds one
+entry per step, and the selected step's form appears on the right, with
+a status line below saying what, if anything, still needs fixing. The
+steps are:
 
-- Disk selection: wipes and partitions the entire target disk by
-  default, or installs into existing free space instead for
-  [dual-boot](../dual-boot/) alongside another OS
-- Hostname, keyboard layout, system language, and timezone
-- User account and password
-- An optional SSH toggle
-- Optional [software profiles](../software-profiles/)
-- A review screen before anything is written to disk
+- **Network**: only shown when the machine has no connectivity at
+  startup
+- **Disk**: wipes and partitions the entire target disk by default, or
+  installs into existing free space instead for
+  [dual-boot](../dual-boot/) alongside another OS; also the optional
+  LUKS encryption toggle and passphrase
+- **Account**: hostname, username, and password
+- **Locale**: keyboard layout, system language, timezone, and mirror
+  region
+- **Options**: [rescue media](../rescue-media/), the optional SSH
+  toggle, and an optional git name and email
+- **Software**: optional [software profiles](../software-profiles/)
+- **Install**: a summary of every choice, then **Save configuration**
+  and **Install now**
+
+Each step shows a mark in the list: a check once it's filled in, an
+exclamation mark while it needs attention. Nothing is written to disk
+until you confirm on the Install step.
+
+### Keys
+
+- **Up/Down** move between steps; **Enter** or **Tab** moves into the
+  step's form, and **Esc** returns to the Steps list
+- **Ctrl+N** / **Ctrl+P** jump to the next or previous step
+- **Ctrl+Q** quits
 
 ## Running it without installing
 
@@ -36,11 +56,12 @@ or, with no setup at all, via [uv](https://github.com/astral-sh/uv):
 uv run installer/tui/__main__.py --dry-run
 ```
 
-`--dry-run` walks every prompt and generates the resulting
-`archinstall` configuration, but the review screen only offers saving
+`--dry-run` lets you fill in every step and generates the resulting
+`archinstall` configuration, but the Install step only offers saving
 it, never installing. Without the flag, "Install now" is also offered,
 but only when running as root, since partitioning a real disk needs
-it. Either way, "Save configuration" writes `base.json` and
+it. Choosing it asks for a second confirmation that names the disk
+that will be modified. Either way, "Save configuration" writes `base.json` and
 `credentials.json` to `--output-dir` (default: `/root/sobarch-install`
 as root, `./sobarch-install-output` otherwise) so you can inspect the
 generated config.

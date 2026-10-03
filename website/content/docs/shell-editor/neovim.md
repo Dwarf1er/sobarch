@@ -37,6 +37,8 @@ mechanism; hover (`K`), go to definition (`<leader>gd`), references
 (`<leader>gr`), and code actions (`<leader>ca`) all work as soon as one
 attaches.
 
+Run `:PackUpdate` to update every plugin and restart Neovim.
+
 ## Optional language extras
 
 Rust, Go, Web (JS/TS/CSS/HTML/JSON), C# (via Roslyn, with debugging),

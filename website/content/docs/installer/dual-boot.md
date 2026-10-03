@@ -24,15 +24,16 @@ disk's unallocated space that sobarch installs into. Leave at least
 
 ## 2. Install into the free space
 
-On the disk-selection screen, a disk with enough free space on it (UEFI
+In the **Disk** step, a disk with enough free space on it (UEFI
 only; see below) offers a second option alongside the usual "wipe
 entire disk" one: installing into that free space instead. Picking it:
 
 - Leaves every existing partition on the disk untouched.
 - Reuses the disk's existing EFI System Partition (ESP) if it has one,
-  rather than creating a second one -- the same ESP Windows' own
+  rather than creating a second one, so the ESP Windows' own
   bootloader already lives on ends up shared with sobarch's.
-- Disables rescue media for this install (the extra partitions it
+- Disables rescue media for this install; the Rescue media toggle in
+  the Options step is turned off and unavailable (the extra partitions it
   needs aren't worth the added complexity on a disk already shared with
   another OS).
 

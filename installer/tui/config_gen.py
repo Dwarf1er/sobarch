@@ -105,7 +105,7 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
         # wipe, never shrink anything -- the free space was already
         # carved out by the user (disk_probe.py only offered this
         # option because it found enough of it). rescue_media is
-        # forced False by screens/disk.py for this path, so the rescue
+        # forced False by sections/disk.py for this path, so the rescue
         # partitions are always dropped, same as the ordinary
         # no-rescue-media branch below.
         if rescue is not None:

@@ -40,7 +40,7 @@ apply of the config file on start).
 The root account is locked unconditionally (`passwd -l root`),
 regardless of whether SSH is enabled or how the base system was
 installed. SSH is off unless you turned it on in the installer's SSH
-screen; when it is on, root login over SSH is explicitly disabled too,
+option; when it is on, root login over SSH is explicitly disabled too,
 on top of the account-level lock, so that guarantee doesn't depend on
 SSH's own state.
 
@@ -54,9 +54,10 @@ actions through `sudo`, so this doesn't cross a new privilege boundary.
 
 ## What isn't covered
 
-- **Disk encryption.** The installer doesn't offer it; see
-  [Disk & Account Setup](../../installer/disk-and-accounts/) for what
-  it actually asks for.
+- **Encryption of everything.** Disk encryption is optional (a LUKS
+  toggle in the installer's Disk step) and covers only the root
+  partition; the boot partition and any rescue-media partition are
+  never encrypted.
 - **Personal file backup.** [Snapshots](../../installer/snapshots/)
   cover the root filesystem for rollback, not your own files; back
   those up with your own tools.

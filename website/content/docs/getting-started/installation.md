@@ -19,9 +19,13 @@ curl -fsSL http://installsobarch.antoinepoulin.com | bash
 This is the only manually-typed, unbranded step. `bootstrap.sh` fetches a
 checkout of the repository into a temp directory and launches
 `installer/tui/__main__.py`, nothing else: no separate hosting, no custom ISO.
-The TUI then walks through disk selection, account/locale setup, and optional
-software profiles before handing off to `archinstall`. On success it reboots
+The TUI is a single screen: a list of steps on the left (Disk, Account,
+Locale, Options, Software, Install, plus Network first when the machine
+is offline) and the selected step's form on the right. Fill in each step
+in any order, then use the Install step to review a summary and start the
+install, which hands off to `archinstall`. On success it reboots
 into a working desktop; on failure it points at the full install log rather
-than hiding it behind a branded screen. Look for `install.log` in
+than hiding it behind a branded screen. The install log appears in the
+same pane as the steps, followed by Reboot and Quit choices. Look for `install.log` in
 `/root/sobarch-install/` (the same directory the generated `archinstall`
 config is saved to).

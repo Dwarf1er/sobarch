@@ -11,8 +11,8 @@ toc = true
 
 The disk layout reserves two dedicated partitions by default: about
 5.5GB total (512MB FAT32 + 5GB ext4), on top of whatever your root
-filesystem needs. Opt out of both together if you're tight on disk
-space:
+filesystem needs. Opt out of both together with the **Include rescue media**
+toggle in the installer's Options step if you're tight on disk space:
 
 - A small FAT32 partition holding the extracted kernel and initramfs.
 - A larger ext4 partition holding the fetched Arch ISO itself, as a
@@ -34,9 +34,9 @@ A daily background check does compare the checksum of the stored ISO
 against the mirror's current one (a few hundred bytes, no ISO
 download). When a newer release exists you get a notification; click it
 to run **Super → Sobarch → Refresh Rescue ISO**. You're notified once
-per new release, not every day. From a terminal, `sobarch rescue-refresh` does the same refresh.
-That menu entry only appears if rescue
-media was set up at install; if you opted out, you never see it.
+per new release, not every day. That menu entry only appears if rescue media was set up at install; if
+you opted out, you never see it. From a terminal, `sobarch rescue-refresh`
+does the same refresh.
 
 This is what [snapshot rollback](../snapshots/#restoring-a-snapshot-as-the-new-root)'s
 live-ISO mode uses when there's no other way to boot the machine.

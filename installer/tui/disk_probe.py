@@ -1,7 +1,7 @@
 """Detects an existing GPT partition table's free space and any
 existing EFI System Partition (ESP), to support installing sobarch into
 free space alongside another OS instead of wiping the whole disk (see
-screens/disk.py). Parses `sfdisk -J`'s own JSON rather than sgdisk's or
+sections/disk.py). Parses `sfdisk -J`'s own JSON rather than sgdisk's or
 parted's text output, and rather than a second `sfdisk -F` call for
 free space specifically: one JSON source already carries everything
 needed (each partition's start/size in sectors, plus the disk's
