@@ -19,7 +19,7 @@ pkgname=sobarch-scripts
 # and the pacman hook have no such per-install variation, so both are
 # packaged below.
 pkgver=20261003
-pkgrel=2
+pkgrel=3
 pkgdesc="Sobarch first-boot reconciliation scripts and the local AUR/custom package sync mechanism"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
@@ -59,6 +59,10 @@ package() {
     install -Dm644 "$startdir/../../../scripts/update-check/sobarch-update-check.timer" "$pkgdir/usr/lib/systemd/user/sobarch-update-check.timer"
     install -dm755 "$pkgdir/usr/lib/systemd/user/timers.target.wants"
     ln -s ../sobarch-update-check.timer "$pkgdir/usr/lib/systemd/user/timers.target.wants/sobarch-update-check.timer"
+
+    # --online mode is what the snapshot-boot notification's click
+    # action (skel's snapshot-boot-check.sh) runs via pkexec.
+    install -Dm755 "$startdir/../../../scripts/snapshot-rollback.sh" "$pkgdir/usr/local/lib/sobarch/snapshot-rollback.sh"
 
     install -Dm755 "$startdir/../../../scripts/aur-sync/aur-sync.sh" "$pkgdir/usr/local/lib/sobarch/aur-sync.sh"
 

@@ -50,8 +50,11 @@
 # Usage:
 #   snapshot-rollback.sh <device> <snapshot-number>
 #     e.g. snapshot-rollback.sh /dev/nvme0n1p2 6
-#   snapshot-rollback.sh --online <snapshot-number>
+#   snapshot-rollback.sh --online [--yes] <snapshot-number>
 #     e.g. snapshot-rollback.sh --online 6
+#     --yes skips the typed confirmation, for callers with no
+#     terminal (the snapshot-boot notification's click action, which
+#     asks for confirmation in its own fuzzel prompt first).
 #
 # <device> is the BTRFS partition (not the whole disk, not /dev/nvme0n1
 # but its partition, e.g. /dev/nvme0n1p2) -- or, on an encrypted
@@ -62,9 +65,15 @@
 
 set -euo pipefail
 
+ASSUME_YES=false
 if [ "${1:-}" = "--online" ]; then
     ONLINE=true
-    SNAPSHOT_NUM="${2:?Usage: snapshot-rollback.sh --online <snapshot-number>}"
+    shift
+    if [ "${1:-}" = "--yes" ]; then
+        ASSUME_YES=true
+        shift
+    fi
+    SNAPSHOT_NUM="${1:?Usage: snapshot-rollback.sh --online [--yes] <snapshot-number>}"
     DEVICE=$(findmnt -n -o SOURCE / | sed 's/\[.*//')
     if [ -z "$DEVICE" ]; then
         echo "error: could not determine the root device from findmnt" >&2
@@ -76,7 +85,7 @@ else
     SNAPSHOT_NUM="${2:?Usage: snapshot-rollback.sh <device> <snapshot-number>, or --online <snapshot-number>}"
 fi
 
-if [ "$ONLINE" = true ]; then
+if [ "$ONLINE" = true ] && [ "$ASSUME_YES" = false ]; then
     echo "This will restore @ from snapshot $SNAPSHOT_NUM on the currently"
     echo "running system ($DEVICE). The current session keeps running"
     echo "unaffected; the change only takes effect after a reboot, which is"

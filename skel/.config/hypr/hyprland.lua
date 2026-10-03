@@ -48,6 +48,8 @@ hl.on("hyprland.start", function()
 	hl.exec_cmd("waybar & mako & hypridle & hyprpaper & udiskie")
 	hl.exec_cmd("fcitx5")
 	hl.exec_cmd("xdg-user-dirs-update")
+	-- No-op unless this boot is a Limine snapshot entry; see the script.
+	hl.exec_cmd("$HOME/.config/hypr/scripts/snapshot-boot-check.sh")
 	-- `tinty-git` is base-required (always installed), but `command -v`
 	-- guards anyway: an already-installed system only picks up a newly
 	-- base-required package once its "Update System" flow runs, and a

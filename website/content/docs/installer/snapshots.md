@@ -36,6 +36,17 @@ than anything else this project vendors, on a live-ISO environment of
 unknown RAM. Writing a small, purpose-built equivalent was more
 reliable than depending on it.
 
+## Knowing you're on a snapshot
+
+When you boot a snapshot from the Limine menu, a persistent
+notification appears at login saying which snapshot you're running and
+that changes made in this session are lost on the next normal boot.
+Click it to make that snapshot your permanent system: you confirm in a
+menu, authenticate once, and the same restore described below runs
+without a terminal. Reboot afterward to use it (you're offered the
+reboot). Ignore or dismiss the notification and nothing changes; a
+normal reboot goes back to your regular system.
+
 ## Restoring a snapshot as the new root
 
 For the rarer case of wanting an old snapshot to become the new
