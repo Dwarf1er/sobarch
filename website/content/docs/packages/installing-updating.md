@@ -38,6 +38,11 @@ Update System** runs `pacman -Syu`, then the same sync, then your
 [config merge](../../desktop/updating-system/), with progress
 notifications. Raw `pacman -Syu` keeps working unchanged.
 
+A daily background check also notifies you when official-repo updates
+or a new `sobarch-skel`/`sobarch-scripts` are pending; click the
+notification to open **Update System**. It only looks, never installs,
+and re-notifies at most weekly for an unchanged backlog.
+
 If a vendored package fails to build or install during that
 automatic sync, you get a critical desktop notification listing which
 packages failed, since the hook runs without a terminal you'd

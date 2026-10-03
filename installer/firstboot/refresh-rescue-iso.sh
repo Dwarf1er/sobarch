@@ -105,4 +105,6 @@ else
     durable_replace 644 "$WORK_DIR/initramfs-linux.img" "$RESCUE_BOOT_DEST/initramfs-linux.img"
 fi
 
+record_rescue_iso_version "$WORK_DIR"
+
 echo "refresh-rescue-iso: done."

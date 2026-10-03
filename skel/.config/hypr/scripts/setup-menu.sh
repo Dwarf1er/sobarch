@@ -2,6 +2,11 @@
 
 ICONS="$HOME/.config/sobarch/icons"
 
+# "Refresh Rescue ISO" only exists if rescue media was provisioned at
+# install (rescue-iso-setup.sh labels that partition RESCUE).
+rescue_entry=()
+lsblk -rno LABEL 2>/dev/null | grep -qx RESCUE && rescue_entry=("Refresh Rescue ISO" "$ICONS/device-usb.svg")
+
 choice=$(printf '%s\0icon\x1f%s\n' \
     "Update System" "$ICONS/refresh.svg" \
     "Review Conflicts" "$ICONS/git-merge.svg" \
@@ -9,7 +14,7 @@ choice=$(printf '%s\0icon\x1f%s\n' \
     "Themes" "$ICONS/palette.svg" \
     "Wallpaper" "$ICONS/photo.svg" \
     "Default Apps" "$ICONS/apps.svg" \
-    "Refresh Rescue ISO" "$ICONS/device-usb.svg" \
+    "${rescue_entry[@]}" \
     "Docs" "$ICONS/book.svg" \
     | fuzzel --dmenu --prompt "sobarch: " --minimal-lines)
 

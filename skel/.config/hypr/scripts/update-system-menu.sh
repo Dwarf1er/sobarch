@@ -42,6 +42,7 @@ trap 'hyprctl reload >/dev/null 2>&1 || true; rm -f "$empty_file"' EXIT
 # desktop froze mid-update, was force shut down, and every file the
 # walkthrough had touched so far came back zero-length on reboot.
 source /usr/local/lib/sobarch/durable-replace.sh
+source /usr/local/lib/sobarch/pinned-version.sh
 source "$HOME/.config/hypr/scripts/confirm.sh"
 source "$HOME/.config/hypr/scripts/notify-progress.sh"
 
@@ -126,30 +127,10 @@ if ! $review_only; then
     update_pending=false
     to_refresh=()
     for pkg in sobarch-skel sobarch-scripts; do
-        installed="$(pacman -Q "$pkg" 2>/dev/null | awk '{print $2}' || true)"
-        if [[ -z "$installed" ]]; then
-            continue
-        fi
-        pkg_pending=false
-        srcinfo_url="https://raw.githubusercontent.com/Dwarf1er/sobarch/master/packages/custom/$pkg/.SRCINFO"
-        if srcinfo="$(curl -fsSL "$srcinfo_url" 2>/dev/null)"; then
-            epoch="$(awk -F' = ' '/^[[:space:]]*epoch = /{print $2; exit}' <<<"$srcinfo")"
-            pkgver="$(awk -F' = ' '/^[[:space:]]*pkgver = /{print $2; exit}' <<<"$srcinfo")"
-            pkgrel="$(awk -F' = ' '/^[[:space:]]*pkgrel = /{print $2; exit}' <<<"$srcinfo")"
-            if [[ -n "$pkgver" && -n "$pkgrel" ]]; then
-                if [[ -n "$epoch" ]]; then
-                    pinned="${epoch}:${pkgver}-${pkgrel}"
-                else
-                    pinned="${pkgver}-${pkgrel}"
-                fi
-                (( $(vercmp "$pinned" "$installed") > 0 )) && pkg_pending=true
-            fi
-        fi
-        # else: couldn't tell (offline, GitHub hiccup, etc.) -- pkexec
-        # would only hit the same wall this curl call just did, so
-        # leave pkg_pending false rather than demand a password for a
-        # call that's this likely to fail anyway.
-        if $pkg_pending; then
+        # else (offline, GitHub hiccup, etc.): vendored_update_pending
+        # says "not pending" -- pkexec would only hit the same wall, so
+        # don't demand a password for a call this likely to fail anyway.
+        if vendored_update_pending "$pkg"; then
             update_pending=true
             to_refresh+=("$pkg")
         fi

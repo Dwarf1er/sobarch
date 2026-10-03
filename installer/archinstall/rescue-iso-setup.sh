@@ -118,6 +118,8 @@ else
     INITRD_PATH="boot():/rescue/initramfs-linux.img"
 fi
 
+record_rescue_iso_version "$WORK_DIR"
+
 echo "rescue-iso-setup.sh: adding the Limine boot entry..."
 
 # Same has_uefi() check archinstall's own _add_limine_bootloader() makes

@@ -1,0 +1,9 @@
+[Unit]
+Description=sobarch: check for system and rescue ISO updates
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/sobarch/sobarch-update-check.sh
+# The notifications wait for a click (up to 10 min each).
+TimeoutStartSec=15min
