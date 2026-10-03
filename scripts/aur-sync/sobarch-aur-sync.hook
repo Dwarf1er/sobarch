@@ -16,4 +16,4 @@ Target = *
 [Action]
 Description = sobarch: checking vetted AUR/custom packages for updates...
 When = PostTransaction
-Exec = /usr/local/lib/sobarch/aur-sync.sh
+Exec = /usr/local/lib/sobarch/aur-sync.sh --notify

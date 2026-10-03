@@ -9,12 +9,17 @@
 #       package's first-ever install (base-required packages during the
 #       install session itself, profile packages at first boot).
 #
-#   aur-sync.sh [--local DIR] [--cache DIR]
+#   aur-sync.sh [--local DIR] [--cache DIR] [--notify]
 #       Sync mode (no package names): only touches package names that
 #       are ALREADY installed. This is what the pacman hook runs on
 #       every `Operation = Upgrade` transaction; it must never
 #       force-install a vendored package onto a system that never
 #       asked for it (e.g. a profile package the user didn't select).
+#
+# --notify: on failure, also send the failure summary as a desktop
+# notification (notify-user.sh). Passed by the pacman hook only, where
+# no terminal is necessarily being watched; install-time and menu
+# callers have their own visibility and don't pass it.
 #
 # Either mode: --local DIR points at an existing checkout instead of
 # fetching one (used by the install-session call, which already has one
@@ -69,12 +74,13 @@ echo "aur-sync: run started $(date -Iseconds)"
 
 repo_dir=""
 cache_dir=""
-while [[ "${1:-}" == "--local" || "${1:-}" == "--cache" ]]; do
+notify_on_failure=false
+while [[ "${1:-}" == "--local" || "${1:-}" == "--cache" || "${1:-}" == "--notify" ]]; do
     case "$1" in
-        --local) repo_dir="$2" ;;
-        --cache) cache_dir="$2" ;;
+        --local) repo_dir="$2"; shift 2 ;;
+        --cache) cache_dir="$2"; shift 2 ;;
+        --notify) notify_on_failure=true; shift ;;
     esac
-    shift 2
 done
 explicit_packages=("$@")
 
@@ -431,6 +437,14 @@ if ((${#scope_failures[@]} + ${#failures[@]})); then
         echo "  $name (not vendored)" >&2
     done
     ((${#failures[@]})) && printf '  %s\n' "${failures[@]}" >&2
+
+    if $notify_on_failure; then
+        GLYPH=$'\U000F03D4'
+        # shellcheck source=/dev/null
+        source /usr/local/lib/sobarch/notify-user.sh
+        notify_user critical "Package update failed" \
+            "$(printf '%s\n' "${scope_failures[@]/%/ (not vendored)}" "${failures[@]}")" >/dev/null
+    fi
     exit 1
 fi
 

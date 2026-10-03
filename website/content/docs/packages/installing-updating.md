@@ -32,3 +32,8 @@ anything behind. In practice: a normal `pacman -Syu` keeps vendored
 packages current the same way it keeps official ones current: a
 package just doesn't get re-checked until some upgrade actually
 happens.
+
+If a vendored package fails to build or install during that
+automatic sync, you get a critical desktop notification listing which
+packages failed, since the hook runs without a terminal you'd
+necessarily be watching. The full output stays in pacman's own log.
