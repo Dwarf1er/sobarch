@@ -4,7 +4,7 @@
 # reconciliation implemented below.
 #
 # Authored once, here, for the first-boot hook's initial skel
-# deployment. `update-system-menu.sh` (Sobarch -> Update Config in
+# deployment. `update-system.sh` (Sobarch -> Update Config in
 # fuzzel) later exposes this exact script, unmodified, as a
 # user-invoked action, with its own interactive
 # [K]eep/[U]se-new/[D]iff/[E]dit/[S]kip walkthrough for any

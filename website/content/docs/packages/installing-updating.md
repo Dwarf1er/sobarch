@@ -43,6 +43,11 @@ or a new `sobarch-skel`/`sobarch-scripts` are pending; click the
 notification to open **Update System**. It only looks, never installs,
 and re-notifies at most weekly for an unchanged backlog.
 
+From a terminal, `sobarch aur-sync` runs the same sync by hand (with
+no arguments it updates what's already installed; with package names
+it installs exactly those, from the vendored set only), and
+`sobarch update` does the full system update described above.
+
 If a vendored package fails to build or install during that
 automatic sync, you get a critical desktop notification listing which
 packages failed, since the hook runs without a terminal you'd

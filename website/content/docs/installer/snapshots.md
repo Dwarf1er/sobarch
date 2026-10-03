@@ -60,3 +60,7 @@ layout isn't meant to be used with). It supports two modes:
   works, even if the installed system can't boot at all.
 - **`--online`**, run directly on the currently booted system, no live
   media needed.
+
+On an installed system, `sobarch snapshot-restore <number>` is a
+shortcut for the `--online` mode (it asks for `sudo` itself); add
+`--yes` to skip the typed confirmation.

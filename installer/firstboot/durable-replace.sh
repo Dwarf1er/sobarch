@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sourced by apply-skel.sh and update-system-menu.sh, never run
+# Sourced by apply-skel.sh and update-system.sh, never run
 # directly: replaces a file the way `install -Dm"$mode" src dest` does,
 # but crash-safely.
 #

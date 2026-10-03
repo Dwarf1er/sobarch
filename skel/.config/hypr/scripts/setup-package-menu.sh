@@ -34,7 +34,6 @@ set -euo pipefail
 source "$HOME/.config/hypr/scripts/notify-progress.sh"
 
 DATA_FILE="/usr/share/sobarch/profiles.txt"
-AUR_SYNC="/usr/local/lib/sobarch/aur-sync.sh"
 ICONS="$HOME/.config/sobarch/icons"
 
 # download: same icon setup-menu.sh's own "Install" entry uses.
@@ -81,7 +80,7 @@ id=$(notify_progress normal "$TITLE" "Installing $choice..." 0 persist "$ICONS/d
 
 if [[ "${pkg_is_aur[$choice]}" == 1 ]]; then
     result=0
-    pkexec "$AUR_SYNC" "$choice" || result=$?
+    sobarch aur-sync "$choice" || result=$?
 else
     result=0
     pkexec pacman -S --needed --noconfirm "$choice" || result=$?

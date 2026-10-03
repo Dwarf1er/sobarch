@@ -73,7 +73,7 @@ SOBARCH_CACHE_DIR_IN_TARGET = Path("/var/tmp/sobarch-cache")
 # aur-sync.sh's --local mode against this already-fetched checkout.
 #
 # Read from base-required-packages.txt rather than hardcoded here: an
-# already-installed system's update-system-menu.sh fetches that same
+# already-installed system's update-system.sh fetches that same
 # file from GitHub to install any base-required package it's still
 # missing (added to the list after that system's own install ran), so
 # one file, not two hand-maintained lists that can drift.

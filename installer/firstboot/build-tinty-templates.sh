@@ -6,7 +6,7 @@
 # it never renders one itself, so this has to run before `tinty
 # apply`/`init` can find anything there. Run from hyprland.lua's
 # self-healing autostart hook right after a first `tinty install`, and
-# from update-system-menu.sh after every apply-skel.sh run, since a
+# from update-system.sh after every apply-skel.sh run, since a
 # skel update can change these templates.
 #
 # Local items only (globbed straight from the directory, not a
@@ -25,7 +25,7 @@
 # happened to trigger `tinty install`, and `apply` would fail on it
 # indefinitely. Failure here is swallowed (offline, GitHub hiccup) so
 # it doesn't block building whatever's already installed -- the same
-# reasoning update-system-menu.sh already applies to its own
+# reasoning update-system.sh already applies to its own
 # refresh/curl checks.
 
 set -euo pipefail

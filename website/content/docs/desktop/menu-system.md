@@ -23,6 +23,12 @@ Pressing `Super` on its own opens a `fuzzel` picker:
 | **Power** | Lock, Logout, Suspend, Reboot, Shutdown; see the table below. |
 | **Apps** | The regular application list, one level in. |
 
+Most of the Sobarch submenu's actions also exist as a `sobarch`
+command for terminals and SSH: `sobarch update`, `sobarch
+review-conflicts`, `sobarch aur-sync`, `sobarch snapshot-restore` and
+`sobarch rescue-refresh`. The menus call the same commands, so both
+paths behave identically. Run `sobarch help` for the list.
+
 <figure class="figure">
   <img class="img-fluid rounded shadow-sm" src="/images/desktop/menu-system-sobarch.webp" width="1366" height="768" alt="The Sobarch submenu, listing Update System, Install, Themes, Wallpaper, Refresh Rescue ISO, and Docs">
 </figure>

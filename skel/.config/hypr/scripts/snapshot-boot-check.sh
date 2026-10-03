@@ -20,7 +20,6 @@ set -uo pipefail
 source "$HOME/.config/hypr/scripts/confirm.sh"
 source "$HOME/.config/hypr/scripts/notify-progress.sh"
 
-ROLLBACK="/usr/local/lib/sobarch/snapshot-rollback.sh"
 ICONS="$HOME/.config/sobarch/icons"
 TITLE="sobarch: running a snapshot"
 
@@ -35,7 +34,7 @@ action="$(notify-send --wait -u critical -A "default=Make permanent" -i "$ICONS/
 confirm "Make snapshot $num permanent? (this session's changes are discarded)" || exit 0
 
 id=$(notify_progress normal "$TITLE" "Restoring snapshot $num as the new root..." 0 persist)
-if pkexec "$ROLLBACK" --online --yes "$num"; then
+if sobarch snapshot-restore --yes "$num"; then
     notify_progress normal "$TITLE" "Snapshot $num restored. Reboot to use it." "$id" >/dev/null
     confirm "Reboot now?" && systemctl reboot
 else

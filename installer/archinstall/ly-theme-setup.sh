@@ -19,7 +19,7 @@
 # raw-copied into the target and run inside arch-chroot at install time
 # (install_runner.py's CHROOT_SETUP_SCRIPTS), and later, packaged as
 # /usr/local/lib/sobarch/ly-theme-setup.sh by sobarch-scripts, re-run by
-# update-system-menu.sh (via pkexec) whenever sobarch-skel refreshes so
+# update-system.sh (via pkexec) whenever sobarch-skel refreshes so
 # an already-installed system picks up branding changes too. Nothing
 # here depends on being inside a fresh chroot specifically (no
 # archinstall-only env vars), and every write below already overwrites

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sourced by update-system-menu.sh and sobarch-update-check.sh, never
+# Sourced by update-system.sh and sobarch-update-check.sh, never
 # run directly: the one place that decides whether an installed
 # vendored sobarch package (packages/custom/) is behind the version
 # pinned on GitHub's master branch. Reads the committed .SRCINFO, same

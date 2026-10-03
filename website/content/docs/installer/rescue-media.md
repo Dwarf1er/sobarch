@@ -34,7 +34,8 @@ A daily background check does compare the checksum of the stored ISO
 against the mirror's current one (a few hundred bytes, no ISO
 download). When a newer release exists you get a notification; click it
 to run **Super → Sobarch → Refresh Rescue ISO**. You're notified once
-per new release, not every day. That menu entry only appears if rescue
+per new release, not every day. From a terminal, `sobarch rescue-refresh` does the same refresh.
+That menu entry only appears if rescue
 media was set up at install; if you opted out, you never see it.
 
 This is what [snapshot rollback](../snapshots/#restoring-a-snapshot-as-the-new-root)'s

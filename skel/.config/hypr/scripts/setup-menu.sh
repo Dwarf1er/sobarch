@@ -19,8 +19,8 @@ choice=$(printf '%s\0icon\x1f%s\n' \
     | fuzzel --dmenu --prompt "sobarch: " --minimal-lines)
 
 case "$choice" in
-    "Update System") exec bash "$HOME/.config/hypr/scripts/update-system-menu.sh" ;;
-    "Review Conflicts") exec bash "$HOME/.config/hypr/scripts/update-system-menu.sh" --review ;;
+    "Update System") exec sobarch update --gui ;;
+    "Review Conflicts") exec sobarch review-conflicts --gui ;;
     "Install") exec bash "$HOME/.config/hypr/scripts/setup-package-menu.sh" ;;
     "Themes") exec bash "$HOME/.config/hypr/scripts/themes-menu.sh" ;;
     "Wallpaper") exec bash "$HOME/.config/hypr/scripts/wallpaper-menu.sh" ;;

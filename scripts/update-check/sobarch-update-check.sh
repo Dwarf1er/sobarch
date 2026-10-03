@@ -74,7 +74,7 @@ if ((official > 0 || ${#vendored[@]} > 0)); then
     # ISO week re-arms it weekly instead.
     offer system "$(date +%G-%V) official=$((official > 0)) ${vendored[*]}" \
         "$ICONS/refresh.svg" "sobarch: updates available" "$body. Click to update." \
-        "Update System" "bash '$SCRIPTS/update-system-menu.sh'"
+        "Update System" "sobarch update --gui"
 fi
 
 # --- rescue ISO -----------------------------------------------------

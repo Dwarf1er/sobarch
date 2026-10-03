@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# `sobarch`: a thin dispatcher over the scripts sobarch-scripts already
+# ships in /usr/local/lib/sobarch/ (decision #21). It adds no update,
+# sync, or restore logic of its own: each subcommand only picks the
+# script and, where that script needs root, escalates for it. The
+# fuzzel menus under ~/.config/hypr/scripts/ call these same
+# subcommands, so each operation lives in exactly one place.
+
+set -euo pipefail
+
+LIB="/usr/local/lib/sobarch"
+
+usage() {
+    cat <<'USAGE'
+Usage: sobarch <command> [args]
+
+  update [--gui]          full system update: pacman -Syu, vendored
+                          AUR/custom packages, config reconciliation
+  review-conflicts [--gui]
+                          resolve .sobarch-new conflicts left by a
+                          previous update
+  aur-sync [PKG...]       update (no args) or install (PKG...) vendored
+                          AUR/custom packages
+  snapshot-restore [--yes] <N>
+                          make Snapper snapshot N the permanent root
+                          (takes effect after a reboot)
+  rescue-refresh          re-fetch the Arch ISO onto the rescue
+                          partition
+  help                    show this message
+USAGE
+}
+
+# Re-runs the given command as root: directly if already root, else
+# sudo when there's a terminal to ask for a password on, else pkexec
+# (the desktop menus, which have none).
+as_root() {
+    if ((EUID == 0)); then
+        exec "$@"
+    elif [[ -t 0 ]] && command -v sudo >/dev/null 2>&1; then
+        exec sudo "$@"
+    else
+        exec pkexec "$@"
+    fi
+}
+
+cmd="${1:-help}"
+shift || true
+
+case "$cmd" in
+    update) exec "$LIB/update-system.sh" "$@" ;;
+    review-conflicts) exec "$LIB/update-system.sh" --review "$@" ;;
+    aur-sync) as_root "$LIB/aur-sync.sh" "$@" ;;
+    snapshot-restore) as_root "$LIB/snapshot-rollback.sh" --online "$@" ;;
+    rescue-refresh) as_root "$LIB/refresh-rescue-iso.sh" "$@" ;;
+    help | -h | --help) usage ;;
+    *)
+        echo "sobarch: unknown command '$cmd'" >&2
+        usage >&2
+        exit 2
+        ;;
+esac

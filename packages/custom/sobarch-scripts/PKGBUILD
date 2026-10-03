@@ -19,13 +19,13 @@ pkgname=sobarch-scripts
 # and the pacman hook have no such per-install variation, so both are
 # packaged below.
 pkgver=20261003
-pkgrel=3
+pkgrel=4
 pkgdesc="Sobarch first-boot reconciliation scripts and the local AUR/custom package sync mechanism"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
 license=('MIT')
 # diffutils: apply-skel.sh's diff3 three-way merge. less: the pager
-# update-system-menu.sh's [D] Diff option opens (`kitty -e less`).
+# update-system.sh's [D] Diff option opens (`kitty -e less`).
 # Neither is part of base or base-devel (checked against both
 # directly), so both must be declared here rather than assumed.
 # pacman-contrib: `checkupdates`, used by sobarch-update-check.sh.
@@ -41,7 +41,7 @@ package() {
         install -Dm755 "$startdir/../../../installer/firstboot/$script" "$pkgdir/usr/local/lib/sobarch/$script"
     done
 
-    # Sourced by apply-skel.sh/update-system-menu.sh,
+    # Sourced by apply-skel.sh/update-system.sh,
     # rescue-iso-setup.sh/refresh-rescue-iso.sh, and
     # apply-security-baseline.sh/install-profile-packages.sh
     # respectively, never run directly.
@@ -64,13 +64,18 @@ package() {
     # action (skel's snapshot-boot-check.sh) runs via pkexec.
     install -Dm755 "$startdir/../../../scripts/snapshot-rollback.sh" "$pkgdir/usr/local/lib/sobarch/snapshot-rollback.sh"
 
+    # The `sobarch` dispatcher (decision #21) and the update flow it
+    # and the fuzzel menu share (update-system.sh).
+    install -Dm755 "$startdir/../../../scripts/sobarch-cli/sobarch" "$pkgdir/usr/local/bin/sobarch"
+    install -Dm755 "$startdir/../../../installer/firstboot/update-system.sh" "$pkgdir/usr/local/lib/sobarch/update-system.sh"
+
     install -Dm755 "$startdir/../../../scripts/aur-sync/aur-sync.sh" "$pkgdir/usr/local/lib/sobarch/aur-sync.sh"
 
     install -Dm644 "$startdir/../../../scripts/aur-sync/sobarch-aur-sync.hook" "$pkgdir/etc/pacman.d/hooks/sobarch-aur-sync.hook"
 
     # Same scripts install_runner.py raw-copies into CHROOT_SETUP_SCRIPTS
     # at install time (see its own module docstring), packaged here too
-    # so update-system-menu.sh can re-run them against an already
+    # so update-system.sh can re-run them against an already
     # installed system whenever sobarch-skel's branding assets change.
     # All three are idempotent and install-time-agnostic already (no
     # archinstall-only env vars, no chroot-only paths), so the same

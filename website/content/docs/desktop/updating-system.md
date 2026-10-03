@@ -47,6 +47,12 @@ still runs against whatever is already installed. Running `pacman -Syu`
 yourself from a terminal still works exactly as before; the pacman
 hook keeps vendored packages current in that case too.
 
+From a terminal or over SSH: `sobarch update` runs the same steps with
+plain prompts instead of menus (`sudo` for the package steps, and the
+conflict choices are typed as a letter). `sobarch review-conflicts`
+is the terminal equivalent of Review Conflicts below. Run both as your
+own user, not with `sudo` in front.
+
 If you'd rather just revisit conflicts left over from a previous run
 without re-checking everything else, use **Review Conflicts** instead.
 It re-runs the same interactive walkthrough over whatever
