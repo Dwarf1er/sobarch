@@ -271,8 +271,9 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
     sobarch-skel's PKGBUILD reaches out to ../../../skel and
     ../../../branding; sobarch-scripts' to ../../../installer/firstboot,
     ../../../installer/archinstall (limine-theme-setup.sh,
-    ly-theme-setup.sh, plymouth-setup.sh), and ../../../scripts/aur-sync,
-    all via a relative path, so those directories must be staged
+    ly-theme-setup.sh, plymouth-setup.sh), and ../../../scripts (aur-sync,
+    update-check, sobarch-cli, snapshot-rollback.sh), all via a relative
+    path, so those directories must be staged
     alongside their package directories here, not just the package
     directories in isolation."""
     build_dir = MOUNTPOINT / SOBARCH_SKEL_BUILD_DIR_IN_TARGET.relative_to("/")
@@ -290,7 +291,7 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
     shutil.copytree(REPO_ROOT / "branding", build_dir / "branding")
     shutil.copytree(REPO_ROOT / "installer" / "firstboot", build_dir / "installer" / "firstboot")
     shutil.copytree(REPO_ROOT / "installer" / "archinstall", build_dir / "installer" / "archinstall")
-    shutil.copytree(REPO_ROOT / "scripts" / "aur-sync", build_dir / "scripts" / "aur-sync")
+    shutil.copytree(REPO_ROOT / "scripts", build_dir / "scripts")
     for pkg in BASE_AUR_PACKAGES:
         shutil.copytree(REPO_ROOT / "packages" / "aur" / pkg, build_dir / "packages" / "aur" / pkg)
 
