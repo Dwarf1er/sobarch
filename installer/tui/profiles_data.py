@@ -3,6 +3,9 @@ merge, or rename an entry the moment it stops being a single coherent
 idea for someone choosing it."""
 
 from dataclasses import dataclass
+from pathlib import Path
+
+_CUSTOM_PACKAGES_DIR = Path(__file__).resolve().parent.parent.parent / "packages" / "custom"
 
 
 @dataclass(frozen=True)
@@ -13,6 +16,15 @@ class Package:
     # e.g. sobarch-via-udev) alike, both handled identically by that
     # script. False only for a plain official-repo `pacman -S` package.
     aur: bool = False
+
+    @property
+    def source_label(self) -> str:
+        """Where the TUI says this package comes from: empty for an
+        official-repo package, "sobarch" for one of this project's own
+        packages/custom/ PKGBUILDs, "AUR" for the rest."""
+        if not self.aur:
+            return ""
+        return "sobarch" if (_CUSTOM_PACKAGES_DIR / self.name).is_dir() else "AUR"
 
 
 @dataclass(frozen=True)

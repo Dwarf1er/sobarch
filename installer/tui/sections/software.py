@@ -30,7 +30,7 @@ class SoftwareSection(Section):
                     chosen = set(state.profile_packages.get(profile.name, []))
                     yield SelectionList(
                         *[
-                            (f"{pkg.name} (AUR)" if pkg.aur else pkg.name, pkg.name, pkg.name in chosen)
+                            (f"{pkg.name} ({pkg.source_label})" if pkg.aur else pkg.name, pkg.name, pkg.name in chosen)
                             for pkg in profile.packages
                         ],
                         id=f"pkgs-{profile.slug}",
