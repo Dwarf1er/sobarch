@@ -154,6 +154,20 @@ if ((${#explicit_packages[@]})); then
     if ((${#scope_failures[@]})); then
         echo "aur-sync: refusing to build unvendored package(s): ${scope_failures[*]}" >&2
     fi
+
+    # Companions: vendored packages that ride along with another one
+    # without being a selectable choice themselves (so they appear in
+    # no profile), e.g. the Vesktop launch wrapper. Only in explicit
+    # mode: once installed, a companion is a normal pacman -Q-installed
+    # package and sync mode keeps it current like any other.
+    declare -A companion_of=(
+        [vesktop-bin]=vesktop-integrity-launch
+    )
+    for name in "${explicit_packages[@]}"; do
+        companion="${companion_of[$name]:-}"
+        [[ -n "$companion" && -n "${pkg_dir[$companion]:-}" ]] || continue
+        [[ " ${targets[*]} " == *" $companion "* ]] || targets+=("$companion")
+    done
 else
     for name in "${!pkg_dir[@]}"; do
         pacman -Q "$name" >/dev/null 2>&1 && targets+=("$name")

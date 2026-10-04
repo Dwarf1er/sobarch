@@ -1,0 +1,12 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = vesktop-bin
+Target = vesktop-integrity-launch
+
+[Action]
+Description = Pointing the Vesktop menu entry at vesktop-integrity-launch...
+When = PostTransaction
+Exec = /usr/lib/vesktop-integrity-launch/sync-desktop-entry.sh

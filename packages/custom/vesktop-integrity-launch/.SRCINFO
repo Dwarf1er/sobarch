@@ -1,0 +1,14 @@
+pkgbase = vesktop-integrity-launch
+	pkgdesc = Self-healing launch wrapper for Vesktop: verifies Vencord files against a local baseline, runs --repair on mismatch
+	pkgver = 20260926
+	pkgrel = 1
+	url = https://github.com/Dwarf1er/vesktop-integrity-launch
+	arch = any
+	license = MIT
+	makedepends = git
+	optdepends = vesktop-bin: the app being wrapped
+	options = !debug
+	source = vesktop-integrity-launch::git+https://github.com/Dwarf1er/vesktop-integrity-launch.git#commit=b287aca3e869868d44af5424b0ab24dcfcdcaba1
+	sha256sums = SKIP
+
+pkgname = vesktop-integrity-launch
