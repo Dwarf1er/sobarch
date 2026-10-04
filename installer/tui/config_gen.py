@@ -8,6 +8,7 @@ whole pass is done the same way once we're already parsing the JSON
 anyway."""
 
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -115,29 +116,22 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
 
         device_mod["wipe"] = False
         assert state.free_space_start_bytes is not None and state.free_space_size_bytes is not None
-        free_space_start_mib = state.free_space_start_bytes // MIB
+        # Align inward, never outward: the start rounds up and the end
+        # rounds down, so the new partitions can never reach into the
+        # neighbouring partition when the gap's own edges aren't
+        # MiB-aligned (a shrunk Windows partition's end usually isn't).
+        free_space_start_mib = -(-state.free_space_start_bytes // MIB)
         free_space_end_mib = (state.free_space_start_bytes + state.free_space_size_bytes) // MIB
 
-        if state.existing_esp_path is not None:
-            # Reuse the other OS's own ESP untouched: "existing" status,
-            # never "modify" -- archinstall deletes-then-recreates any
-            # "modify" partition when the device isn't wiped, which
-            # would destroy the other OS's boot files. "existing" is
-            # excluded from both repartitioning and reformatting, only
-            # mounted as-is. It lives wherever it already was on disk,
-            # unrelated to the free space, so the new root partition
-            # simply starts at the free space's own beginning.
-            assert state.existing_esp_start_bytes is not None and state.existing_esp_size_bytes is not None
-            boot["status"] = "existing"
-            boot["dev_path"] = state.existing_esp_path
-            boot["start"] = _mib_dict(boot["start"], state.existing_esp_start_bytes // MIB)
-            boot["size"] = _mib_dict(boot["size"], state.existing_esp_size_bytes // MIB)
-            btrfs_start_mib = free_space_start_mib
-        else:
-            # No ESP anywhere on this disk (rare): create one at the
-            # start of the free space, same as the ordinary layout.
-            boot["start"] = _mib_dict(boot["start"], free_space_start_mib)
-            btrfs_start_mib = free_space_start_mib + _to_mib(boot["size"])
+        # sobarch always gets its own ESP, created at the start of the
+        # free space, never the other OS's: /boot IS the ESP here, so
+        # sharing a (typically 100-260 MB) Windows ESP would let kernel
+        # and initramfs updates fill it, and Limine's removable-path
+        # install (EFI/BOOT/BOOTX64.EFI) would overwrite any fallback
+        # loader already on it. The other OS's boot files are never
+        # touched; limine-add-os-entry.sh chainloads it from its own ESP.
+        boot["start"] = _mib_dict(boot["start"], free_space_start_mib)
+        btrfs_start_mib = free_space_start_mib + _to_mib(boot["size"])
 
         root_size_mib = free_space_end_mib - btrfs_start_mib
         # The GPT-tail reserve only matters when the free space runs to
@@ -266,11 +260,14 @@ def write_configs(generated: GeneratedConfig, out_dir: Path) -> tuple[Path, Path
     base_path = out_dir / "base.json"
     credentials_path = out_dir / "credentials.json"
     base_path.write_text(json.dumps(generated.base, indent=4) + "\n")
-    credentials_path.write_text(json.dumps(generated.credentials, indent=4) + "\n")
-    # credentials.json can now carry a plaintext LUKS passphrase
-    # (encryption_password) alongside the account's yescrypt hash;
-    # tighten it past the default umask-derived mode rather than leaving
-    # either readable to anyone but the invoking user.
+    # credentials.json can carry a plaintext LUKS passphrase
+    # (encryption_password) alongside the account's yescrypt hash, so it
+    # is created 0600 from the start: write_text() then chmod() would
+    # leave a window where it exists with the umask-derived mode. The
+    # chmod covers a file that already existed with a looser mode.
+    fd = os.open(credentials_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as credentials_file:
+        credentials_file.write(json.dumps(generated.credentials, indent=4) + "\n")
     credentials_path.chmod(0o600)
     return base_path, credentials_path
 

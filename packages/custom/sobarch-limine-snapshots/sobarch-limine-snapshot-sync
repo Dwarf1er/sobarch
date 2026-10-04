@@ -5,12 +5,21 @@
 # Deliberately scoped down from grub-btrfs's
 # general-purpose design (upstream: github.com/Antynea/grub-btrfs,
 # 41_snapshots-btrfs) to sobarch's fixed layout:
-#   - one kernel, one initramfs, no LUKS, a single distro on this disk
-#   - /boot is always its own partition, never inside the snapshotted
-#     root subvolume, so every snapshot entry boots the exact same real
-#     /boot/vmlinuz-linux + /boot/initramfs-linux.img -- matching
-#     grub-btrfs's own "boot_separate" case, we never need to look for
-#     a kernel inside a snapshot itself.
+#   - one kernel package (linux), a single distro on this disk
+#   - /boot is always its own partition (the ESP), never inside the
+#     snapshotted root subvolume, and Limine can't read btrfs. A
+#     snapshot taken before a kernel upgrade has a different
+#     /usr/lib/modules/<version> than the kernel now sitting in /boot,
+#     and booting that kernel against it leaves no loadable modules. So
+#     a snapshot whose kernel version matches the installed one boots
+#     the real /boot/vmlinuz-linux + initramfs-linux.img; any other
+#     snapshot gets its own vmlinuz (copied out of the snapshot's
+#     /usr/lib/modules/<version>/) and an initramfs built from the
+#     snapshot's modules, kept per version under /boot/sobarch-snapshots/
+#     and pruned once no snapshot references that version.
+#   - snap-pac snapshots are read-only, so entries boot with `ro`; an
+#     `rw` flag on a read-only subvolume only produces confusing
+#     failures. Treat a snapshot boot as a recovery environment.
 #   - the root mount options are this project's own fixed set
 #     (installer/archinstall/base.json's disk_config), not re-derived
 #     from /etc/fstab on every run the way grub-btrfs does generically.
@@ -44,6 +53,72 @@ fi
 root_uuid="$(findmnt -no UUID /)"
 mount_opts="compress=zstd:3,ssd,discard=async,space_cache=v2"
 
+KERNEL_STORE_NAME="sobarch-snapshots"
+KERNEL_STORE="/boot/$KERNEL_STORE_NAME"
+# Per-version kernel+initramfs copies are ~50 MiB each; stop building
+# new ones rather than fill the ESP (a full /boot breaks kernel updates).
+MIN_FREE_KIB=$((200 * 1024))
+
+# Everything from the running system's kernel command line except the
+# parts this script sets itself: keeps cryptdevice=/rd.luks.* (LUKS
+# installs can't boot without them), quiet, splash, GPU parameters.
+base_cmdline=""
+for arg in $(cat /proc/cmdline); do
+    case "$arg" in
+        root=* | rootflags=* | rw | ro | initrd=* | BOOT_IMAGE=*) ;;
+        *) base_cmdline+=" $arg" ;;
+    esac
+done
+base_cmdline="${base_cmdline# }"
+
+# The version directory of the linux package under a modules root, or
+# empty if there isn't one.
+kernel_version_in() {
+    local dir
+    for dir in "$1"/usr/lib/modules/*/; do
+        [ -f "${dir}pkgbase" ] || continue
+        [ "$(cat "${dir}pkgbase")" = "linux" ] || continue
+        basename "$dir"
+        return 0
+    done
+    return 0
+}
+
+current_version="$(kernel_version_in "")"
+used_versions=" "
+
+# Makes sure /boot/sobarch-snapshots/<version>/ holds a bootable kernel
+# and initramfs for a snapshot whose kernel differs from the installed
+# one. Returns non-zero (and leaves nothing half-written) on any failure.
+ensure_kernel_store() {
+    local version="$1" subvol_dir="$2"
+    local dest="$KERNEL_STORE/$version"
+    [ -f "$dest/vmlinuz" ] && [ -f "$dest/initramfs.img" ] && return 0
+
+    local free_kib
+    free_kib="$(df --output=avail -k /boot | tail -n1 | tr -d ' ')"
+    if [ "${free_kib:-0}" -lt "$MIN_FREE_KIB" ]; then
+        echo "sobarch-limine-snapshot-sync: less than 200 MiB free on /boot, not adding kernel $version" >&2
+        return 1
+    fi
+    [ -f "$subvol_dir/usr/lib/modules/$version/vmlinuz" ] || return 1
+
+    local tmp="$KERNEL_STORE/.tmp-$version"
+    rm -rf "$tmp"
+    mkdir -p "$tmp"
+    if cp "$subvol_dir/usr/lib/modules/$version/vmlinuz" "$tmp/vmlinuz" \
+        && mkinitcpio -r "$subvol_dir" -k "$version" -g "$tmp/initramfs.img" >/dev/null 2>&1 \
+        && [ -s "$tmp/initramfs.img" ]; then
+        sync -f "$tmp/initramfs.img"
+        rm -rf "$dest"
+        mv "$tmp" "$dest"
+        return 0
+    fi
+    rm -rf "$tmp"
+    echo "sobarch-limine-snapshot-sync: could not build an initramfs for kernel $version" >&2
+    return 1
+}
+
 entries=""
 count=0
 
@@ -71,15 +146,29 @@ for id in "${snap_ids[@]}"; do
     # the currently-mounted "@".
     subvol_path="/${subvol_path%/}"
 
+    snap_version="$(kernel_version_in "$subvol_dir")"
+    if [ -z "$snap_version" ] || [ -z "$current_version" ]; then
+        continue
+    fi
+    if [ "$snap_version" = "$current_version" ]; then
+        kernel_path="boot():/vmlinuz-linux"
+        initrd_path="boot():/initramfs-linux.img"
+    else
+        ensure_kernel_store "$snap_version" "$subvol_dir" || continue
+        kernel_path="boot():/$KERNEL_STORE_NAME/$snap_version/vmlinuz"
+        initrd_path="boot():/$KERNEL_STORE_NAME/$snap_version/initramfs.img"
+        used_versions+="$snap_version "
+    fi
+
     date="$(sed -n 's:.*<date>\(.*\)</date>.*:\1:p' "$info_xml" | head -n1)"
     description="$(sed -n 's:.*<description>\(.*\)</description>.*:\1:p' "$info_xml" | head -n1)"
 
     entries+="
-    //Snapshot ${id} - ${date:-unknown date} - ${description:-no description}
+    //Snapshot ${id} (read-only) - ${date:-unknown date} - ${description:-no description}
         protocol: linux
-        path: boot():/vmlinuz-linux
-        module_path: boot():/initramfs-linux.img
-        cmdline: root=UUID=${root_uuid} rootflags=${mount_opts},subvol=${subvol_path} rw
+        path: ${kernel_path}
+        module_path: ${initrd_path}
+        cmdline: ${base_cmdline} root=UUID=${root_uuid} rootflags=${mount_opts},subvol=${subvol_path} ro
 "
     count=$((count + 1))
 done
@@ -114,6 +203,21 @@ if grep -qF "$START_MARKER" "$LIMINE_CONF"; then
     mv "${LIMINE_CONF}.sobarch-new" "$LIMINE_CONF"
 else
     printf '\n%s\n' "$block" >> "$LIMINE_CONF"
+fi
+
+# Drop kernel copies no remaining snapshot entry references. Done after
+# limine.conf is rewritten, so no entry ever points at a removed file.
+if [ -d "$KERNEL_STORE" ]; then
+    rm -rf "$KERNEL_STORE"/.tmp-*
+    for dir in "$KERNEL_STORE"/*/; do
+        [ -d "$dir" ] || continue
+        version="$(basename "$dir")"
+        case "$used_versions" in
+            *" $version "*) ;;
+            *) rm -rf "$dir" ;;
+        esac
+    done
+    rmdir "$KERNEL_STORE" 2>/dev/null || true
 fi
 
 plural="ies"

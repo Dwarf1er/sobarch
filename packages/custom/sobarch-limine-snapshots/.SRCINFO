@@ -1,7 +1,7 @@
 pkgbase = sobarch-limine-snapshots
 	pkgdesc = Bespoke Limine boot-entry sync for Snapper snapshots (Limine equivalent of grub-btrfs, decision #12)
-	pkgver = 20260905
-	pkgrel = 1
+	pkgver = 20261004
+	pkgrel = 2
 	url = https://github.com/Dwarf1er/sobarch
 	arch = any
 	license = MIT

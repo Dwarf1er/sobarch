@@ -56,21 +56,32 @@ class UnattendedConfigError(Exception):
     pass
 
 
-def _resolve_disk(selector: str) -> tuple[str, int]:
+def _resolve_disk(selector: str, confirm_erase: bool) -> tuple[str, int]:
     disks = list_disks()
     if not disks:
         raise UnattendedConfigError("no disks detected")
 
     if selector == "largest":
-        chosen = max(disks, key=lambda disk: disk.size_bytes)
-        return chosen.path, chosen.size_bytes
+        # Removable media (USB sticks, SD cards) are never picked
+        # implicitly; name one by path to target it on purpose.
+        fixed = [disk for disk in disks if not disk.removable]
+        if not fixed:
+            raise UnattendedConfigError('"largest" found no non-removable disk; give an exact device path')
+        chosen = max(fixed, key=lambda disk: disk.size_bytes)
+    else:
+        chosen = next((disk for disk in disks if disk.path == selector), None)
 
-    for disk in disks:
-        if disk.path == selector:
-            return disk.path, disk.size_bytes
+    if chosen is None:
+        available = ", ".join(disk.path for disk in disks)
+        raise UnattendedConfigError(f"disk {selector!r} not found (available: {available})")
 
-    available = ", ".join(disk.path for disk in disks)
-    raise UnattendedConfigError(f"disk {selector!r} not found (available: {available})")
+    if chosen.partitions and not confirm_erase:
+        existing = "; ".join(chosen.partitions)
+        raise UnattendedConfigError(
+            f"{chosen.path} already has partitions ({existing}) and installing wipes them all; "
+            'set "confirm_erase": true in the answer file to proceed'
+        )
+    return chosen.path, chosen.size_bytes
 
 
 def _resolve_profiles(slugs: object) -> dict[str, list[str]]:
@@ -126,7 +137,7 @@ def build_state(data: dict) -> WizardState:
     if git_email and not EMAIL_RE.match(git_email):
         raise UnattendedConfigError(f"invalid git_email: {git_email!r}")
 
-    disk_device, disk_size_bytes = _resolve_disk(str(data["disk"]))
+    disk_device, disk_size_bytes = _resolve_disk(str(data["disk"]), bool(data.get("confirm_erase", False)))
 
     return WizardState(
         disk_device=disk_device,

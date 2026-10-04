@@ -70,6 +70,13 @@ if [[ -n "${SOBARCH_AUR_SYNC_RUNNING:-}" ]]; then
 fi
 export SOBARCH_AUR_SYNC_RUNNING=1
 
+# One sync at a time across processes (the hook's detached run and
+# update-system.sh's explicit one can overlap). Blocking, not skipping:
+# a waiting run just finds nothing left to do once the first finishes.
+mkdir -p /run/lock
+exec 9>/run/lock/sobarch-aur-sync.lock
+flock 9
+
 echo "aur-sync: run started $(date -Iseconds)"
 
 repo_dir=""
@@ -105,7 +112,7 @@ fetch_repo() {
     # its return value (repo_dir="$(fetch_repo)"), so any status output
     # mixed into stdout here would corrupt that path.
     echo "aur-sync: fetching current repo state from ${REPO}@${BRANCH}..." >&2
-    curl -fsSL "$ARCHIVE_URL" | tar -xz -C "$dir" --strip-components=1
+    curl -fsSL --connect-timeout 20 --max-time 600 "$ARCHIVE_URL" | tar -xz -C "$dir" --strip-components=1
     echo "$dir"
 }
 
@@ -245,8 +252,17 @@ cached_pkgfile() {
 # handled: none of the currently vendored packages use them, and this
 # is meant to stay a thin reader of what's actually there, not a full
 # .SRCINFO parser.
+#
+# Names this same .SRCINFO's own split packages provide are dropped: a
+# package in a multi-package base may depend on a sibling built in the
+# same run (nvidia-580xx-dkms on nvidia-580xx-utils), which exists in no
+# sync repo and is installed together with it by one pacman -U.
 build_deps() {
-    awk -F' = ' '/^[[:space:]]*(depends|makedepends) = /{print $2}' "$1/.SRCINFO" | sed -E 's/[<>=].*//'
+    awk -F' = ' '
+        /^[[:space:]]*pkgname = / { own[$2] = 1 }
+        /^[[:space:]]*(depends|makedepends) = / { dep = $2; sub(/[<>=].*/, "", dep); deps[++n] = dep }
+        END { for (i = 1; i <= n; i++) if (!(deps[i] in own)) print deps[i] }
+    ' "$1/.SRCINFO"
 }
 
 # makepkg verifies a source's PGP signature (when validpgpkeys is set)

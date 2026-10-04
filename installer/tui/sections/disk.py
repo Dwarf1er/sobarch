@@ -72,7 +72,7 @@ class DiskSection(Section):
         return entries
 
     def _label(self, entry: _Entry) -> str:
-        base = f"{entry.disk.path}  ({entry.disk.model}, {entry.disk.size_human})"
+        base = f"{entry.disk.path}  ({entry.disk.model}, {entry.disk.size_human}{', removable' if entry.disk.removable else ''})"
         if not entry.free_space_install:
             return base
         assert entry.probe is not None and entry.probe.free_space is not None
@@ -114,13 +114,9 @@ class DiskSection(Section):
 
         assert entry.probe is not None and entry.probe.free_space is not None
         free_space = entry.probe.free_space
-        esp = entry.probe.existing_esp
         state.free_space_start_bytes = free_space.start_bytes
         state.free_space_size_bytes = free_space.size_bytes
         state.free_space_at_disk_end = free_space.at_disk_end
-        state.existing_esp_path = esp.path if esp else None
-        state.existing_esp_start_bytes = esp.start_bytes if esp else None
-        state.existing_esp_size_bytes = esp.size_bytes if esp else None
         # Rescue media is disabled for free-space installs, to avoid
         # partition-count/size-budget edge cases on a disk shared with
         # another OS (see docs/DECISIONS.md); OptionsSection enforces it.

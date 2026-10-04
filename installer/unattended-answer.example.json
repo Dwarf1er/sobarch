@@ -1,5 +1,6 @@
 {
     "disk": "largest",
+    "confirm_erase": false,
     "hostname": "workstation",
     "username": "alice",
     "password": "changeme",

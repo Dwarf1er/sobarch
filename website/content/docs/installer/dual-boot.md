@@ -29,9 +29,11 @@ only; see below) offers a second option alongside the usual "wipe
 entire disk" one: installing into that free space instead. Picking it:
 
 - Leaves every existing partition on the disk untouched.
-- Reuses the disk's existing EFI System Partition (ESP) if it has one,
-  rather than creating a second one, so the ESP Windows' own
-  bootloader already lives on ends up shared with sobarch's.
+- Creates its own EFI System Partition (ESP) in the free space and
+  never touches the other OS's. A Windows ESP is typically only
+  100-260 MB, too small for kernel and initramfs updates, and
+  sobarch's bootloader would otherwise risk overwriting its fallback
+  loader.
 - Disables rescue media for this install; the Rescue media toggle in
   the Options step is turned off and unavailable (the extra partitions it
   needs aren't worth the added complexity on a disk already shared with
@@ -51,7 +53,7 @@ first boot into sobarch, open a terminal and run:
 sudo /usr/local/lib/sobarch/limine-add-os-entry.sh
 ```
 
-It lists the other bootloader(s) it finds on the shared ESP, asks which
+It lists the other bootloader(s) it finds on the disk's other ESPs, asks which
 one to add and what to call it, and writes the entry into Limine's boot
 menu. Run it again for additional OSes, or to pick a different entry.
 

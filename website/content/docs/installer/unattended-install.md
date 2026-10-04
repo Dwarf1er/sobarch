@@ -43,7 +43,8 @@ for a complete example. Every field below is optional except `disk`,
 
 | Field | Default | Notes |
 |---|---|---|
-| `disk` | *(required)* | `"largest"`, or an exact device path (e.g. `/dev/nvme0n1`). |
+| `disk` | *(required)* | `"largest"` (largest non-removable disk), or an exact device path (e.g. `/dev/nvme0n1`). The disk the installer itself booted from is never offered. |
+| `confirm_erase` | `false` | Required to be `true` when the chosen disk already has partitions, since installing wipes all of them. |
 | `hostname` | *(required)* | Same validation as the interactive Account step. |
 | `username` | *(required)* | Same validation as the interactive Account step. |
 | `password` | *(one of `password`/`password_hash` required)* | Plaintext; hashed the same way the interactive wizard hashes it, before it ever reaches `archinstall`'s own config. |

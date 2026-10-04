@@ -2,8 +2,8 @@
 pkgname=sobarch-limine-snapshots
 # No upstream release of its own; pkgver tracks the date these scripts
 # last changed in this monorepo, same convention as sobarch-skel.
-pkgver=20260905
-pkgrel=1
+pkgver=20261004
+pkgrel=2
 pkgdesc="Bespoke Limine boot-entry sync for Snapper snapshots (Limine equivalent of grub-btrfs, decision #12)"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"

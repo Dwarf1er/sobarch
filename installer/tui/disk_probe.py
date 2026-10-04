@@ -1,7 +1,6 @@
-"""Detects an existing GPT partition table's free space and any
-existing EFI System Partition (ESP), to support installing sobarch into
-free space alongside another OS instead of wiping the whole disk (see
-sections/disk.py). Parses `sfdisk -J`'s own JSON rather than sgdisk's or
+"""Detects an existing GPT partition table's free space, to support
+installing sobarch into it alongside another OS instead of wiping the
+whole disk (see sections/disk.py). Parses `sfdisk -J`'s own JSON rather than sgdisk's or
 parted's text output, and rather than a second `sfdisk -F` call for
 free space specifically: one JSON source already carries everything
 needed (each partition's start/size in sectors, plus the disk's
@@ -11,21 +10,10 @@ import json
 import subprocess
 from dataclasses import dataclass
 
-# GPT partition type GUID for an EFI System Partition, fixed by the
-# UEFI spec, not something sfdisk assigns arbitrarily.
-ESP_TYPE_GUID = "C12A7328-F81F-11D2-BA4B-00A0C93EC93B"
-
 # Below this, installing sobarch's full default package set alongside
 # another OS isn't realistic, so the free-space install option simply
 # isn't offered under this floor. One module constant, easy to retune.
 MIN_FREE_SPACE_BYTES = 20 * 1024**3
-
-
-@dataclass
-class PartitionRef:
-    path: str
-    start_bytes: int
-    size_bytes: int
 
 
 @dataclass
@@ -41,7 +29,6 @@ class FreeSpaceRegion:
 @dataclass
 class DiskProbe:
     has_gpt: bool
-    existing_esp: PartitionRef | None
     # The largest free gap on the disk, if any clears MIN_FREE_SPACE_BYTES.
     free_space: FreeSpaceRegion | None
 
@@ -59,20 +46,10 @@ def probe_disk(path: str) -> DiskProbe:
     # BIOS already has a tight 3-primary-partition budget, and dual-boot
     # alongside an existing OS is overwhelmingly a UEFI+GPT scenario anyway.
     if table.get("label") != "gpt":
-        return DiskProbe(has_gpt=False, existing_esp=None, free_space=None)
+        return DiskProbe(has_gpt=False, free_space=None)
 
     sector_size = table["sectorsize"]
     partitions = sorted(table.get("partitions", []), key=lambda p: p["start"])
-
-    existing_esp = None
-    for partition in partitions:
-        if partition.get("type", "").upper() == ESP_TYPE_GUID:
-            existing_esp = PartitionRef(
-                path=partition["node"],
-                start_bytes=partition["start"] * sector_size,
-                size_bytes=partition["size"] * sector_size,
-            )
-            break
 
     # Walk the sorted partition list, recording the gap before each one
     # and, at the end, the gap between the last partition and the last
@@ -99,4 +76,4 @@ def probe_disk(path: str) -> DiskProbe:
                 at_disk_end=(start_sector + size_sectors == disk_end_sector),
             )
 
-    return DiskProbe(has_gpt=True, existing_esp=existing_esp, free_space=free_space)
+    return DiskProbe(has_gpt=True, free_space=free_space)

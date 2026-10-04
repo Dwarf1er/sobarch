@@ -39,6 +39,7 @@ gpu_vendors=""
 gpu_packages=""
 nvidia_present=false
 nvidia_proprietary_driver=false
+nvidia_legacy_580xx=false
 
 while IFS= read -r -d '' card; do
     vendor_file="$card/device/vendor"
@@ -64,14 +65,20 @@ while IFS= read -r -d '' card; do
                 # Turing (RTX 20xx) and newer: GSP-firmware capable,
                 # mandatory for RTX 50xx (no proprietary driver path at
                 # all for it otherwise).
-                gpu_packages="$gpu_packages nvidia-open-dkms nvidia-utils lib32-nvidia-utils egl-wayland libva-nvidia-driver nvidia-settings opencl-nvidia lib32-opencl-nvidia lib32-vulkan-icd-loader"
+                gpu_packages="$gpu_packages linux-headers nvidia-open-dkms nvidia-utils lib32-nvidia-utils egl-wayland libva-nvidia-driver nvidia-settings opencl-nvidia lib32-opencl-nvidia lib32-vulkan-icd-loader"
                 nvidia_proprietary_driver=true
             elif (( device_id >= 0x1340 )); then
                 # Maxwell/Pascal/Volta: no GSP firmware. Needs the
                 # pinned legacy 580xx driver branch specifically, plain
                 # nvidia-dkms dropped support for this generation as of
                 # driver 590.
-                gpu_packages="$gpu_packages nvidia-580xx-dkms nvidia-580xx-utils lib32-nvidia-580xx-utils egl-wayland libva-nvidia-driver nvidia-580xx-settings opencl-nvidia-580xx lib32-opencl-nvidia-580xx lib32-vulkan-icd-loader"
+                # None of the 580xx packages are in the official repos
+                # (AUR only), so they can't go in the pacstrap package
+                # list; install_runner.py builds the vendored copies in
+                # packages/aur/ after archinstall instead. Only what
+                # they depend on, from the official repos, goes here.
+                gpu_packages="$gpu_packages linux-headers dkms egl-wayland libva-nvidia-driver lib32-vulkan-icd-loader"
+                nvidia_legacy_580xx=true
                 nvidia_proprietary_driver=true
             else
                 # Kepler and older: no proprietary driver family
@@ -103,5 +110,6 @@ GPU_VENDORS="$gpu_vendors"
 GPU_PACKAGES="$gpu_packages"
 NVIDIA_PRESENT=$nvidia_present
 NVIDIA_PROPRIETARY_DRIVER=$nvidia_proprietary_driver
+NVIDIA_LEGACY_580XX=$nvidia_legacy_580xx
 BLUETOOTH_DETECTED=$bluetooth_detected
 EOF

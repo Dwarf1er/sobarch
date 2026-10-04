@@ -320,6 +320,43 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
     return returncode
 
 
+# Built in this order, one aur-sync call each: aur-sync sorts the
+# targets of a single call by name, and lib32-nvidia-580xx-utils would
+# sort ahead of the nvidia-580xx-utils it needs. nvidia-580xx-utils
+# also builds opencl-nvidia-580xx and nvidia-580xx-dkms (one package
+# base), all installed together.
+NVIDIA_LEGACY_PACKAGES = ("nvidia-580xx-utils", "lib32-nvidia-580xx-utils")
+
+
+def _install_nvidia_legacy_driver(log_file, on_output: OutputCallback) -> int:
+    """Maxwell/Pascal/Volta GPUs need the 580xx driver branch, which
+    only exists in the AUR; the vendored copies in packages/aur/ are
+    built and installed here via aur-sync.sh, same mechanism as the
+    base-required AUR packages above."""
+    build_dir = MOUNTPOINT / SOBARCH_SKEL_BUILD_DIR_IN_TARGET.relative_to("/")
+    shutil.rmtree(build_dir, ignore_errors=True)
+    for pkg in NVIDIA_LEGACY_PACKAGES:
+        shutil.copytree(REPO_ROOT / "packages" / "aur" / pkg, build_dir / "packages" / "aur" / pkg)
+
+    returncode = 0
+    for pkg in NVIDIA_LEGACY_PACKAGES:
+        returncode = _run_logged(
+            [
+                "arch-chroot", str(MOUNTPOINT),
+                str(AUR_SYNC_SCRIPT_PATH_IN_TARGET),
+                "--local", str(SOBARCH_SKEL_BUILD_DIR_IN_TARGET),
+                pkg,
+            ],
+            log_file,
+            on_output,
+        )
+        if returncode != 0:
+            break
+
+    shutil.rmtree(build_dir, ignore_errors=True)
+    return returncode
+
+
 def run_install(
     state: WizardState,
     hardware: HardwareInfo,
@@ -345,6 +382,10 @@ def run_install(
             log_file,
             on_output,
         )
+        # Holds the account hash and any LUKS passphrase in plaintext;
+        # archinstall is done with it either way, and a retry
+        # regenerates it, so don't leave it behind on disk.
+        credentials_path.unlink(missing_ok=True)
         if returncode != 0:
             raise InstallError(f"archinstall exited with status {returncode}", log_path)
 
@@ -361,6 +402,12 @@ def run_install(
         returncode = _build_and_install_base_packages(log_file, on_output)
         if returncode != 0:
             raise InstallError("failed to build/install base packages", log_path)
+
+        if hardware.nvidia_legacy_580xx:
+            on_output("Building the NVIDIA 580xx legacy driver (this takes a while)...")
+            returncode = _install_nvidia_legacy_driver(log_file, on_output)
+            if returncode != 0:
+                raise InstallError("failed to build/install the NVIDIA 580xx driver", log_path)
 
         write_firstboot_package_lists(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
         write_security_flags(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))

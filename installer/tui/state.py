@@ -19,9 +19,6 @@ class WizardState:
     free_space_start_bytes: int | None = None
     free_space_size_bytes: int | None = None
     free_space_at_disk_end: bool = False
-    existing_esp_path: str | None = None
-    existing_esp_start_bytes: int | None = None
-    existing_esp_size_bytes: int | None = None
 
     hostname: str = ""
     username: str = ""

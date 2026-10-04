@@ -1,21 +1,15 @@
 #!/bin/bash
 # Adds another OS's UEFI bootloader (e.g. Windows) to the Limine boot
-# menu, for a free-space (dual-boot) install where sobarch's /boot IS
-# the shared EFI System Partition (ESP) -- see docs/DECISIONS.md and
-# website/content/docs/installer/dual-boot.md. Interactive by design
+# menu, for a free-space (dual-boot) install. sobarch always has its
+# own ESP (mounted at /boot) there, so the other OS's bootloader lives
+# on a different EFI System Partition: this script finds those other
+# ESPs, mounts each read-only, scans it for *.efi applications, and
+# writes a Limine chainload entry addressing the partition by its GPT
+# partition GUID (guid(<PARTUUID>):/path). Interactive by design
 # (asks which detected .efi application to add), so this is a manual,
 # post-first-boot command (`sudo limine-add-os-entry.sh`), never run
 # from the scripted installer pipeline (install_runner.py's chroot
 # steps have no TTY to prompt on).
-#
-# Scans the shared ESP's filesystem for *.efi applications rather than
-# parsing efibootmgr's NVRAM boot-entry device-path binary format:
-# sobarch's own Limine binaries and the other OS's bootloader both live
-# as plain files on the same mounted /boot, so a filesystem scan finds
-# exactly what a Limine `boot():/path` chainload entry needs (see
-# limine-theme-setup.sh's own use of that same boot():/path syntax),
-# with far less to get wrong in bash than decoding NVRAM device paths.
-# This also means no efibootmgr dependency.
 #
 # UEFI-only, matching disk_probe.py's own scope cut (free-space
 # installs are never offered on a BIOS/MBR disk), so unlike its
@@ -35,31 +29,44 @@ fi
 
 LIMINE_CONF="/boot/EFI/BOOT/limine.conf"
 
-# sobarch's own Limine binaries (archinstall's _add_limine_bootloader()
-# with bootloader_config.removable: true writes here), never offered as
-# something to chainload into.
-OWN_EFI_PATHS=(
-    "/boot/EFI/BOOT/BOOTX64.EFI"
-    "/boot/EFI/BOOT/BOOTIA32.EFI"
-)
+ESP_PARTTYPE="c12a7328-f81f-11d2-ba4b-00a0c93ec93b"
+own_esp="$(findmnt -no SOURCE /boot)"
 
-candidates=()
-while IFS= read -r path; do
-    is_own=false
-    for own in "${OWN_EFI_PATHS[@]}"; do
-        [ "$path" = "$own" ] && is_own=true
+scan_root="$(mktemp -d)"
+cleanup() {
+    for mnt in "$scan_root"/*/; do
+        if [ -d "$mnt" ] && mountpoint -q "$mnt"; then umount "$mnt" || true; fi
     done
-    "$is_own" || candidates+=("$path")
-done < <(find /boot -iname "*.efi" -type f | sort)
+    # rmdir, never rm -rf: a mount that failed to unmount must not be
+    # recursed into.
+    rmdir "$scan_root"/* "$scan_root" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+# One entry per candidate: "<partuuid>|<path on that ESP>"
+candidates=()
+n=0
+while read -r dev parttype partuuid; do
+    [ "${parttype,,}" = "$ESP_PARTTYPE" ] || continue
+    [ "$dev" = "$own_esp" ] && continue
+    [ -n "$partuuid" ] || continue
+    n=$((n + 1))
+    mnt="$scan_root/$n"
+    mkdir -p "$mnt"
+    mount -o ro "$dev" "$mnt" 2>/dev/null || continue
+    while IFS= read -r path; do
+        candidates+=("$partuuid|${path#"$mnt"}")
+    done < <(find "$mnt" -iname "*.efi" -type f | sort)
+done < <(lsblk -rnpo PATH,PARTTYPE,PARTUUID)
 
 if [ "${#candidates[@]}" -eq 0 ]; then
-    echo "limine-add-os-entry.sh: no other bootloader found on /boot." >&2
+    echo "limine-add-os-entry.sh: no other bootloader found on any other EFI System Partition." >&2
     exit 1
 fi
 
-echo "Other bootloaders found on /boot:"
+echo "Other bootloaders found:"
 for i in "${!candidates[@]}"; do
-    printf '  %d) %s\n' "$((i + 1))" "${candidates[$i]}"
+    printf '  %d) %s (partition %s)\n' "$((i + 1))" "${candidates[$i]#*|}" "${candidates[$i]%%|*}"
 done
 
 read -rp "Add which one to the Limine boot menu? [1-${#candidates[@]}]: " choice
@@ -67,15 +74,12 @@ if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#c
     echo "limine-add-os-entry.sh: invalid choice." >&2
     exit 1
 fi
-chosen_path="${candidates[$((choice - 1))]}"
+chosen="${candidates[$((choice - 1))]}"
+chosen_partuuid="${chosen%%|*}"
+chosen_path="${chosen#*|}"
 
 read -rp "Entry name to show in the boot menu [Windows]: " entry_name
 entry_name="${entry_name:-Windows}"
-
-# boot():/path is relative to the partition Limine itself was loaded
-# from -- our shared ESP -- so stripping the /boot mountpoint prefix
-# from the absolute path gives exactly what that syntax expects.
-relative_path="${chosen_path#/boot}"
 
 # Slugged from the entry name, not a single fixed marker like
 # limine-theme-setup.sh/rescue-iso-setup.sh use: re-running this for a
@@ -88,7 +92,7 @@ END_MARKER="#### SOBARCH OS ENTRY END ($slug) ####"
 block="$START_MARKER
 /$entry_name
     protocol: efi
-    path: boot():${relative_path}
+    path: guid(${chosen_partuuid}):${chosen_path}
 $END_MARKER"
 
 if grep -qF "$START_MARKER" "$LIMINE_CONF"; then

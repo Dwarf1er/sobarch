@@ -1,11 +1,12 @@
 import os
 import re
 import subprocess
+from pathlib import PurePosixPath
 
 from rich.text import Text
 from textual import work
 from textual.app import ComposeResult
-from textual.widgets import OptionList, RichLog, Static
+from textual.widgets import Input, OptionList, RichLog, Static
 from textual.widgets.option_list import Option
 
 from config_gen import (
@@ -17,6 +18,7 @@ from config_gen import (
     write_profile_selection,
     write_security_flags,
 )
+from disks import list_disks
 from install_runner import InstallError, run_install
 from profiles_data import resolve_selection
 from sections.base import Section
@@ -64,27 +66,72 @@ class InstallSection(Section):
         yield Static("", id="summary")
         yield OptionList(id="install-actions")
         yield Static("", id="install-note", classes="note")
+        yield Input(placeholder="type the disk name to confirm", compact=True, id="install-confirm")
         yield RichLog(id="log", max_lines=500, wrap=True, min_width=1, markup=False)
 
     def on_mount(self) -> None:
         self.query_one("#log").display = False
+        self.query_one("#install-confirm").display = False
         self._set_actions()
 
     def _can_install(self) -> bool:
         return not self.sobarch_app.dry_run and os.geteuid() == 0
 
-    def _set_actions(self, *, confirm: bool = False) -> None:
+    def _set_actions(self) -> None:
         actions = self.query_one("#install-actions", OptionList)
         actions.clear_options()
         options = [Option("Save configuration", id="save")]
         if self._can_install():
-            if confirm:
-                disk = self.sobarch_app.state.disk_device
-                options.append(Option(Text(f"Confirm: install now and modify {disk}", style="bold red"), id="install"))
-            else:
-                options.append(Option("Install now", id="install"))
+            options.append(Option("Install now", id="install"))
         actions.add_options(options)
-        actions.highlighted = len(options) - 1 if confirm else 0
+        actions.highlighted = 0
+
+    def _confirm_name(self) -> str:
+        return PurePosixPath(self.sobarch_app.state.disk_device or "").name
+
+    def _begin_confirm(self) -> None:
+        state = self.sobarch_app.state
+        disk = state.disk_device
+        existing = next((d.partitions for d in list_disks() if d.path == disk), ())
+        warning = Text()
+        if state.free_space_install:
+            warning.append(f"New partitions will be created in the free space on {disk}.\n", style="bold red")
+            warning.append("Existing partitions are left untouched.\n")
+        else:
+            warning.append(f"ALL DATA ON {disk} WILL BE ERASED.\n", style="bold red")
+            if existing:
+                warning.append("Partitions that will be destroyed:\n")
+                for line in existing:
+                    warning.append(f"  {line}\n")
+        warning.append(f"Type {self._confirm_name()!r} and press Enter to install, Esc to cancel.")
+        self.query_one("#install-note", Static).update(warning)
+        confirm = self.query_one("#install-confirm", Input)
+        confirm.value = ""
+        confirm.display = True
+        confirm.focus()
+
+    def _cancel_confirm(self) -> None:
+        self._confirming = False
+        confirm = self.query_one("#install-confirm", Input)
+        confirm.display = False
+        confirm.value = ""
+        self.query_one("#install-note", Static).update("")
+        self.query_one("#install-actions", OptionList).focus()
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        if event.input.id != "install-confirm":
+            return
+        event.stop()
+        if not self._confirming:
+            return
+        if event.value.strip() != self._confirm_name():
+            self.query_one("#install-note", Static).update(
+                Text(f"Doesn't match. Type {self._confirm_name()!r} exactly, or press Esc to cancel.", style="red")
+            )
+            return
+        self._confirming = False
+        event.input.display = False
+        self._start_install()
 
     def on_show(self) -> None:
         if self.running:
@@ -112,6 +159,7 @@ class InstallSection(Section):
             summary.append(f"{key:<12}", style="dim")
             summary.append(f"{value}\n")
         self.query_one("#summary", Static).update(summary)
+        self._cancel_confirm()
 
         note = self.query_one("#install-note", Static)
         if self.sobarch_app.dry_run:
@@ -120,7 +168,6 @@ class InstallSection(Section):
             note.update("Root privileges are required to install; only saving the generated config is available.")
         else:
             note.update("")
-        self._confirming = False
         self._set_actions()
 
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
@@ -137,11 +184,8 @@ class InstallSection(Section):
         if action == "save":
             self._save_configuration()
         elif action == "install":
-            if not self._confirming:
-                self._confirming = True
-                self._set_actions(confirm=True)
-                return
-            self._start_install()
+            self._confirming = True
+            self._begin_confirm()
         elif action == "reboot":
             subprocess.run(["systemctl", "reboot"])
         elif action == "quit":
@@ -150,8 +194,7 @@ class InstallSection(Section):
     def on_key(self, event) -> None:
         if event.key == "escape" and self._confirming:
             event.stop()
-            self._confirming = False
-            self._set_actions()
+            self._cancel_confirm()
 
     def _save_configuration(self) -> None:
         app = self.sobarch_app

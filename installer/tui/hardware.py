@@ -22,6 +22,9 @@ class HardwareInfo:
     gpu_packages: list[str]
     nvidia_present: bool
     nvidia_proprietary_driver: bool
+    # Maxwell/Pascal/Volta: needs the vendored nvidia-580xx-* AUR
+    # packages, built after archinstall (not installable via pacstrap).
+    nvidia_legacy_580xx: bool
     bluetooth_detected: bool
     is_uefi: bool
 
@@ -58,6 +61,7 @@ def detect_hardware(script_path: Path = HARDWARE_DETECT_SCRIPT) -> HardwareInfo:
         gpu_packages=values.get("GPU_PACKAGES", "").split(),
         nvidia_present=_parse_bool(values.get("NVIDIA_PRESENT", "false")),
         nvidia_proprietary_driver=_parse_bool(values.get("NVIDIA_PROPRIETARY_DRIVER", "false")),
+        nvidia_legacy_580xx=_parse_bool(values.get("NVIDIA_LEGACY_580XX", "false")),
         bluetooth_detected=_parse_bool(values.get("BLUETOOTH_DETECTED", "false")),
         is_uefi=EFI_VARS_DIR.is_dir(),
     )
