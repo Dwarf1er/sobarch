@@ -48,7 +48,7 @@ PROFILES: tuple[Profile, ...] = (
         "Gaming",
         "gaming",
         _pkgs("gamescope", "lutris", "mangohud", "prismlauncher", "protontricks", "steam")
-        + _pkgs("protonup-qt-bin", aur=True),
+        + _pkgs("gale-bin", "protonup-qt-bin", aur=True),
     ),
     Profile(
         "Creative",

@@ -31,7 +31,7 @@ delayed isn't actually avoidable if any of it happened during install.
 | Profile | Packages |
 | --- | --- |
 | **Developer** | `mise`, `presenterm` |
-| **Gaming** | `gamescope`, `lutris`, `mangohud`, `prismlauncher`, `protontricks`, `steam`, `protonup-qt-bin` (AUR) |
+| **Gaming** | `gamescope`, `lutris`, `mangohud`, `prismlauncher`, `protontricks`, `steam`, `gale-bin` (AUR), `protonup-qt-bin` (AUR) |
 | **Creative** | `audacity`, `calf`, `easyeffects`, `gimp`, `inkscape`, `lsp-plugins`, `obs-studio`, `shotcut` |
 | **Maker / 3D Printing** | `blender`, `freecad`, `orca-slicer-bin` (AUR) |
 | **Virtualization** | `quickemu-git` (AUR), `quickgui-bin` (AUR) |
