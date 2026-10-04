@@ -7,36 +7,80 @@ on:
       - 'packages/aur/**'
   workflow_dispatch: {}
 
+# pull-requests: write lets the jobs comment their results on the PR.
+# On workflow_dispatch (how aur.yml triggers this for bot-opened PRs,
+# since GITHUB_TOKEN-created PRs don't fire pull_request) the PR is
+# looked up by branch name.
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   pkgbuild-validate:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
       - name: Install validate dependencies
-        run: pacman -Sy --needed --noconfirm namcap
+        run: pacman -Sy --needed --noconfirm namcap github-cli
       - name: Create build user
         run: |
           useradd -m builder
           chown -R builder:builder .
       - name: Validate vendored PKGBUILDs
-        run: runuser -u builder -- .github/scripts/validate-vendored-pkgbuilds.sh
+        id: validate
+        run: |
+          set +e
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          # Only the packages this PR touches; empty means check all
+          mapfile -t pkgs < <(.github/scripts/changed-aur-packages.sh)
+          runuser -u builder -- .github/scripts/validate-vendored-pkgbuilds.sh "${pkgs[@]}" 2>&1 | tee validate.log
+          echo "rc=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+      - name: Comment results on PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TITLE: pkgbuild-validate
+        run: .github/scripts/comment-check-results.sh validate.log
+      - name: Fail if validation failed
+        if: steps.validate.outputs.rc != '0'
+        run: exit 1
 
   security-scan:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
       - name: Install build dependencies
         run: pacman -Sy --needed --noconfirm rust clang openssl git
       - name: Build aur-scan
         run: .github/scripts/build-aur-scan.sh /usr/local/bin/aur-scan
       - name: Scan vendored packages
         run: |
-          for dir in packages/aur/*/; do
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          mapfile -t pkgs < <(.github/scripts/changed-aur-packages.sh)
+          if ((${#pkgs[@]})); then
+            dirs=("${pkgs[@]/#/packages/aur/}")
+            dirs=("${dirs[@]/%//}")
+          else
+            dirs=(packages/aur/*/)
+          fi
+          for dir in "${dirs[@]}"; do
             [[ -d "$dir" ]] || continue
             echo "== $(basename "$dir") =="
             # Advisory only, same as namcap: findings need a human's
             # judgment, never block the check on their own.
             aur-scan scan "$dir" --format text || true
-          done
+          done 2>&1 | tee scan.log
+      - name: Comment results on PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TITLE: security-scan
+        run: |
+          pacman -Sy --needed --noconfirm github-cli
+          .github/scripts/comment-check-results.sh scan.log

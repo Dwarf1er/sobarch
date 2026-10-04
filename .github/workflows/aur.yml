@@ -9,6 +9,7 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  actions: write
 
 jobs:
   check:
@@ -92,9 +93,15 @@ jobs:
           {
             echo "Automated update of \`$PKG\` to \`$newver\`, fetched from its AUR git repo."
             echo
-            echo "Requires human review before merge (no auto-merge configured); check the diff for anything beyond the version bump before approving. namcap/aur-scan results are on the Checks tab, run automatically against this PR."
+            echo "Requires human review before merge (no auto-merge configured); check the diff for anything beyond the version bump before approving. namcap/aur-scan results are posted as comments on this PR once the Checks workflow finishes."
           } > pr-body.txt
           gh pr create --title "aur: update $PKG to $newver" --head "$branch" --base master --body-file pr-body.txt
+
+          # A PR opened with GITHUB_TOKEN never fires pull_request
+          # workflows (GitHub's recursion guard), but workflow_dispatch
+          # is exempt. Run the checks on the PR branch explicitly; they
+          # attach to its head commit and comment on the PR themselves.
+          gh workflow run checks.yml --ref "$branch"
 
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
           echo "created=true" >> "$GITHUB_OUTPUT"

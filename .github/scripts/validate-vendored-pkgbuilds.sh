@@ -14,6 +14,9 @@
 #     deliberately sets options=(!debug) on some packages, which
 #     namcap flags), same treatment checks.yml gives ks-aur-scanner.
 #
+# Takes optional package names to restrict the run to; with none, every
+# packages/aur/*/ directory is checked.
+#
 # Must run as a non-root user: makepkg refuses outright to run as
 # root.
 
@@ -21,8 +24,15 @@ set -uo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
+if (($#)); then
+    dirs=("${@/#/packages/aur/}")
+    dirs=("${dirs[@]/%//}")
+else
+    dirs=(packages/aur/*/)
+fi
+
 mismatches=()
-for dir in packages/aur/*/; do
+for dir in "${dirs[@]}"; do
     [[ -d "$dir" ]] || continue
     name="$(basename "$dir")"
     committed="$dir/.SRCINFO"
