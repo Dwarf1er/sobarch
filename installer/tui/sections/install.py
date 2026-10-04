@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 
 from rich.text import Text
@@ -21,6 +22,24 @@ from profiles_data import resolve_selection
 from sections.base import Section
 
 _SPINNER = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+
+# Anything left after Text.from_ansi has taken the colour codes it
+# understands: other escape sequences (cursor movement, erase) and bare
+# control characters, which a terminal would act on instead of print.
+_ESCAPE_RE = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|[@-Z\\-_]|\][^\x07]*\x07)")
+_CONTROL_RE = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
+
+
+def _clean_line(line: str) -> Text:
+    """Installer output is written for a real terminal: ANSI colours,
+    carriage-return progress redraws, tabs. Rendered raw, those corrupt
+    the pane, so keep only what a redraw would finally leave visible."""
+    parts = [part for part in line.split("\r") if part.strip()]
+    line = parts[-1] if parts else ""
+    line = _ESCAPE_RE.sub(lambda m: m.group(0) if m.group(0).endswith("m") else "", line)
+    text = Text.from_ansi(line.expandtabs(4))
+    text.plain = _CONTROL_RE.sub("", text.plain) if _CONTROL_RE.search(text.plain) else text.plain
+    return text
 
 
 def _profiles_summary(state) -> str:
@@ -45,7 +64,7 @@ class InstallSection(Section):
         yield Static("", id="summary")
         yield OptionList(id="install-actions")
         yield Static("", id="install-note", classes="note")
-        yield RichLog(id="log", max_lines=500, wrap=True)
+        yield RichLog(id="log", max_lines=500, wrap=True, min_width=1, markup=False)
 
     def on_mount(self) -> None:
         self.query_one("#log").display = False
@@ -82,7 +101,7 @@ class InstallSection(Section):
             ("Keyboard", state.kb_layout),
             ("Language", state.sys_lang),
             ("Timezone", state.timezone),
-            ("Mirrors", state.mirror_region or "automatic"),
+            ("Mirrors", ", ".join(state.mirror_regions) or "automatic"),
             ("Rescue ISO", "yes" if state.rescue_media else "no"),
             ("SSH", "enabled" if state.ssh_enabled else "disabled"),
             ("Git config", f"{state.git_name} <{state.git_email}>" if state.git_name else "skipped"),
@@ -188,7 +207,7 @@ class InstallSection(Section):
         self._finish(True, "", None)
 
     def _on_output(self, line: str) -> None:
-        self.app.call_from_thread(self.query_one("#log", RichLog).write, line)
+        self.app.call_from_thread(self.query_one("#log", RichLog).write, _clean_line(line))
 
     def _finish(self, ok: bool, message: str, log_path) -> None:
         def update() -> None:

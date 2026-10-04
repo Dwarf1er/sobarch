@@ -6,7 +6,7 @@
     "kb_layout": "us",
     "sys_lang": "en_US.UTF-8",
     "timezone": "UTC",
-    "mirror_region": "",
+    "mirror_regions": [],
     "rescue_media": true,
     "ssh_enabled": false,
     "encryption_password": "",

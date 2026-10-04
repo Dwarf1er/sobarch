@@ -93,6 +93,25 @@ SelectionList:focus > .option-list--option-highlighted {
     color: $background;
 }
 
+/* Checkbox glyph: the X is only visible when the row is selected */
+
+SelectionList > .selection-list--button {
+    color: $surface;
+    background: $surface;
+}
+
+SelectionList > .selection-list--button-highlighted {
+    color: $surface;
+    background: $surface;
+}
+
+SelectionList > .selection-list--button-selected,
+SelectionList > .selection-list--button-selected-highlighted {
+    color: $success;
+    background: $surface;
+    text-style: bold;
+}
+
 /* Rows and fields */
 
 Row {
@@ -127,9 +146,13 @@ SelectCurrent {
     padding: 0 1;
 }
 
+/* After the generic OptionList rule above, which would otherwise clamp
+   the popup to its one-row parent via max-height: 100%. */
 SelectOverlay {
     border: solid $primary;
     background: $background;
+    height: auto;
+    max-height: 12;
 }
 
 Toggle {
@@ -203,6 +226,19 @@ Toggle:disabled {
 
 #profiles:disabled {
     opacity: 50%;
+}
+
+/* Locale */
+
+#mirror-list {
+    height: 1fr;
+    min-height: 5;
+}
+
+/* Network */
+
+#net-actions, #network-choice {
+    margin-bottom: 1;
 }
 
 /* Install */

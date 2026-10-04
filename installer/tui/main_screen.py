@@ -166,4 +166,9 @@ class MainScreen(Screen):
             return
         steps = self.query_one("#steps", OptionList)
         current = steps.highlighted or 0
-        steps.highlighted = max(0, min(len(self._sections) - 1, current + delta))
+        target = max(0, min(len(self._sections) - 1, current + delta))
+        steps.highlighted = target
+        # Show the section now rather than waiting for the highlight
+        # event, so its widgets are on screen when focus moves into it.
+        self.query_one("#sections", ContentSwitcher).current = self._sections[target].id
+        self.call_after_refresh(self._focus_section)

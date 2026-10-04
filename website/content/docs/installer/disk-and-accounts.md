@@ -22,7 +22,8 @@ steps are:
   LUKS encryption toggle and passphrase
 - **Account**: hostname, username, and password
 - **Locale**: keyboard layout, system language, timezone, and mirror
-  region
+  regions (pick any number, or none to keep the live ISO's
+  speed-ranked mirrors)
 - **Options**: [rescue media](../rescue-media/), the optional SSH
   toggle, and an optional git name and email
 - **Software**: optional [software profiles](../software-profiles/)

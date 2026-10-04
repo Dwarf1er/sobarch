@@ -51,7 +51,7 @@ for a complete example. Every field below is optional except `disk`,
 | `kb_layout` | `"us"` | |
 | `sys_lang` | `"en_US.UTF-8"` | |
 | `timezone` | `"UTC"` | |
-| `mirror_region` | `""` (automatic) | A country name from `archinstall`'s own mirror-status data. |
+| `mirror_regions` | `[]` (automatic) | A list of country names from `archinstall`'s own mirror-status data. The older single-string `mirror_region` is still accepted. |
 | `rescue_media` | `true` | |
 | `ssh_enabled` | `false` | |
 | `encryption_password` | `""` (disabled) | Plaintext; a non-empty value LUKS-encrypts the root (btrfs) partition and unlocks with this passphrase at boot. The ESP and any rescue-media partitions are never encrypted. |

@@ -37,10 +37,10 @@ class WizardState:
     sys_lang: str = "en_US.UTF-8"
     timezone: str = "UTC"
     # Empty means automatic: let the live ISO's own reflector-ranked
-    # mirrorlist stand, untouched (see config_gen.py). A non-empty value
-    # is a country name from archinstall's own mirror-status data,
+    # mirrorlist stand, untouched (see config_gen.py). Otherwise country
+    # names from archinstall's own mirror-status data, all of them
     # overriding it with a fresh, region-scoped speed test instead.
-    mirror_region: str = ""
+    mirror_regions: list[str] = field(default_factory=list)
 
     rescue_media: bool = True
 

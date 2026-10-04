@@ -89,6 +89,18 @@ def _resolve_profiles(slugs: object) -> dict[str, list[str]]:
     return selection
 
 
+def _resolve_mirror_regions(data: dict) -> list[str]:
+    """`mirror_regions` is a list of region names; the single-string
+    `mirror_region` from before multiple regions were supported still
+    works. Empty or absent means automatic."""
+    value = data.get("mirror_regions", data.get("mirror_region", []))
+    if isinstance(value, str):
+        value = [value] if value else []
+    if not isinstance(value, list) or not all(isinstance(region, str) for region in value):
+        raise UnattendedConfigError("'mirror_regions' must be a list of region names")
+    return [region for region in dict.fromkeys(value) if region]
+
+
 def build_state(data: dict) -> WizardState:
     missing = [key for key in _REQUIRED_FIELDS if not data.get(key)]
     if missing:
@@ -126,7 +138,7 @@ def build_state(data: dict) -> WizardState:
         kb_layout=str(data.get("kb_layout", "us")),
         sys_lang=str(data.get("sys_lang", "en_US.UTF-8")),
         timezone=str(data.get("timezone", "UTC")),
-        mirror_region=str(data.get("mirror_region", "")),
+        mirror_regions=_resolve_mirror_regions(data),
         rescue_media=bool(data.get("rescue_media", True)),
         ssh_enabled=bool(data.get("ssh_enabled", False)),
         disk_encryption_enabled=bool(data.get("encryption_password")),

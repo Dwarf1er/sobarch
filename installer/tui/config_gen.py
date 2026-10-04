@@ -213,12 +213,12 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
     base["locale_config"]["sys_lang"] = state.sys_lang
     base["timezone"] = state.timezone
 
-    if state.mirror_region:
+    if state.mirror_regions:
         # The list of URLs archinstall's MirrorRegion also carries is
-        # unused by its own region lookup (it re-fetches URLs for the
+        # unused by its own region lookup (it re-fetches URLs for each
         # named region live, from the same mirror-status data the TUI
-        # offered this name from), so an empty list here is enough.
-        base["mirror_config"]["mirror_regions"] = {state.mirror_region: []}
+        # offered these names from), so an empty list per region is enough.
+        base["mirror_config"]["mirror_regions"] = {region: [] for region in state.mirror_regions}
 
     # Opportunistic, not ISO-detection: a plain filesystem-presence check
     # for a local package repo, baked in only by the prebuilt-ISO build
