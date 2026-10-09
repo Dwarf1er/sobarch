@@ -2,10 +2,8 @@
 # Builds ks-aur-scanner's aur-scan binary from source into DEST.
 # https://github.com/KiefStudioMA/ks-aur-scanner ships no prebuilt
 # binary on any release (checked every tag), so this is the only way
-# to get it. Shared by .github/workflows/aur.yml and checks.yml so the
-# pinned version and build recipe live in exactly one place --
-# aur-scan.version, next to this script -- instead of two workflow
-# files drifting independently.
+# to get it. Used by .github/workflows/aur.yml; the
+# pinned version lives in aur-scan.version, next to this script.
 #
 # Only builds the aur-scan binary (crate aur-scanner-cli), not the
 # aur-scan-wrap/aur-scan-hook shell-integration binaries this repo has

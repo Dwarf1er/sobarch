@@ -6,13 +6,15 @@
 # .github/workflows/aur.yml to pick which packages need
 # apply-aur-update.sh.
 #
-# -git packages are skipped: same reasoning as aur-sync.sh's own
-# pinned_version() note (that script's pinned-version comparison is
-# unreliable for a VCS package once installed, since its pkgver()
-# recomputes from a live clone at build time; here it means AUR's
-# Version field for one is just whatever the maintainer last set by
-# hand, not a real signal that upstream moved). quickemu-git is
-# currently the only vendored package this excludes.
+# -git packages can't use the version comparison: their pkgver()
+# recomputes from a live clone at build time (see aur-sync.sh's own
+# pinned_version() note), so AUR's Version field is just whatever the
+# maintainer last set by hand, not a real signal that upstream moved.
+# What can still matter is the maintainer changing the PKGBUILD itself
+# (new dependency, source URL, build fix), so each is checked by
+# content instead: a shallow clone of its AUR repo, compared against
+# the vendored copy with pkgver/pkgrel lines and .SRCINFO ignored.
+# Prints "name content-changed" for one that differs.
 
 set -euo pipefail
 shopt -s inherit_errexit
@@ -32,10 +34,14 @@ pinned_version() {
 }
 
 names=()
+git_names=()
 for dir in packages/aur/*/; do
     name="$(basename "$dir")"
-    [[ "$name" == *-git ]] && continue
-    names+=("$name")
+    if [[ "$name" == *-git ]]; then
+        git_names+=("$name")
+    else
+        names+=("$name")
+    fi
 done
 
 query=""
@@ -56,3 +62,29 @@ for name in "${names[@]}"; do
         echo "$name $pinned $upstream"
     fi
 done
+
+# Copies a package dir to $2 with the lines a VCS package's own
+# bookkeeping rewrites (pkgver/pkgrel) and the regenerated .SRCINFO
+# removed, so what's left is only the maintainer's actual content.
+normalized_copy() {
+    mkdir -p "$2"
+    find "$1" -mindepth 1 -maxdepth 1 -not -name '.git' -not -name '.SRCINFO' -exec cp -a {} "$2/" \;
+    [[ -f "$2/PKGBUILD" ]] && sed -i -E '/^(pkgver|pkgrel)=/d' "$2/PKGBUILD"
+    return 0
+}
+
+if ((${#git_names[@]})); then
+    work="$(mktemp -d)"
+    trap 'rm -rf "$work"' EXIT
+    for name in "${git_names[@]}"; do
+        if ! git clone -q --depth 1 "https://aur.archlinux.org/${name}.git" "$work/$name.upstream" 2>/dev/null; then
+            echo "check-aur-updates: could not clone $name from AUR (skipping)" >&2
+            continue
+        fi
+        normalized_copy "$work/$name.upstream" "$work/$name.a"
+        normalized_copy "packages/aur/$name" "$work/$name.b"
+        if ! diff -rq "$work/$name.a" "$work/$name.b" >/dev/null; then
+            echo "$name content-changed"
+        fi
+    done
+fi

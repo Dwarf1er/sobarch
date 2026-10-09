@@ -9,7 +9,6 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
-  actions: write
 
 jobs:
   check:
@@ -19,47 +18,42 @@ jobs:
       packages: ${{ steps.check.outputs.packages }}
     steps:
       - name: Install check dependencies
-        run: pacman -Sy --needed --noconfirm curl jq git
-      - uses: actions/checkout@v7.0.1
-      - id: check
-        run: |
-          scripts/aur-sync/check-aur-updates.sh > outdated.txt
-          json="$(cut -d' ' -f1 outdated.txt | jq -R -s -c 'split("\n") | map(select(length > 0))')"
-          echo "packages=$json" >> "$GITHUB_OUTPUT"
-
-  update:
-    needs: check
-    if: needs.check.outputs.packages != '[]'
-    runs-on: ubuntu-latest
-    container: archlinux:base-devel
-    strategy:
-      fail-fast: false
-      matrix:
-        package: ${{ fromJson(needs.check.outputs.packages) }}
-    steps:
-      - name: Install update dependencies
-        run: pacman -Sy --needed --noconfirm git jq github-cli
-      - uses: actions/checkout@v7.0.1
-      - name: Trust workspace as root despite the build user's chown below
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - name: Create build user
-        run: |
-          useradd -m builder
-          chown -R builder:builder .
-      - name: Stage update
-        env:
-          PKG: ${{ matrix.package }}
-        run: runuser -u builder -- scripts/aur-sync/apply-aur-update.sh "$PKG"
-      - name: Check for actual changes
-        id: diff
+        if: steps.diff.outputs.changed == 'true'
+        run: pacman -Sy --needed --noconfirm namcap
+      # The compiled scanner only changes when aur-scan.version does, so
+      # the rust toolchain install and ~2.5 minute build happen once per
+      # version bump instead of once per matrix package per run.
+      - name: Cache aur-scan
+        if: steps.diff.outputs.changed == 'true'
+        id: aur-scan-cache
+        uses: actions/cache@v4.2.0
+        with:
+          path: /usr/local/bin/aur-scan
+          key: aur-scan-${{ hashFiles('.github/scripts/aur-scan.version') }}
+      - name: Validate PKGBUILD
+        if: steps.diff.outputs.changed == 'true'
+        id: validate
         env:
           PKG: ${{ matrix.package }}
         run: |
-          if git diff --quiet -- "packages/aur/$PKG"; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+          set +e
+          runuser -u builder -- .github/scripts/validate-vendored-pkgbuilds.sh "$PKG" 2>&1 | tee "$RUNNER_TEMP/validate.log"
+          echo "rc=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+      - name: Security scan
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          PKG: ${{ matrix.package }}
+        run: |
+          if [[ "${{ steps.aur-scan-cache.outputs.cache-hit }}" != 'true' ]]; then
+            pacman -S --needed --noconfirm rust clang openssl
+            .github/scripts/build-aur-scan.sh /usr/local/bin/aur-scan
           fi
+          # Advisory only, same as namcap: findings need a human's
+          # judgment, never block the update on their own.
+          aur-scan scan "packages/aur/$PKG/" --format text 2>&1 | tee "$RUNNER_TEMP/scan.log" || true
+      - name: Fail if validation failed
+        if: steps.diff.outputs.changed == 'true' && steps.validate.outputs.rc != '0'
+        run: exit 1
       - name: Open pull request
         if: steps.diff.outputs.changed == 'true'
         id: pr
@@ -70,6 +64,14 @@ jobs:
           set -euo pipefail
           newver="$(awk -F' = ' '/^\tpkgver = /{v=$2} /^\tpkgrel = /{r=$2} END{print v"-"r}' "packages/aur/$PKG/.SRCINFO")"
           branch="aur-update/${PKG}-${newver//:/-}"
+          title="aur: update $PKG to $newver"
+          desc="Automated update of \`$PKG\` to \`$newver\`, fetched from its AUR git repo."
+          if [[ "$PKG" == *-git ]]; then
+            # A VCS package's pkgver is stale bookkeeping, not a real
+            # version; the update is the maintainer's PKGBUILD content.
+            title="aur: content update for $PKG"
+            desc="Automated content update of \`$PKG\` (VCS package, so no meaningful version), fetched from its AUR git repo."
+          fi
 
           if [[ -n "$(gh pr list --state open --head "$branch" --json number --jq '.[0].number')" ]]; then
             echo "PR for $branch already open, skipping"
@@ -81,7 +83,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -B "$branch"
           git add "packages/aur/$PKG"
-          git commit -m "aur: update $PKG to $newver"
+          git commit -m "$title"
           # Force: this branch name is entirely derived from
           # $PKG+$newver above, so it's owned by this automation alone
           # -- a stale ref left by an earlier run that pushed but
@@ -91,17 +93,23 @@ jobs:
           git push --force origin "$branch"
 
           {
-            echo "Automated update of \`$PKG\` to \`$newver\`, fetched from its AUR git repo."
+            echo "$desc"
             echo
-            echo "Requires human review before merge (no auto-merge configured); check the diff for anything beyond the version bump before approving. namcap/aur-scan results are posted as comments on this PR once the Checks workflow finishes."
+            echo "Requires human review before merge (no auto-merge configured); check the diff for anything beyond the version bump before approving. namcap and aur-scan results for this package are below (advisory; a stale \`.SRCINFO\` would have failed the run before this PR opened)."
+            for check in validate scan; do
+              echo
+              echo "<details><summary>$check</summary>"
+              echo
+              echo '```'
+              # PR bodies cap at 65536 chars
+              tail -c 25000 "$RUNNER_TEMP/$check.log"
+              echo '```'
+              echo "</details>"
+            done
+            echo
+            echo "[Workflow run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
           } > pr-body.txt
-          gh pr create --title "aur: update $PKG to $newver" --head "$branch" --base master --body-file pr-body.txt
-
-          # A PR opened with GITHUB_TOKEN never fires pull_request
-          # workflows (GitHub's recursion guard), but workflow_dispatch
-          # is exempt. Run the checks on the PR branch explicitly; they
-          # attach to its head commit and comment on the PR themselves.
-          gh workflow run checks.yml --ref "$branch"
+          gh pr create --title "$title" --head "$branch" --base master --body-file pr-body.txt
 
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
           echo "created=true" >> "$GITHUB_OUTPUT"

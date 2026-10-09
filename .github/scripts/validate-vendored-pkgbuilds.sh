@@ -12,7 +12,7 @@
 #   - Runs namcap against the PKGBUILD. Advisory only, never fails the
 #     run: namcap findings need a human's judgment (e.g. this repo
 #     deliberately sets options=(!debug) on some packages, which
-#     namcap flags), same treatment checks.yml gives ks-aur-scanner.
+#     namcap flags), same treatment aur.yml gives ks-aur-scanner.
 #
 # Takes optional package names to restrict the run to; with none, every
 # packages/aur/*/ directory is checked.
