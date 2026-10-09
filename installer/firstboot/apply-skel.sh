@@ -114,6 +114,21 @@ while IFS= read -r -d '' new_file; do
     esac
 done < <(find "$SKEL_SRC" -type f -print0)
 
+# GTK/libfm bookmarks only take absolute file:// URIs, so this one file
+# can't be a static skel entry (the path differs per user). Seeded once
+# on first run, never reconciled afterwards: it's the user's own list to
+# edit from PCManFM from then on. The directories themselves are created
+# by xdg-user-dirs at first graphical login, so they may not exist yet.
+if $first_run; then
+    bookmarks_tmp="$(mktemp)"
+    for d in Documents Downloads Music Pictures Videos; do
+        printf 'file://%s/%s\n' "$HOME" "$d"
+    done > "$bookmarks_tmp"
+    mkdir -p "$HOME/.config/gtk-3.0"
+    durable_replace 644 "$bookmarks_tmp" "$HOME/.config/gtk-3.0/bookmarks"
+    rm -f "$bookmarks_tmp"
+fi
+
 if ((${#conflicts[@]})); then
     echo "apply-skel: ${#conflicts[@]} file(s) have local changes that conflict with the new defaults;" \
         "new versions were written alongside as .sobarch-new (Sobarch -> Review Conflicts to resolve):"
