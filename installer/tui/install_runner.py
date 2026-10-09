@@ -13,6 +13,7 @@ of config_gen.py."""
 import re
 import shutil
 import subprocess
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -115,6 +116,10 @@ BASE_AUR_PACKAGES = _read_base_aur_packages()
 #   optional SSH component, reading the ssh-enabled
 #   flag write_security_flags() writes below. Same as
 #   install-profile-packages.sh above: no [Install] section, dispatcher-only.
+# - setup-rescue-iso.sh: fetches the rescue ISO onto the media
+#   rescue-iso-setup.sh formatted at install time, then adds its Limine
+#   entry. Needs network and is slow (~1.3GB), so like the two units
+#   above: no [Install] section, dispatcher-only.
 # - apply-git-setup.sh: generates an SSH key and applies the git
 #   identity collected by the TUI's Git screen. Needs no network
 #   (unlike apply-skel.sh's peers below), so it's boot-enabled too.
@@ -125,6 +130,7 @@ FIRSTBOOT_UNITS = [
     ("apply-skel.sh", "sobarch-firstboot-skel.service"),
     ("apply-security-baseline.sh", "sobarch-firstboot-security.service"),
     ("apply-git-setup.sh", "sobarch-firstboot-git.service"),
+    ("setup-rescue-iso.sh", "sobarch-firstboot-rescue.service"),
 ]
 # Subset of FIRSTBOOT_UNITS above that actually has an [Install] section
 # and should be started at boot. install-profile-packages.sh and
@@ -155,6 +161,42 @@ SOBARCH_DIR_IN_TARGET = Path("/etc/sobarch")
 # nothing left for install_runner.py itself to do for it.
 
 OutputCallback = Callable[[str], None]
+
+
+class _PhaseTimer:
+    """Records wall-clock time per install phase to the install log and
+    prints a summary at the end, so "why was this install slow" has a
+    measured answer instead of a guess."""
+
+    def __init__(self, log_file, on_output: OutputCallback):
+        self._log_file = log_file
+        self._on_output = on_output
+        self._phases: list[tuple[str, float]] = []
+        self._label: str | None = None
+        self._started = 0.0
+
+    def start(self, label: str) -> None:
+        self.stop()
+        self._label = label
+        self._started = time.monotonic()
+
+    def stop(self) -> None:
+        if self._label is None:
+            return
+        elapsed = time.monotonic() - self._started
+        self._phases.append((self._label, elapsed))
+        self._log_file.write(f"[timing] {self._label}: {elapsed:.1f}s\n")
+        self._log_file.flush()
+        self._label = None
+
+    def summary(self) -> None:
+        self.stop()
+        total = sum(elapsed for _, elapsed in self._phases)
+        lines = [f"  {label}: {elapsed:.0f}s" for label, elapsed in self._phases]
+        lines.append(f"  total: {total:.0f}s")
+        text = "Install timing:\n" + "\n".join(lines)
+        self._log_file.write(text + "\n")
+        self._on_output(text)
 
 
 class InstallError(Exception):
@@ -370,6 +412,9 @@ def run_install(
     with log_path.open("a") as log_file:
         log_file.write(f"\n----- archinstall run: {state.hostname} -----\n")
 
+        timer = _PhaseTimer(log_file, on_output)
+
+        timer.start("archinstall (partition, pacstrap, base config)")
         on_output(f"Running archinstall (log: {log_path})...")
         returncode = _run_logged(
             [
@@ -393,22 +438,26 @@ def run_install(
 
         _strip_live_only_sobarch_cache_repo()
 
+        timer.start("deploy aur-sync")
         on_output("Deploying the AUR sync mechanism...")
         returncode = _deploy_aur_sync(log_file, on_output)
         if returncode != 0:
             raise InstallError("failed to deploy aur-sync.sh", log_path)
 
+        timer.start("base package build/install")
         on_output("Building and installing sobarch-skel, sobarch-scripts, sobarch-limine-snapshots, and base-required AUR packages...")
         returncode = _build_and_install_base_packages(log_file, on_output)
         if returncode != 0:
             raise InstallError("failed to build/install base packages", log_path)
 
         if hardware.nvidia_legacy_580xx:
+            timer.start("NVIDIA 580xx build")
             on_output("Building the NVIDIA 580xx legacy driver (this takes a while)...")
             returncode = _install_nvidia_legacy_driver(log_file, on_output)
             if returncode != 0:
                 raise InstallError("failed to build/install the NVIDIA 580xx driver", log_path)
 
+        timer.start("first-boot unit deployment")
         write_firstboot_package_lists(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
         write_security_flags(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
         write_git_config(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
@@ -461,6 +510,7 @@ def run_install(
             env_updates["RESCUE_BOOT_MERGED"] = "true"
 
         for script in CHROOT_SETUP_SCRIPTS:
+            timer.start(script)
             on_output(f"Running {script} inside the new install...")
             script_path = CHROOT_SETUP_DIR_IN_TARGET / script
             returncode = _run_logged(
@@ -480,7 +530,9 @@ def run_install(
 
         shutil.rmtree(target_setup_dir, ignore_errors=True)
 
+        timer.start("unmount")
         on_output("Unmounting target...")
         subprocess.run(["umount", "-R", str(MOUNTPOINT)], check=True)
 
+        timer.summary()
         on_output("Installation complete.")

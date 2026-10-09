@@ -1,0 +1,11 @@
+[Unit]
+Description=Fetch the rescue ISO onto the rescue media
+ConditionPathExists=/etc/sobarch/rescue-pending
+After=sobarch-firstboot-packages.service
+
+[Service]
+Type=oneshot
+TimeoutStartSec=infinity
+Nice=10
+IOSchedulingClass=idle
+ExecStart=/usr/local/lib/sobarch/setup-rescue-iso.sh

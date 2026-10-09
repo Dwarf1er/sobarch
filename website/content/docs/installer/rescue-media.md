@@ -18,6 +18,11 @@ toggle in the installer's Options step if you're tight on disk space:
 - A larger ext4 partition holding the fetched Arch ISO itself, as a
   plain file.
 
+The installer only formats these partitions. The ISO itself (about 1.3GB) is
+downloaded in the background after first boot, once the network is up, so it
+doesn't hold up the install. The rescue entry appears in the boot menu once
+that download finishes.
+
 On a BIOS (non-UEFI) machine the layout is different, because an MBR
 disk allows only three primary partitions: there is no separate FAT32
 partition. The rescue kernel and initramfs are kept under

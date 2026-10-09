@@ -26,5 +26,6 @@ case "$action" in
     up|connectivity-change)
         systemctl start --no-block sobarch-firstboot-packages.service
         systemctl start --no-block sobarch-firstboot-security.service
+        systemctl start --no-block sobarch-firstboot-rescue.service
         ;;
 esac
