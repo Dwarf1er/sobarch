@@ -105,14 +105,28 @@ ensure_build_user() {
         --shell /usr/bin/nologin "$BUILD_USER"
 }
 
+# Runs a command and logs how long it took as "[timing] aur-sync <label>:
+# Ns", on stderr (fetch_repo's stdout is a captured return value). The
+# lines land in the same log install_runner.py's install.log already
+# captures aur-sync.sh's output into, to show where a slow install
+# actually spends its time. Returns the command's own exit status.
+timed() {
+    local label="$1" start=$SECONDS rc=0
+    shift
+    "$@" || rc=$?
+    echo "[timing] aur-sync $label: $((SECONDS - start))s" >&2
+    return "$rc"
+}
+
 fetch_repo() {
-    local dir
+    local dir start=$SECONDS
     dir="$(mktemp -d /var/tmp/sobarch-aur-sync-repo.XXXXXX)"
     # stderr, not stdout: this function's stdout is captured whole as
     # its return value (repo_dir="$(fetch_repo)"), so any status output
     # mixed into stdout here would corrupt that path.
     echo "aur-sync: fetching current repo state from ${REPO}@${BRANCH}..." >&2
     curl -fsSL --connect-timeout 20 --max-time 600 "$ARCHIVE_URL" | tar -xz -C "$dir" --strip-components=1
+    echo "[timing] aur-sync fetch repo: $((SECONDS - start))s" >&2
     echo "$dir"
 }
 
@@ -384,7 +398,7 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
         if ((${#deps[@]})); then
             mapfile -t missing_deps < <(pacman -T "${deps[@]}")
         fi
-        if ((${#missing_deps[@]})) && ! pacman_locked -S --needed --noconfirm "${missing_deps[@]}"; then
+        if ((${#missing_deps[@]})) && ! timed "$name build deps" pacman_locked -S --needed --noconfirm "${missing_deps[@]}"; then
             echo "aur-sync: $name failed to install dependencies (${missing_deps[*]})" >&2
             failures+=("$name (dependency install failed)")
             continue
@@ -399,18 +413,18 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
         # First real build this run: stand up the shared build root now
         # (see its own comment above for why this stays lazy).
         if [[ -z "$build_root_repo" ]]; then
-            ensure_build_user
-            ensure_makepkg_prereqs
+            timed "create build user" ensure_build_user
+            timed "install base-devel" ensure_makepkg_prereqs
             BUILD_ROOT="$(mktemp -d /var/tmp/sobarch-aur-sync-build.XXXXXX)"
             cleanup_paths+=("$BUILD_ROOT")
             build_root_repo="$BUILD_ROOT/repo"
-            cp -a "$repo_dir" "$build_root_repo"
-            chown -R "$BUILD_USER:$BUILD_USER" "$BUILD_ROOT"
+            timed "copy repo tree" cp -a "$repo_dir" "$build_root_repo"
+            timed "chown repo tree" chown -R "$BUILD_USER:$BUILD_USER" "$BUILD_ROOT"
         fi
 
         build_dir="$build_root_repo/${src#"$repo_dir"/}"
 
-        if ! runuser -u "$BUILD_USER" -- bash -c "cd '$build_dir' && makepkg --noconfirm --needed --clean"; then
+        if ! timed "$name makepkg" runuser -u "$BUILD_USER" -- bash -c "cd '$build_dir' && makepkg --noconfirm --needed --clean"; then
             echo "aur-sync: $name failed to build" >&2
             failures+=("$name (makepkg failed)")
             continue
@@ -439,10 +453,10 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
     # aur-sync pass touching several packages back to back.
     if $first_install; then
         install_result=0
-        pacman_locked -U --noconfirm --ask=4 "${overwrite_args[@]}" "${pkgfiles[@]}" || install_result=$?
+        timed "$name pacman -U" pacman_locked -U --noconfirm --ask=4 "${overwrite_args[@]}" "${pkgfiles[@]}" || install_result=$?
     else
         install_result=0
-        SNAP_PAC_SKIP=1 pacman_locked -U --noconfirm --ask=4 "${overwrite_args[@]}" "${pkgfiles[@]}" || install_result=$?
+        SNAP_PAC_SKIP=1 timed "$name pacman -U" pacman_locked -U --noconfirm --ask=4 "${overwrite_args[@]}" "${pkgfiles[@]}" || install_result=$?
     fi
 
     [[ -n "$build_dir" ]] && rm -rf "$build_dir"
