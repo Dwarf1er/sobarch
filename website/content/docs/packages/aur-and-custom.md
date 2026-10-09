@@ -36,7 +36,7 @@ on the AUR forever.
 | --- | --- | --- |
 | `localsend-bin` | Open-source, AirDrop-style file sharing | Every install |
 | `blesh-git` | ble.sh, the Bash line editor used by the [shell setup](../../shell-editor/terminal-and-shell/) | Every install |
-| `tinty-git` | Base16/Base24 colour scheme manager behind [theming](../../desktop/theming/) | Every install |
+| `tinty-bin` | Base16/Base24 colour scheme manager behind [theming](../../desktop/theming/); repackages upstream's prebuilt release binary | Every install |
 | `gale-bin` | Lightweight Thunderstore mod client | [Gaming profile](../../installer/software-profiles/) |
 | `protonup-qt-bin` | Installs Proton-GE for Steam and Wine-GE for Lutris | Gaming profile |
 | `orca-slicer-bin` | G-code slicer for 3D printers | Maker / 3D Printing profile |

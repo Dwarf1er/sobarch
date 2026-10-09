@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Lists every base16/base24/tinted8 scheme tinty knows about (populated
 # by `tinty install`, run self-healingly from hyprland.lua's autostart
-# hook on every login -- there is no separate tinty-git post-install
+# hook on every login -- there is no separate tinty post-install
 # step) and applies the chosen one. Each tinty
 # config.toml item's own `hook` (see
 # ~/.config/tinted-theming/tinty/config.toml) handles reloading the app

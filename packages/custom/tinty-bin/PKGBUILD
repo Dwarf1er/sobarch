@@ -1,0 +1,38 @@
+# Maintainer: Dwarf1er
+pkgname=tinty-bin
+# Unlike this repo's other custom packages, pkgver is upstream's real
+# release version, not a date: this repackages the prebuilt binary from
+# tinty's GitHub releases (the AUR has only tinty-git, a full cargo
+# build, ~15+ minutes on a laptop, which is too slow for the install
+# path). .github/scripts/update-tinty-bin.sh keeps pkgver and both
+# checksums current (run weekly by .github/workflows/aur.yml).
+pkgver=0.34.1
+pkgrel=1
+pkgdesc="A base16 and base24 color scheme manager (prebuilt release binary)"
+arch=('x86_64')
+url="https://github.com/tinted-theming/tinty"
+license=('GPL-3.0-only')
+# git: tinty clones scheme/template repos with it. libgcc_s and the
+# libc/libm the binary links against come from gcc-libs and glibc; the
+# release is built against glibc 2.39, so older Arch installs are not
+# a concern.
+depends=('git' 'glibc' 'gcc-libs')
+provides=('tinty')
+conflicts=('tinty' 'tinty-git')
+options=('!debug')
+# The binary tarball ships only the executable; LICENSE and the shell
+# completions come from the same tag's source archive.
+source=("$pkgname-$pkgver-x86_64.tar.gz::$url/releases/download/v$pkgver/tinty-x86_64-unknown-linux-gnu.tar.gz"
+        "$pkgname-$pkgver-src.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('311985e4b25c463c09db00e7fd8c9e50a055e07d764c7c0916b7e7e31add0fc3'
+            '932c0c6b5c76d6b725ef327fdb71c54976631cc55293c1cd64f30303ace68013')
+
+package() {
+    install -Dm755 "$srcdir/tinty" "$pkgdir/usr/bin/tinty"
+
+    cd "$srcdir/tinty-$pkgver"
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    install -Dm644 contrib/completion/tinty.bash "$pkgdir/usr/share/bash-completion/completions/tinty"
+    install -Dm644 contrib/completion/tinty.fish "$pkgdir/usr/share/fish/vendor_completions.d/tinty.fish"
+    install -Dm644 contrib/completion/tinty.zsh "$pkgdir/usr/share/zsh/site-functions/_tinty"
+}

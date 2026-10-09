@@ -18,6 +18,48 @@ jobs:
       packages: ${{ steps.check.outputs.packages }}
     steps:
       - name: Install check dependencies
+        run: pacman -Sy --needed --noconfirm curl jq git
+      - uses: actions/checkout@v7.0.1
+      - id: check
+        run: |
+          scripts/aur-sync/check-aur-updates.sh > outdated.txt
+          json="$(cut -d' ' -f1 outdated.txt | jq -R -s -c 'split("\n") | map(select(length > 0))')"
+          echo "packages=$json" >> "$GITHUB_OUTPUT"
+
+  update:
+    needs: check
+    if: needs.check.outputs.packages != '[]'
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJson(needs.check.outputs.packages) }}
+    steps:
+      - name: Install update dependencies
+        run: pacman -Sy --needed --noconfirm git jq github-cli
+      - uses: actions/checkout@v7.0.1
+      - name: Trust workspace as root despite the build user's chown below
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Create build user
+        run: |
+          useradd -m builder
+          chown -R builder:builder .
+      - name: Stage update
+        env:
+          PKG: ${{ matrix.package }}
+        run: runuser -u builder -- scripts/aur-sync/apply-aur-update.sh "$PKG"
+      - name: Check for actual changes
+        id: diff
+        env:
+          PKG: ${{ matrix.package }}
+        run: |
+          if git diff --quiet -- "packages/aur/$PKG"; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install check dependencies
         if: steps.diff.outputs.changed == 'true'
         run: pacman -Sy --needed --noconfirm namcap
       # The compiled scanner only changes when aur-scan.version does, so
@@ -56,14 +98,12 @@ jobs:
         run: exit 1
       - name: Open pull request
         if: steps.diff.outputs.changed == 'true'
-        id: pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PKG: ${{ matrix.package }}
         run: |
           set -euo pipefail
           newver="$(awk -F' = ' '/^\tpkgver = /{v=$2} /^\tpkgrel = /{r=$2} END{print v"-"r}' "packages/aur/$PKG/.SRCINFO")"
-          branch="aur-update/${PKG}-${newver//:/-}"
           title="aur: update $PKG to $newver"
           desc="Automated update of \`$PKG\` to \`$newver\`, fetched from its AUR git repo."
           if [[ "$PKG" == *-git ]]; then
@@ -72,44 +112,92 @@ jobs:
             title="aur: content update for $PKG"
             desc="Automated content update of \`$PKG\` (VCS package, so no meaningful version), fetched from its AUR git repo."
           fi
+          .github/scripts/open-update-pr.sh "aur-update/${PKG}-${newver//:/-}" "$title" "$desc" "packages/aur/$PKG" validate scan
 
-          if [[ -n "$(gh pr list --state open --head "$branch" --json number --jq '.[0].number')" ]]; then
-            echo "PR for $branch already open, skipping"
-            echo "created=false" >> "$GITHUB_OUTPUT"
-            exit 0
+  # tinty-bin repackages upstream's GitHub release binary (the AUR has
+  # only tinty-git), so the AUR check above can't see it.
+  tinty-bin:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - name: Install dependencies
+        run: pacman -Sy --needed --noconfirm git github-cli
+      - uses: actions/checkout@v7.0.1
+      - name: Trust workspace as root despite the build user's chown below
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Create build user
+        run: |
+          useradd -m builder
+          chown -R builder:builder .
+      - name: Update to the latest release
+        run: runuser -u builder -- .github/scripts/update-tinty-bin.sh
+      - name: Check for actual changes
+        id: diff
+        run: |
+          if git diff --quiet -- packages/custom/tinty-bin; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
+      - name: Validate PKGBUILD
+        if: steps.diff.outputs.changed == 'true'
+        # bash explicitly: its pipefail is what lets a validator failure
+        # survive the pipe into tee.
+        shell: bash
+        run: runuser -u builder -- .github/scripts/validate-custom-pkgbuilds.sh 2>&1 | tee "$RUNNER_TEMP/validate.log"
+      - name: Open pull request
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          newver="$(grep -oP '^pkgver=\K.*' packages/custom/tinty-bin/PKGBUILD)"
+          .github/scripts/open-update-pr.sh "tinty-bin-update/${newver}" \
+            "custom: update tinty-bin to $newver" \
+            "Automated update of \`tinty-bin\` to upstream release \`v$newver\`, from https://github.com/tinted-theming/tinty/releases/tag/v$newver. Checksums were computed from the downloaded files; the binary's was cross-checked against the release's own published \`.sha256\`." \
+            packages/custom/tinty-bin validate
 
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -B "$branch"
-          git add "packages/aur/$PKG"
-          git commit -m "$title"
-          # Force: this branch name is entirely derived from
-          # $PKG+$newver above, so it's owned by this automation alone
-          # -- a stale ref left by an earlier run that pushed but
-          # failed before/at `gh pr create` (no open PR, so the guard
-          # above didn't catch it) must never block this run from
-          # reaching the same state.
-          git push --force origin "$branch"
-
-          {
-            echo "$desc"
-            echo
-            echo "Requires human review before merge (no auto-merge configured); check the diff for anything beyond the version bump before approving. namcap and aur-scan results for this package are below (advisory; a stale \`.SRCINFO\` would have failed the run before this PR opened)."
-            for check in validate scan; do
-              echo
-              echo "<details><summary>$check</summary>"
-              echo
-              echo '```'
-              # PR bodies cap at 65536 chars
-              tail -c 25000 "$RUNNER_TEMP/$check.log"
-              echo '```'
-              echo "</details>"
-            done
-            echo
-            echo "[Workflow run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
-          } > pr-body.txt
-          gh pr create --title "$title" --head "$branch" --base master --body-file pr-body.txt
-
-          echo "branch=$branch" >> "$GITHUB_OUTPUT"
-          echo "created=true" >> "$GITHUB_OUTPUT"
+  # vesktop-integrity-launch pins an exact commit of its own upstream
+  # repo; this bumps the pin to that repo's current HEAD.
+  vesktop-integrity-launch:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - name: Install dependencies
+        run: pacman -Sy --needed --noconfirm git github-cli
+      - uses: actions/checkout@v7.0.1
+      - name: Trust workspace as root despite the build user's chown below
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Create build user
+        run: |
+          useradd -m builder
+          chown -R builder:builder .
+      - name: Update to upstream HEAD
+        run: runuser -u builder -- .github/scripts/update-vesktop-integrity-launch.sh
+      - name: Check for actual changes
+        id: diff
+        run: |
+          if git diff --quiet -- packages/custom/vesktop-integrity-launch; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Validate PKGBUILD
+        if: steps.diff.outputs.changed == 'true'
+        # bash explicitly: its pipefail is what lets a validator failure
+        # survive the pipe into tee.
+        shell: bash
+        run: runuser -u builder -- .github/scripts/validate-custom-pkgbuilds.sh 2>&1 | tee "$RUNNER_TEMP/validate.log"
+      - name: Open pull request
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          pkg=packages/custom/vesktop-integrity-launch
+          old="$(git show "HEAD:$pkg/PKGBUILD" | grep -oP '^_commit=\K.*')"
+          new="$(grep -oP '^_commit=\K.*' "$pkg/PKGBUILD")"
+          .github/scripts/open-update-pr.sh "vesktop-integrity-launch-update/${new:0:7}" \
+            "custom: update vesktop-integrity-launch to ${new:0:7}" \
+            "Automated bump of the pinned upstream commit of \`vesktop-integrity-launch\`: https://github.com/Dwarf1er/vesktop-integrity-launch/compare/${old}...${new}. The launcher runs on users' machines, so read that diff before merging, not just this one." \
+            "$pkg" validate

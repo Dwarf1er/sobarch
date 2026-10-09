@@ -304,7 +304,7 @@ pacman_locked() {
 # full set of tools any PKGBUILD is entitled to assume is already
 # present without declaring it in makedepends, per Arch's own
 # packaging convention (a compiler/toolchain for a real build() step,
-# e.g. tinty-git's `cargo build`; debugedit for makepkg's own default
+# e.g. a `cargo build`; debugedit for makepkg's own default
 # debug-package generation, which sobarch-skel's PKGBUILD works around
 # with !debug precisely because base-devel isn't part of this minimal
 # base install otherwise). Installed once, up front, rather than
@@ -439,10 +439,10 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
     # aur-sync pass touching several packages back to back.
     if $first_install; then
         install_result=0
-        pacman_locked -U --noconfirm "${overwrite_args[@]}" "${pkgfiles[@]}" || install_result=$?
+        pacman_locked -U --noconfirm --ask=4 "${overwrite_args[@]}" "${pkgfiles[@]}" || install_result=$?
     else
         install_result=0
-        SNAP_PAC_SKIP=1 pacman_locked -U --noconfirm "${overwrite_args[@]}" "${pkgfiles[@]}" || install_result=$?
+        SNAP_PAC_SKIP=1 pacman_locked -U --noconfirm --ask=4 "${overwrite_args[@]}" "${pkgfiles[@]}" || install_result=$?
     fi
 
     [[ -n "$build_dir" ]] && rm -rf "$build_dir"
