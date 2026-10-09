@@ -50,13 +50,42 @@ landing on disk doesn't always mean it's been picked up yet.
 ## A vendored package fails to build
 
 The [package sync mechanism](../../packages/installing-updating/) runs
-on every `pacman -Syu`; its output appears inline in that same
-transaction, so scroll back through it first. To retry a single
-package directly instead of waiting for the next upgrade:
+in the background after an upgrade, so its output isn't in your
+`pacman` session. A failure raises a critical notification; for the
+details, read the log or the journal:
 
 ```sh
-sudo /usr/local/lib/sobarch/aur-sync.sh <package-name>
+less /var/log/sobarch/aur-sync.log
+journalctl -u sobarch-aur-sync
 ```
+
+To retry a single package directly instead of waiting for the next
+upgrade:
+
+```sh
+sobarch aur-sync <package-name>
+```
+
+An "unable to lock database" message just means another pacman
+operation was running; the sync retries on its own for a short while.
+
+## Update notifications never appear
+
+The daily check is a systemd user timer. Confirm it's scheduled with
+`systemctl --user list-timers sobarch-update-check.timer`, and run it
+once by hand with `systemctl --user start sobarch-update-check.service`
+(it logs to `journalctl --user -u sobarch-update-check`). It stays
+quiet when you're offline, and it won't repeat a notification for a
+backlog it has already told you about, other than weekly.
+
+## Applications hang asking for a keyring unlock
+
+Chromium-based browsers and other apps that store secrets need the
+login keyring unlocked. Log out and back in through the login screen
+so it's unlocked with your password; see
+[Security](../security/) for how this is wired up. If it still hangs,
+check that the first-boot security unit finished:
+`systemctl status sobarch-firstboot-security.service`.
 
 ## Something broke and you want to go back
 

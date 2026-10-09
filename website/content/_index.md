@@ -7,6 +7,7 @@ lead = "A Hyprland desktop for Arch Linux: installer, versioned configuration, a
 install_command = "curl -fsSL http://installsobarch.antoinepoulin.com | bash"
 docs_url = "/docs/"
 repo_url = "https://github.com/Dwarf1er/sobarch"
+iso_url = "https://github.com/Dwarf1er/sobarch/releases/latest"
 philosophy = [
   "A modern desktop needs a secrets store, a polkit agent, network management, and a video editor, among other things. Sobarch picks whichever tool delivers each of those without dragging in a whole foreign desktop environment's framework: oo7 instead of KWallet, hyprpolkitagent instead of polkit-kde-agent, a NetworkManager-driven fuzzel menu instead of a GUI applet, Shotcut instead of Kdenlive. Same capability, a fraction of what's actually installed.",
   "One installer and one set of versioned configs make rebuilding a machine from scratch the normal way to make a change, not a last resort. Every app's config is generated from the same base16/base24 color scheme via tinty, so picking a new theme from the built-in menu recolors the terminal, bar, launcher, and editor together, not one app at a time.",

@@ -24,8 +24,11 @@
       <pre class="home-terminal-body"><code>{{ section.extra.install_command }}</code></pre>
     </div>
 
+    <p class="home-iso-note">Or boot the official Arch ISO and run the command above. The prebuilt ISO is published monthly on the latest release.</p>
+
     <div class="home-cta">
-      <a class="btn btn-primary" href="{{ get_url(path=section.extra.docs_url) | safe }}">Read the docs</a>
+      <a class="btn btn-primary" id="iso-download" href="{{ section.extra.iso_url | safe }}">Download the ISO</a>
+      <a class="btn btn-outline-primary" href="{{ get_url(path=section.extra.docs_url) | safe }}">Read the docs</a>
       <a class="btn btn-outline-primary" href="{{ section.extra.repo_url | safe }}">View on GitHub</a>
     </div>
   </div>
@@ -59,6 +62,22 @@
         }, 1500);
       });
     });
+  })();
+</script>
+
+<script>
+  (function () {
+    var link = document.getElementById("iso-download");
+    if (!link || !window.fetch) return;
+
+    fetch("https://api.github.com/repos/Dwarf1er/sobarch/releases/latest")
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (release) {
+        if (!release || !release.assets) return;
+        var iso = release.assets.find(function (a) { return /\.iso$/.test(a.name); });
+        if (iso) link.href = iso.browser_download_url;
+      })
+      .catch(function () {});
   })();
 </script>
 

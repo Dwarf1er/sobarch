@@ -15,17 +15,28 @@ Sobarch themes the desktop through
 ecosystem. The default scheme is OneDark, but any base16, base24, or
 tinted8 scheme installed by tinty can be applied.
 
-Themed apps: Hyprland, waybar, mako, fuzzel, hyprlock, qt6ct,
-[starship](../../shell-editor/terminal-and-shell/), fastfetch, the
-desktop wallpaper, and [kitty's](../../shell-editor/terminal-and-shell/)
-terminal colors.
+Themed apps: Hyprland (window borders), waybar, mako, fuzzel, hyprlock,
+qt6ct (Qt app colors), [starship](../../shell-editor/terminal-and-shell/),
+fastfetch, [Neovim](../../shell-editor/neovim/), the desktop
+[wallpaper](../wallpaper/), the icons shown in the menus, and
+[kitty's](../../shell-editor/terminal-and-shell/) terminal colors.
+GTK apps use the dark `adw-gtk3` theme and Papirus-Dark icons, which
+stay the same whichever scheme is active.
+
+The last applied scheme is re-applied on every login, so it survives
+restarts. Hyprland's own colors only support base16 schemes; picking a
+base24 or tinted8 scheme recolors everything else and leaves window
+border colors as they were.
 
 ## Switching schemes
 
 Open the theme picker from **Super → Sobarch**, or run
 `~/.config/hypr/scripts/themes-menu.sh` directly. It lists every scheme
 tinty knows about, tagging non-base16 systems for clarity
-(`(24-color)`, `(8-color)`), and applies whichever one you pick.
+(`(24-color)`, `(8-color)`), and applies whichever one you pick. Each
+entry shows a small four-color swatch. Swatches are generated in the
+background the first time, so a scheme you haven't seen yet may show
+as a plain row until the next time you open the picker.
 
 <figure class="figure">
   <img class="img-fluid rounded shadow-sm" src="/images/desktop/theming-picker-menu.webp" width="1366" height="768" alt="The theme picker, listing available base16/base24/tinted8 color schemes">

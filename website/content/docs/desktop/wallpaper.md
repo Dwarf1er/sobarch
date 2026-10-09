@@ -13,7 +13,10 @@ Open the picker from **Super → Sobarch → Wallpaper**. It lists every
 file in `~/.local/share/backgrounds/`, the per-user counterpart of the
 `/usr/share/backgrounds` convention most distros ship their own
 default wallpapers under. Picking one applies it immediately to every
-connected monitor, scaled to cover.
+connected monitor, scaled to cover. Each entry shows a thumbnail, and
+names are shown with dashes and underscores turned into spaces and the
+file extension dropped. The shipped wallpaper is
+`sobarch-wallpaper.svg`, used until you pick something else.
 
 ## SVG wallpapers recolor automatically
 

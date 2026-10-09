@@ -29,7 +29,7 @@ toc = true
 
 | Keybind | Action |
 | --- | --- |
-| `Super` (tap) | Open the [main menu](../menu-system/) |
+| `Super` (tap) | Open the [main menu](../menu-system/) (ignored while a window is fullscreen) |
 | `Super+A` | Open the audio menu |
 | `Super+N` | Open the network menu |
 | `Super+Shift+B` | Open the Bluetooth menu |
@@ -48,6 +48,8 @@ toc = true
 | `Super+Drag` (left button) | Move window |
 | `Super+Drag` (right button) | Resize window |
 
+Workspaces 1 to 10 exist, with `0` reaching workspace 10.
+
 ## Screenshots and capture
 
 | Keybind | Action |
@@ -55,7 +57,7 @@ toc = true
 | `Print Screen` | Screenshot the full output to the clipboard |
 | `Super+S` | Screenshot the full output to a file and the clipboard, without grabbing keyboard focus (region capture below does, since it shells out to `slurp`; this doesn't) |
 | `Super+Shift+S` | Screenshot a region to the clipboard |
-| `Super+O` | OCR a screen region to the clipboard |
+| `Super+O` | OCR a screen region (English text) to the clipboard |
 | `Super+Shift+O` | Scan a QR code or barcode in a region to the clipboard |
 
 ## Media and volume
@@ -68,6 +70,9 @@ toc = true
 | `Brightness Up`/`Brightness Down` | Raise/lower brightness 10% |
 | `Media Next`/`Media Previous` | Skip track |
 | `Media Play/Pause` | Play or pause |
+
+Input method switching (`Super+Space`) is covered in
+[Input Methods](../input-methods/).
 
 ## The cheat sheet
 

@@ -17,6 +17,14 @@ skips asking a human for it.
 
 ## Running it
 
+An unattended run needs a live installer environment, either the [official
+Arch ISO](../../getting-started/installation/) or the [prebuilt
+ISO](../../getting-started/prebuilt-iso/), and must run as root unless you
+pass `--dry-run`. It prints progress to the console and exits non-zero with
+a message if the answer file is invalid, so a script can detect failure.
+It never prompts, including for the disk-name confirmation the interactive
+installer asks for; `confirm_erase` plays that role instead.
+
     python3 installer/tui/__main__.py --answer-file answer.json
 
 Add `--dry-run` to only generate and save the config (same as
@@ -48,7 +56,7 @@ for a complete example. Every field below is optional except `disk`,
 | `hostname` | *(required)* | Same validation as the interactive Account step. |
 | `username` | *(required)* | Same validation as the interactive Account step. |
 | `password` | *(one of `password`/`password_hash` required)* | Plaintext; hashed the same way the interactive wizard hashes it, before it ever reaches `archinstall`'s own config. |
-| `password_hash` | *(one of `password`/`password_hash` required)* | A pre-hashed value (`archinstall`'s own `crypt_yescrypt()` format) instead of plaintext, so a shared answer file never carries a readable password. Setting both, or neither, is an error. |
+| `password_hash` | *(one of `password`/`password_hash` required)* | A pre-hashed value (yescrypt, the same crypt format `archinstall` produces) instead of plaintext, so a shared answer file never carries a readable password. Setting both, or neither, is an error. |
 | `kb_layout` | `"us"` | |
 | `sys_lang` | `"en_US.UTF-8"` | |
 | `timezone` | `"UTC"` | |

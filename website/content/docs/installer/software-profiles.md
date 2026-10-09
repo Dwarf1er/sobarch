@@ -41,6 +41,15 @@ delayed isn't actually avoidable if any of it happened during install.
 | **Input Method** | `fcitx5`, `fcitx5-configtool`, `fcitx5-gtk`, `fcitx5-hangul` |
 <!-- profiles:end -->
 
+Packages marked "(AUR)" are the ones built locally from the repository's
+vendored snapshots instead of installed from Arch's official
+repositories; that includes `sobarch-via-udev`, which is sobarch's own
+package (a udev rule so a VIA-compatible keyboard can be configured
+from its web app without root), not an AUR one. Installing
+`vesktop-bin` also brings in a small launch wrapper that checks Vesktop's
+Vencord files, as described in [AUR & Custom
+Packages](../../packages/aur-and-custom/).
+
 ## Installing a profile package later
 
 Anything you skipped during install, or decide you want afterward, is

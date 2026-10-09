@@ -15,20 +15,24 @@ a status line below saying what, if anything, still needs fixing. The
 steps are:
 
 - **Network**: only shown when the machine has no connectivity at
-  startup
+  startup; see [Network Step](../network-step/)
 - **Disk**: wipes and partitions the entire target disk by default, or
   installs into existing free space instead for
   [dual-boot](../dual-boot/) alongside another OS; also the optional
-  LUKS encryption toggle and passphrase
-- **Account**: hostname, username, and password
+  [LUKS encryption](../disk-encryption/) toggle and passphrase
+- **Account**: hostname, username, and password (entered twice).
+  Hostnames are lowercase letters, digits, and inner hyphens; usernames
+  start with a lowercase letter or underscore. This account is the
+  only login, since root is locked
 - **Locale**: keyboard layout, system language, timezone, and mirror
   regions (pick any number, or none to keep the live ISO's
   speed-ranked mirrors)
 - **Options**: [rescue media](../rescue-media/), the optional SSH
-  toggle, and an optional git name and email
+  toggle, and an optional git name and email; see [SSH & Git
+  Options](../ssh-and-git/)
 - **Software**: optional [software profiles](../software-profiles/)
 - **Install**: a summary of every choice, then **Save configuration**
-  and **Install now**
+  and **Install now**; see [What the Install Does](../install-process/)
 
 Each step shows a mark in the list: a check once it's filled in, an
 exclamation mark while it needs attention. Nothing is written to disk
@@ -61,8 +65,10 @@ uv run installer/tui/__main__.py --dry-run
 `archinstall` configuration, but the Install step only offers saving
 it, never installing. Without the flag, "Install now" is also offered,
 but only when running as root, since partitioning a real disk needs
-it. Choosing it asks for a second confirmation that names the disk
-that will be modified. Either way, "Save configuration" writes `base.json` and
+it. Choosing it lists the partitions that will be destroyed (or says
+existing partitions are left alone, for a free-space install) and asks you
+to type the disk's name, such as `nvme0n1`, to confirm. Either way, "Save configuration" writes `base.json` and
 `credentials.json` to `--output-dir` (default: `/root/sobarch-install`
 as root, `./sobarch-install-output` otherwise) so you can inspect the
-generated config.
+generated config. `credentials.json` contains your password hash and any
+disk encryption passphrase, so it is readable by root only.

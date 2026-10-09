@@ -20,7 +20,7 @@ toc = true
   | GPU generation | Driver |
   | --- | --- |
   | Turing (RTX 20-series) and newer | `nvidia-open-dkms` |
-  | Maxwell / Pascal / Volta | A pinned legacy driver branch |
+  | Maxwell / Pascal / Volta | The pinned `nvidia-580xx` driver branch, built from source during install |
   | Anything older | `nouveau` |
 
 - **Bluetooth adapter presence** drives `archinstall`'s own Bluetooth

@@ -31,7 +31,8 @@ throughout:
 
 1. `pacman -Syu` updates official packages.
 2. The [package sync mechanism](../../packages/installing-updating/)
-   updates vendored AUR/custom packages.
+   updates vendored AUR/custom packages. Packages the base system
+   requires that were added after your install are picked up here too.
 3. If `sobarch-skel` changed, [boot and login theming](../boot-theming/)
    is re-applied, so branding changes ship through this same command
    as config changes.
@@ -40,14 +41,16 @@ throughout:
    yours, **U**se the new version, view the **D**iff, **E**dit, **S**kip for now, or use the new
    version for **A**ll remaining conflicts.
 
-You'll be asked to authenticate once for the package steps. If the
+You don't have to remember to run it: a [daily check](../notifications/)
+shows a notification when updates are waiting, and clicking it starts
+this same flow. You'll be asked to authenticate once for the package steps. If the
 update fails (offline, or a package conflict that needs a terminal),
 you get a notification saying which half failed, and the config merge
 still runs against whatever is already installed. Running `pacman -Syu`
 yourself from a terminal still works exactly as before; the pacman
 hook keeps vendored packages current in that case too.
 
-From a terminal or over SSH: `sobarch update` runs the same steps with
+From a terminal or over SSH (see [The sobarch Command](../sobarch-command/)): `sobarch update` runs the same steps with
 plain prompts instead of menus (`sudo` for the package steps, and the
 conflict choices are typed as a letter). `sobarch review-conflicts`
 is the terminal equivalent of Review Conflicts below. Run both as your

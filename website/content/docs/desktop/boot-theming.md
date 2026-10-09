@@ -9,8 +9,10 @@ lead = "Everything you see before your desktop session starts shares one color p
 toc = true
 +++
 
-Three things get themed outside the desktop session itself, each set
-up once during install and re-applied automatically by
+Three things get themed outside the desktop session itself. They use
+a fixed OneDark-based palette and do not follow the color scheme you
+pick in [Theming](../theming/), since none of them can be recolored
+live. Each is set up once during install and re-applied automatically by
 [Update System](../updating-system/) whenever `sobarch-skel`/
 `sobarch-scripts` refreshes, so branding changes ship the same way
 config changes do:
