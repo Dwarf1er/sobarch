@@ -283,6 +283,19 @@ def _deploy_aur_sync(log_file, on_output: OutputCallback) -> int:
     return 0
 
 
+def _stage_vendored_package(pkg: str, build_dir: Path) -> None:
+    """Copies one package into build_dir at the same position it has in
+    the repo. base-required-packages.txt names both vendored AUR
+    packages (packages/aur/) and this project's own custom ones
+    (packages/custom/, e.g. tinty-bin), so look in both."""
+    for kind in ("aur", "custom"):
+        source = REPO_ROOT / "packages" / kind / pkg
+        if source.is_dir():
+            shutil.copytree(source, build_dir / "packages" / kind / pkg)
+            return
+    raise FileNotFoundError(f"base-required package {pkg} is in neither packages/aur/ nor packages/custom/")
+
+
 def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int:
     """Local-builds sobarch-skel, sobarch-scripts, sobarch-limine-snapshots,
     and the base-required AUR packages (localsend-bin, blesh-git, tinty-bin; decision 3)
@@ -335,7 +348,7 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
     shutil.copytree(REPO_ROOT / "installer" / "archinstall", build_dir / "installer" / "archinstall")
     shutil.copytree(REPO_ROOT / "scripts", build_dir / "scripts")
     for pkg in BASE_AUR_PACKAGES:
-        shutil.copytree(REPO_ROOT / "packages" / "aur" / pkg, build_dir / "packages" / "aur" / pkg)
+        _stage_vendored_package(pkg, build_dir)
 
     cache_dir = MOUNTPOINT / SOBARCH_CACHE_DIR_IN_TARGET.relative_to("/")
     cache_args: list[str] = []
