@@ -6,6 +6,10 @@
 <img alt="Sobarch logo" height="280" src="branding/sobarch-logo.svg" />
 
 ![License](https://img.shields.io/github/license/Dwarf1er/sobarch?style=for-the-badge)
+![Issues](https://img.shields.io/github/issues/Dwarf1er/sobarch?style=for-the-badge)
+![PRs](https://img.shields.io/github/issues-pr/Dwarf1er/sobarch?style=for-the-badge)
+![Stars](https://img.shields.io/github/stars/Dwarf1er/sobarch?style=for-the-badge)
+![Release](https://img.shields.io/github/v/release/Dwarf1er/sobarch?style=for-the-badge)
 
 </div>
 
@@ -24,7 +28,23 @@ instead of Kdenlive. Same capability, a fraction of what actually gets
 installed.
 
 Built to run one machine well, kept legible enough that yours can be
-the second.
+the second. Full documentation lives at
+[sobarch.antoinepoulin.com](https://sobarch.antoinepoulin.com/docs/).
+
+## Table of Contents
+
+<!-- mtoc-start -->
+
+* [What's included](#whats-included)
+* [Software profiles](#software-profiles)
+* [Quickstart](#quickstart)
+  * [Prebuilt ISO](#prebuilt-iso)
+* [Day-to-day use](#day-to-day-use)
+* [Documentation](#documentation)
+* [Development](#development)
+* [License](#license)
+
+<!-- mtoc-end -->
 
 <p align="center">
   <img alt="The sobarch desktop: Hyprland with waybar, a themed terminal, and the default wallpaper" src="website/static/images/home/desktop-hero.webp" width="800" />
@@ -32,34 +52,19 @@ the second.
 
 ## What's included
 
-**Desktop.** Hyprland, Waybar, Mako notifications, Fuzzel launcher, Kitty,
-and `ly` as the display manager, with `hyprlock`/`hypridle`/`hyprpaper`/
-`hyprshot`/`hyprpicker` rounding out locking, idle handling, wallpapers,
-and screenshots. GPU driver selection (including NVIDIA generation
-detection) is automatic during install.
+| | |
+| --- | --- |
+| **Desktop** | Hyprland, Waybar, Mako, Fuzzel, Kitty, and `ly` as the display manager, with `hyprlock`/`hypridle`/`hyprpaper`/`hyprshot`/`hyprpicker` for locking, idle, wallpapers, and screenshots. GPU driver selection (including NVIDIA generation detection) is automatic. |
+| **One theme, everywhere** | Every app config is generated from one base16/base24 color scheme via `tinty`, so switching themes recolors the terminal, bar, launcher, notifications, and editor together. |
+| **Shell and editor** | Plain `bash` with `ble.sh` and `starship`, and a from-scratch Neovim config built on Neovim's own `vim.pack`. Both ship by default. |
+| **Bootable snapshots** | BTRFS root snapshots (Snapper) appear as boot entries in the Limine menu. A spare Arch ISO on its own partition makes rollback possible even when the system won't boot, with no USB drive needed. |
+| **Security baseline** | A default-deny `nftables` firewall and a locked root account out of the box. SSH stays off unless enabled during install. Optional LUKS encryption of the root partition. |
+| **Reviewed packages only** | Arch's official repositories plus a small set of AUR packages vendored and reviewed into this repo, built locally by a dedicated build user. No AUR helper, no third-party binary repository. |
+| **Flexible installs** | Wipe a disk, or install into free space for dual-boot. Interactive TUI, unattended with an answer file, or over the network with PXE. |
 
-**One theme, the whole desktop.** Every app config is generated from the
-same base16/base24 color scheme via `tinty`, so picking a new theme from
-the built-in menu recolors the terminal, bar, launcher, and editor
-together instead of one app at a time.
+## Software profiles
 
-**Snapshots you can actually boot into.** BTRFS root snapshots (Snapper)
-show up as their own boot entries directly in the Limine bootloader menu,
-and a dedicated on-disk partition carries a spare Arch ISO so a rollback
-is possible even if the installed system won't boot at all, no separate
-USB drive needed.
-
-**Security baseline, applied by default.** A default-deny `nftables`
-firewall and a locked root account ship out of the box; SSH stays off
-unless enabled during install.
-
-**No terminal required for day-to-day upkeep.** A Fuzzel-driven menu
-(bound to the Super key) covers pulling config updates and walking
-through any merge conflicts, installing additional packages, switching
-themes/wallpapers, and refreshing the rescue ISO.
-
-**Optional software profiles**, applied after first boot and left
-unchecked by default:
+Optional, applied after first boot, and unchecked by default:
 
 | Profile | Included |
 | --- | --- |
@@ -73,14 +78,7 @@ unchecked by default:
 | System Tuning | TLP, LACT, nvtop, smartmontools, ethtool, VIA keyboard support |
 | Input Method | fcitx5 (CJK, Hangul) |
 
-Each profile can also be expanded to hand-pick individual packages
-instead of taking it as a whole, and "install everything" is a single
-toggle away.
-
-**Packages come from two places only**: Arch's official repositories,
-and a small set of AUR packages vendored and reviewed into this repo,
-built locally by a dedicated build user. No AUR helper, no third-party
-binary repository.
+Each profile can be expanded to hand-pick individual packages, and "install everything" is a single toggle.
 
 ## Quickstart
 
@@ -108,7 +106,9 @@ Booting that path over the network instead of from a USB drive is also
 possible, see the [PXE Netboot
 docs](https://sobarch.antoinepoulin.com/docs/installer/pxe-netboot/).
 
-**Faster alternative:** a monthly-built ISO with the installer and the
+### Prebuilt ISO
+
+A monthly-built ISO with the installer and the
 base system's packages pre-cached is published on the [Releases
 page](https://github.com/Dwarf1er/sobarch/releases), letting a real
 install resolve those packages from local disk instead of downloading
@@ -129,6 +129,46 @@ import it once, then verify the same way as the official Arch ISO's own
 GitHub also shows each release asset's own SHA256 digest directly on the
 [Releases page](https://github.com/Dwarf1er/sobarch/releases), for a
 plain comparison without `gpg`.
+
+## Day-to-day use
+
+No terminal is required for upkeep. Tap `Super` for the Fuzzel main menu,
+which covers updating the system, reviewing config merge conflicts,
+installing additional packages, switching themes and wallpapers, and
+refreshing the rescue ISO.
+
+**Updating.** **Super, Sobarch, Update System** (or `sobarch update` in a
+terminal) runs `pacman -Syu`, rebuilds any vendored package that is behind,
+and merges config updates into `$HOME` with a three-way merge. Your edits
+are never overwritten: a true conflict leaves the new version beside yours
+as `<file>.sobarch-new`. A plain `pacman -Syu` still works too.
+
+**Notifications.** A daily check tells you when updates or a newer rescue
+ISO are waiting, a failed vendored-package build is reported instead of
+failing silently, and booting a snapshot entry shows a persistent prompt
+offering to make it your permanent system.
+
+**The `sobarch` command.** A thin front end for the same actions the menus
+run:
+
+| Command | What it does |
+| --- | --- |
+| `sobarch update` | Full system update: official packages, vendored packages, config merge |
+| `sobarch review-conflicts` | Walk through leftover `.sobarch-new` conflicts |
+| `sobarch aur-sync [PKG...]` | Update installed vendored packages, or build exactly the ones named |
+| `sobarch snapshot-restore N` | Make Snapper snapshot `N` the permanent root |
+| `sobarch rescue-refresh` | Re-fetch the Arch ISO onto the rescue partition |
+
+## Documentation
+
+The [manual](https://sobarch.antoinepoulin.com/docs/) covers everything above in depth:
+
+* [Getting started](https://sobarch.antoinepoulin.com/docs/getting-started/): installation, first boot, the prebuilt ISO
+* [Installer](https://sobarch.antoinepoulin.com/docs/installer/): disks and accounts, encryption, dual-boot, snapshots, rescue media, unattended and PXE installs
+* [Desktop](https://sobarch.antoinepoulin.com/docs/desktop/): menus, keybindings, theming, notifications, updating, the `sobarch` command
+* [Shell and editor](https://sobarch.antoinepoulin.com/docs/shell-editor/): kitty, bash, starship, Neovim
+* [Packages](https://sobarch.antoinepoulin.com/docs/packages/): how AUR and custom packages are vendored, built, and updated
+* [Reference](https://sobarch.antoinepoulin.com/docs/reference/): security, files and logs, troubleshooting, FAQ
 
 ## Development
 
