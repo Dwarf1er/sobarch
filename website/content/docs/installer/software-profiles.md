@@ -37,7 +37,7 @@ delayed isn't actually avoidable if any of it happened during install.
 | **Virtualization** | `quickemu-git` (AUR), `quickgui-bin` (AUR) |
 | **Office** | `homebank`, `libreoffice-fresh` |
 | **Browsers & Chat** | `signal-desktop`, `brave-origin-bin` (AUR), `vesktop-bin` (AUR) |
-| **System Tuning** | `ethtool`, `lact`, `nvtop`, `smartmontools`, `tlp`, `tlp-rdw`, `sobarch-via-udev` (AUR) |
+| **System Tuning** | `ethtool`, `lact`, `nvtop`, `smartmontools`, `sobarch-via-udev` (AUR) |
 | **Input Method** | `fcitx5`, `fcitx5-configtool`, `fcitx5-gtk`, `fcitx5-hangul` |
 <!-- profiles:end -->
 

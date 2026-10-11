@@ -9,8 +9,8 @@ lead = "A few things finish setting up after the installer hands off: some run a
 toc = true
 +++
 
-Five systemd units run once, each guarded by its own marker file so a
-completed step never repeats:
+Six systemd units run once, each guarded by its own marker or flag file so
+a completed step never repeats:
 
 - **Wireless radio unblock.** Runs before NetworkManager starts, in
   case a laptop's WiFi radio comes up soft-blocked by firmware.
@@ -30,13 +30,17 @@ completed step never repeats:
 - **Security baseline.** A default-drop firewall is written and
   enabled, and the root account is locked. See
   [Security](../../reference/security/) for the full policy.
+- **Rescue ISO fetch.** Only if you chose rescue media during install:
+  the Arch ISO is downloaded onto the rescue partition, after the
+  package step finishes. See [Rescue
+  Media](../../installer/rescue-media/).
 
 The radio unblock, skel deployment, and git/SSH key units run at ordinary
 boot and need nothing from you. Your new public key is at
 `~/.ssh/id_ed25519.pub`.
-The other two need network access (installing packages, and
-installing/enabling SSH if you asked for it), and neither has a boot-time
-trigger at all: a NetworkManager dispatcher script starts them every time
+The other three need network access (installing packages, installing or
+enabling SSH if you asked for it, and downloading the rescue ISO), and
+none has a boot-time trigger at all: a NetworkManager dispatcher script starts them every time
 a connection comes up instead. On a fresh WiFi-only install there's no
 saved connection yet, so in practice they run as soon as you connect for
 the first time, which can be right after your first login rather than on

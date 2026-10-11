@@ -36,7 +36,6 @@ on the AUR forever.
 | --- | --- | --- |
 | `localsend-bin` | Open-source, AirDrop-style file sharing | Every install |
 | `blesh-git` | ble.sh, the Bash line editor used by the [shell setup](../../shell-editor/terminal-and-shell/) | Every install |
-| `tinty-bin` | Base16/Base24 colour scheme manager behind [theming](../../desktop/theming/); repackages upstream's prebuilt release binary | Every install |
 | `gale-bin` | Lightweight Thunderstore mod client | [Gaming profile](../../installer/software-profiles/) |
 | `protonup-qt-bin` | Installs Proton-GE for Steam and Wine-GE for Lutris | Gaming profile |
 | `orca-slicer-bin` | G-code slicer for 3D printers | Maker / 3D Printing profile |
@@ -46,7 +45,7 @@ on the AUR forever.
 | `vesktop-bin` | Vesktop, a Discord client with Vencord built in | Browsers & Chat profile |
 | `nvidia-580xx-utils`, `lib32-nvidia-580xx-utils` | Legacy NVIDIA 580xx driver branch (one build also produces the matching DKMS and OpenCL packages) | Installer, only when a Maxwell, Pascal or Volta GPU is detected |
 
-The "every install" packages are built synchronously during the
+The "every install" packages (these two plus `tinty-bin`, listed below) are built synchronously during the
 install itself, before first boot. Profile packages are installed
 after first boot, as described in
 [Software Profiles](../../installer/software-profiles/).
@@ -58,7 +57,8 @@ after first boot, as described in
 | `sobarch-skel` | The default desktop configuration (the dotfiles merged into `$HOME` by [Updating Your Config](../../desktop/updating-system/)), the profile list the Install menu reads, and the branding assets used for the boot splash, boot menu and login screen. |
 | `sobarch-scripts` | The `sobarch` command, the update flow, the package sync script and its pacman hook, the first-boot scripts, the NetworkManager dispatcher script, the daily update-check timer, and the snapshot restore and rescue refresh helpers. Scripts live in `/usr/local/lib/sobarch/`. |
 | `sobarch-limine-snapshots` | The service that keeps one Limine boot entry per Snapper snapshot, so any snapshot can be booted straight from the boot menu. See [Snapshots](../../installer/snapshots/). |
-| `sobarch-via-udev` | A udev rule granting `hidraw` access so keyboards can be configured from the VIA web app (usevia.app) without root. Opt-in through the System Tuning profile; an already-plugged-in keyboard is picked up on install, no reboot needed. |
+| `sobarch-via-udev` | A udev rule granting `hidraw` access so keyboards can be configured from the VIA web app (usevia.app) without root. Opt-in through the System Tuning profile. |
+| `tinty-bin` | Base16/Base24 colour scheme manager behind [theming](../../desktop/theming/); repackages upstream's prebuilt release binary, since the AUR only has the slow-to-compile `tinty-git`. Built on every install. |
 | `vesktop-integrity-launch` | A launch wrapper for Vesktop that checks the Vencord files against a local baseline and runs Vesktop's own repair when they don't match. |
 
 ### How the Vesktop wrapper is installed
@@ -86,7 +86,10 @@ new snapshot, along with the output of two advisory checks: `namcap`
 It also fails the run if a package's committed `.SRCINFO` doesn't
 match its PKGBUILD, because that file is what the sync script trusts
 for the version to install. Nothing merges without a human reading the
-diff.
+diff. Two of the custom packages track an upstream too, so the same
+workflow also bumps `tinty-bin` to the latest upstream release and
+`vesktop-integrity-launch` to its upstream's current HEAD, each as its
+own pull request.
 
 Sobarch's own custom packages are checked locally instead: a git
 pre-commit hook rebuilds each `.SRCINFO` and, if a package's payload

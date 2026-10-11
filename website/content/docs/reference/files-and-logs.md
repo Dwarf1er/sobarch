@@ -16,7 +16,7 @@ toc = true
 | `/root/sobarch-install/install.log` | The installer's own log, on the live ISO. |
 | `/var/log/sobarch/aur-sync.log` | Every vendored-package sync, whether run by the pacman hook, **Update System**, or by hand. |
 | `journalctl -u sobarch-aur-sync` | The same sync when the pacman hook started it. |
-| `journalctl -u sobarch-firstboot-packages.service` (and `-security`, `-skel`, `-git`, `-rfkill`) | The first-boot units. |
+| `journalctl -u sobarch-firstboot-packages.service` (and `-security`, `-skel`, `-git`, `-rfkill`, `-rescue`) | The first-boot units. |
 | `journalctl --user -u sobarch-update-check` | The daily update check. |
 
 ## First-boot markers
@@ -30,6 +30,7 @@ skipped. Deleting a marker makes that step run again.
 | `/var/lib/sobarch/profile-packages-installed` | Optional profile packages |
 | `/var/lib/sobarch/security-baseline-applied` | [Security baseline](../security/) |
 | `/var/lib/sobarch/rfkill-unblocked` | Wi-Fi/Bluetooth rfkill unblock |
+| `~/.local/state/sobarch/skel-version` | Skel deployment |
 | `~/.local/state/sobarch/git-setup-done` | SSH key generation and git identity for your account |
 
 ## Flags and records
@@ -37,6 +38,8 @@ skipped. Deleting a marker makes that step run again.
 | Path | Contents |
 | --- | --- |
 | `/etc/sobarch/ssh-enabled` | `true` or `false`, written by the installer's SSH option. |
+| `/etc/sobarch/profile-packages-official.txt`, `/etc/sobarch/profile-packages-aur.txt` | The optional packages picked during install, read by the first-boot package step. |
+| `/etc/sobarch/rescue-pending` | Present until the first-boot rescue step has downloaded the rescue ISO, then removed. |
 | `/etc/sobarch/git-identity` | The git identity entered during install, applied to your account at first boot. |
 | `/var/lib/sobarch/rescue-iso-sha256` | Checksum of the ISO on the rescue partition, used to tell when a newer one exists. |
 | `~/.local/state/sobarch/skel-baseline/` | The baseline copy of each config file, for the three-way merge in [Updating Your Config](../../desktop/updating-system/). |
@@ -50,4 +53,5 @@ dotfiles, so edit them directly if you need to.
 - `/etc/nftables.conf`, the firewall ruleset.
 - `/etc/ssh/sshd_config.d/10-sobarch-no-root-login.conf`, only when SSH is enabled.
 - `/etc/polkit-1/rules.d/46-sobarch-power.rules`, the power-action rule.
+- `/etc/pam.d/ly` and `/etc/pam.d/ly-autologin`, edited to use `pam_oo7.so` instead of `pam_gnome_keyring.so`.
 - `/etc/pacman.d/hooks/sobarch-aur-sync.hook`, the sync trigger, owned by the `sobarch-scripts` package.

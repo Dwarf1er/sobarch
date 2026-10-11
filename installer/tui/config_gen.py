@@ -237,7 +237,7 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
 
     base["app_config"]["bluetooth_config"]["enabled"] = hardware.bluetooth_detected
 
-    extra_packages = {pkg for pkg in (hardware.cpu_microcode_pkg, *hardware.gpu_packages) if pkg}
+    extra_packages = {pkg for pkg in (hardware.cpu_microcode_pkg, *hardware.gpu_packages, *hardware.laptop_packages) if pkg}
     base["packages"] = sorted(set(base["packages"]) | extra_packages)
 
     credentials["users"][0]["username"] = state.username

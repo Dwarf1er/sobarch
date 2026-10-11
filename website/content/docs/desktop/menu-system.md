@@ -17,11 +17,11 @@ Pressing `Super` on its own opens a `fuzzel` picker:
 
 | Entry | What it opens |
 | --- | --- |
-| **System** | Audio, network, and Bluetooth (also reachable directly via `Super+A`, `Super+N`, `Super+Shift+B`, and from waybar's own status module), plus firmware (`fwupdmgr`: check for updates, install updates, list devices; also reachable via `Super+Shift+F`). |
-| **Sobarch** | **Update System** / **Review Conflicts** (see [Updating Your System](../updating-system/)), **Install** (see [Software Profiles](../../installer/software-profiles/)), **Themes** (see [Theming](../theming/)), **Wallpaper** (see [Wallpaper](../wallpaper/)), **Default Apps** (pick a file type, then which installed app opens it), **Refresh Rescue ISO** (see [Rescue Media](../../installer/rescue-media/); only listed when rescue media was set up at install), and **Docs**, which opens this site. |
+| **Apps** | The regular application list, one level in. |
+| **System** | Audio, network, and Bluetooth (also reachable directly via `Super+A`, `Super+N`, `Super+Shift+B`, and from waybar's own status module), the power profile switcher (laptops only), plus firmware (`fwupdmgr`: check for updates, install updates, list devices; also reachable via `Super+Shift+F`). |
+| **Sobarch** | **Update System** / **Review Conflicts** (see [Updating Your System](../updating-system/)), **Install** (lists known packages that are not installed yet; see [Software Profiles](../../installer/software-profiles/)), **Themes** (see [Theming](../theming/)), **Wallpaper** (see [Wallpaper](../wallpaper/)), **Default Apps** (pick a file type, then which installed app opens it), **Refresh Rescue ISO** (see [Rescue Media](../../installer/rescue-media/); only listed when rescue media was set up at install), and **Docs**, which opens this site. |
 | **Keybinds** | A read-only cheat sheet of every bind; see [Keybindings](../keybindings/). |
 | **Power** | Lock, Logout, Suspend, Reboot, Shutdown; see the table below. |
-| **Apps** | The regular application list, one level in. |
 
 Most of the Sobarch submenu's actions also exist as a `sobarch`
 command for terminals and SSH; see [The sobarch Command](../sobarch-command/).
@@ -40,6 +40,7 @@ reopen after each action so you can chain several; Escape closes them.
 | **Audio** (`Super+A`) | Toggle output mute, toggle mic mute, volume up/down 5%, switch output device, switch input device, per-app volume (mute, unmute, up, down). |
 | **Network** (`Super+N`) | Wi-Fi networks (scan, pick, enter a password if the network is new), toggle Wi-Fi, disconnect, forget a saved network, copy your IP address, and share the current Wi-Fi as a QR code. |
 | **Bluetooth** (`Super+Shift+B`) | Toggle power, scan and connect (pairs and trusts the device), paired devices (connect, disconnect, remove), disconnect. |
+| **Power Profile** (laptops only; also a click on the battery module in waybar) | Switch between Performance, Balanced, and Power Saver. The active profile is marked. It is applied by TLP through `tlpctl`. |
 | **Firmware** (`Super+Shift+F`) | Check for updates, install updates, list devices, all through `fwupdmgr`. |
 
 ## Power

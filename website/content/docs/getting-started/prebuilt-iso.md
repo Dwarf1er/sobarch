@@ -1,11 +1,11 @@
 +++
 title = "Prebuilt ISO"
-description = "The monthly sobarch ISO: boots straight into the installer, with the base packages cached."
+description = "The monthly sobarch ISO, the primary way to install: boots straight into the installer, with the base packages cached."
 weight = 15
 template = "docs/page.html"
 
 [extra]
-lead = "A second way to install: an ISO that boots directly into the installer and resolves the base system from local disk instead of the network."
+lead = "The primary way to install: an ISO that boots directly into the installer and resolves the base system from local disk instead of the network."
 toc = true
 +++
 
@@ -16,11 +16,12 @@ Arch's own `releng` profile, so the kernel and live tools track upstream.
 Each release carries the ISO (`sobarch-YYYY.MM.DD-x86_64.iso`) and a
 detached signature next to it (`.iso.sig`).
 
-It does not replace the [official ISO path](../installation/), which
-stays available and always runs the newest installer. The installer on the
-ISO is whatever was current when that month's image was built.
+The alternative is the [stock Arch ISO plus one
+command](../installation/), which always runs the newest installer. The
+installer on the sobarch ISO is whatever was current when that month's
+image was built.
 
-## What is different
+## What it adds to the stock ISO
 
 - **It boots straight into the installer.** The first console
   (tty1) auto-launches the TUI, so there is no command to type.
@@ -32,14 +33,16 @@ ISO is whatever was current when that month's image was built.
   build only when its version matches the pinned one, and builds
   normally otherwise.
 - **Optional software profiles are not cached.** They install over the
-  network at first boot exactly as they do from the official ISO, so a
+  network at first boot exactly as they do from the stock Arch ISO, so a
   network connection is still needed.
 - **It works for unattended and PXE installs.** If a `script=` kernel
   parameter is present, the ISO runs that script instead of launching the
-  TUI, the same hook the official ISO provides. See [PXE
+  TUI, the same hook the stock Arch ISO provides. See [PXE
   Netboot](../../installer/pxe-netboot/).
 
-The installer, partitioning, and result are identical to the other path.
+If the machine is offline, the installer adds a **Network** step as
+usual. The installer, partitioning, and result are identical to the other
+path.
 
 ## Verifying the download
 

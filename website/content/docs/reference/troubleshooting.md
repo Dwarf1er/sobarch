@@ -19,7 +19,7 @@ the TUI from the start.
 
 ## A first-boot step doesn't seem to have run
 
-The package-install and security-baseline units only start once a
+The package-install, security-baseline, and rescue-ISO units only start once a
 network connection comes up, not at ordinary boot; see
 [First Boot](../../getting-started/first-boot/) for why. If you've
 connected and it still hasn't run, check the unit directly:
@@ -27,9 +27,10 @@ connected and it still hasn't run, check the unit directly:
 ```sh
 systemctl status sobarch-firstboot-packages.service
 journalctl -u sobarch-firstboot-security.service
+journalctl -u sobarch-firstboot-rescue.service
 ```
 
-Both are safe to start by hand if you don't want to wait for the
+Each is safe to start by hand if you don't want to wait for the
 dispatcher: `systemctl start --no-block sobarch-firstboot-packages.service`.
 
 ## Boot splash, boot menu, or login screen branding is missing

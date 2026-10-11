@@ -33,8 +33,10 @@ order, and shows the output live in the same pane.
 6. **Setup scripts run inside the new system**, in this order: NVIDIA
    configuration (when it applies), [Snapper](../snapshots/) retention and
    the first snapshot, the Limine boot menu theme, the Plymouth boot
-   splash theme, the [rescue media](../rescue-media/) download and boot
-   entry (when enabled), and the `ly` login screen theme.
+   splash theme, formatting the [rescue media](../rescue-media/)
+   partitions (when enabled), the `ly` login screen theme, and, on laptops,
+   power management (enabling TLP and masking `systemd-rfkill`). The rescue
+   ISO itself is downloaded after first boot, not here.
 7. **The target is unmounted** and you are offered **Reboot now** or
    **Quit**.
 
@@ -46,6 +48,7 @@ and has no error handling.
 
 A failing step stops the install and names the step. The complete log is
 `install.log` in the output directory, `/root/sobarch-install/` by
-default, alongside the generated `base.json`. Fix the cause (usually the
+default, alongside the generated `base.json`. Each phase's wall-clock time
+is recorded in it, and a timing summary is printed when the install ends. Fix the cause (usually the
 network) and run the installer again; it regenerates its configuration
 every time.

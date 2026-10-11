@@ -26,6 +26,9 @@ class HardwareInfo:
     # packages, built after archinstall (not installable via pacstrap).
     nvidia_legacy_580xx: bool
     bluetooth_detected: bool
+    is_laptop: bool
+    # Power-management packages (TLP) only a laptop gets.
+    laptop_packages: list[str]
     is_uefi: bool
 
 
@@ -63,5 +66,7 @@ def detect_hardware(script_path: Path = HARDWARE_DETECT_SCRIPT) -> HardwareInfo:
         nvidia_proprietary_driver=_parse_bool(values.get("NVIDIA_PROPRIETARY_DRIVER", "false")),
         nvidia_legacy_580xx=_parse_bool(values.get("NVIDIA_LEGACY_580XX", "false")),
         bluetooth_detected=_parse_bool(values.get("BLUETOOTH_DETECTED", "false")),
+        is_laptop=_parse_bool(values.get("IS_LAPTOP", "false")),
+        laptop_packages=values.get("LAPTOP_PACKAGES", "").split(),
         is_uefi=EFI_VARS_DIR.is_dir(),
     )

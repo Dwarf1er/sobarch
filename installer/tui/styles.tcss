@@ -18,7 +18,7 @@ Screen {
 
 #title-right {
     width: auto;
-    color: $foreground 60%;
+    color: $foreground 75%;
 }
 
 #body {
@@ -60,6 +60,10 @@ Section {
     height: 3;
     padding: 0 1;
 }
+
+/* Dimmed text stays at 70% or more: on the 16-color Linux console anything
+   fainter downgrades to the same bright-black as the background and
+   disappears. */
 
 /* Lists: a solid highlight bar instead of Textual's default tint */
 
@@ -151,7 +155,8 @@ Input:focus > .input--placeholder {
 }
 
 Input > .input--placeholder {
-    color: $foreground 35%;
+    color: $foreground 75%;
+    text-style: italic;
 }
 
 SelectCurrent {
@@ -181,7 +186,8 @@ Toggle:focus {
 }
 
 Toggle:disabled {
-    color: $foreground 40%;
+    color: $foreground 75%;
+    text-style: italic;
 }
 
 .heading {
@@ -195,7 +201,7 @@ Toggle:disabled {
 }
 
 .note {
-    color: $foreground 60%;
+    color: $foreground 75%;
     margin-bottom: 1;
 }
 
@@ -239,7 +245,7 @@ Toggle:disabled {
 }
 
 #profiles:disabled {
-    opacity: 50%;
+    opacity: 70%;
 }
 
 /* Locale */

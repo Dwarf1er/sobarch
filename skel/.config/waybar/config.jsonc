@@ -75,6 +75,7 @@
     "format": "{capacity}%",
     "format-full": "Charged",
     "interval": 5,
+    "on-click": "bash ~/.config/hypr/scripts/power-profile-menu.sh",
     "states": {
       "warning": 20,
       "critical": 10

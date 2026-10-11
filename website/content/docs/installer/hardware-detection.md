@@ -1,6 +1,6 @@
 +++
 title = "Hardware Detection"
-description = "How CPU, GPU, and Bluetooth are detected before the install starts."
+description = "How CPU, GPU, Bluetooth, and laptops are detected before the install starts."
 weight = 20
 template = "docs/page.html"
 
@@ -26,6 +26,11 @@ toc = true
 - **Bluetooth adapter presence** drives `archinstall`'s own Bluetooth
   setup (installing `bluez`/`bluez-utils` and enabling the service),
   so there's no separate toggle to hunt for.
+- **Laptop chassis** (read from the firmware's chassis type: laptop,
+  notebook, portable, convertible, tablet, and similar) adds `tlp`,
+  `tlp-rdw`, and `tlp-pd` for power management. Desktops and virtual
+  machines don't get them. See [Battery life and power
+  tuning](../../reference/faq/#what-about-battery-life-and-power-tuning).
 
 ## NVIDIA-specific setup
 

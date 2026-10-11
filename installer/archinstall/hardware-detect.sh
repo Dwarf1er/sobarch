@@ -19,11 +19,12 @@
 # exactly 0x1340-0x1df6). Package lists (nvidia-settings, opencl-nvidia,
 # lib32-vulkan-icd-loader, the mkinitcpio "kms" hook removal for
 # proprietary driver tiers below) follow CachyOS's fuller reference.
-# Hybrid-laptop-specific handling (PRIME/switcheroo-control,
-# chassis-type detection, an NVIDIA RTD3 power-management workaround)
-# is deliberately not included here: real value, but laptop-specific
-# scope beyond GPU-generation detection, and again, I do not own that kind
-# of hardware so I can't test it.
+# Hybrid-laptop-specific GPU handling (PRIME/switcheroo-control, an
+# NVIDIA RTD3 power-management workaround) is deliberately not included
+# here: real value, but laptop-specific scope beyond GPU-generation
+# detection, and again, I do not own that kind of hardware so I can't
+# test it. The chassis type is read only to decide whether the laptop
+# power-management packages (TLP) belong on this machine.
 
 set -euo pipefail
 
@@ -104,6 +105,20 @@ else
     bluetooth_detected=false
 fi
 
+# SMBIOS chassis type (the same table `dmidecode -t chassis` prints):
+# 8 portable, 9 laptop, 10 notebook, 11 handheld, 14 sub-notebook, 30
+# tablet, 31 convertible, 32 detachable. Checked instead of "has a
+# battery": a wireless mouse or headset also shows up under
+# /sys/class/power_supply, and a VM reports no battery at all.
+laptop_packages=""
+case "$(cat /sys/class/dmi/id/chassis_type 2>/dev/null || true)" in
+    8|9|10|11|14|30|31|32)
+        is_laptop=true
+        laptop_packages="tlp tlp-pd tlp-rdw"
+        ;;
+    *) is_laptop=false ;;
+esac
+
 cat <<EOF
 CPU_MICROCODE_PKG="$CPU_MICROCODE_PKG"
 GPU_VENDORS="$gpu_vendors"
@@ -112,4 +127,6 @@ NVIDIA_PRESENT=$nvidia_present
 NVIDIA_PROPRIETARY_DRIVER=$nvidia_proprietary_driver
 NVIDIA_LEGACY_580XX=$nvidia_legacy_580xx
 BLUETOOTH_DETECTED=$bluetooth_detected
+IS_LAPTOP=$is_laptop
+LAPTOP_PACKAGES="$laptop_packages"
 EOF

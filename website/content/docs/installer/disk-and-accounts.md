@@ -35,7 +35,8 @@ steps are:
   and **Install now**; see [What the Install Does](../install-process/)
 
 Each step shows a mark in the list: a check once it's filled in, an
-exclamation mark while it needs attention. Nothing is written to disk
+exclamation mark while it needs attention, and a dim dot for the Network
+step until you have connected. Nothing is written to disk
 until you confirm on the Install step.
 
 ### Keys

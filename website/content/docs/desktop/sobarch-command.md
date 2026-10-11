@@ -43,6 +43,7 @@ menu or notification.
 | Sobarch, Update System | `sobarch update --gui` |
 | Sobarch, Review Conflicts | `sobarch review-conflicts --gui` |
 | Sobarch, Install (an AUR package) | `sobarch aur-sync <package>` |
+| Sobarch, Install (an official package) | `pkexec pacman -S --needed --noconfirm <package>` |
 | Sobarch, Refresh Rescue ISO | `sobarch rescue-refresh` |
 | Booted-snapshot notification | `sobarch snapshot-restore --yes N` |
 

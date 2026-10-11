@@ -79,7 +79,7 @@ PROFILES: tuple[Profile, ...] = (
     Profile(
         "System Tuning",
         "system-tuning",
-        _pkgs("ethtool", "lact", "nvtop", "smartmontools", "tlp", "tlp-rdw")
+        _pkgs("ethtool", "lact", "nvtop", "smartmontools")
         + _pkgs("sobarch-via-udev", aur=True),
     ),
     Profile(

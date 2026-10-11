@@ -75,23 +75,33 @@ Optional, applied after first boot, and unchecked by default:
 | Virtualization | QuickEMU, QuickGUI |
 | Office | LibreOffice, Homebank |
 | Browsers & Chat | Brave, Signal, Vesktop |
-| System Tuning | TLP, LACT, nvtop, smartmontools, ethtool, VIA keyboard support |
+| System Tuning | LACT, nvtop, smartmontools, ethtool, VIA keyboard support |
 | Input Method | fcitx5 (CJK, Hangul) |
 
 Each profile can be expanded to hand-pick individual packages, and "install everything" is a single toggle.
 
 ## Quickstart
 
-Boot the [official Arch Linux ISO](https://archlinux.org/download/),
+Download the latest ISO from the [Releases
+page](https://github.com/Dwarf1er/sobarch/releases/latest), write it to a
+USB drive, and boot it. The installer launches on its own on the first
+console, so there is nothing to type. Walk through disk selection,
+account/locale setup, and optional software profiles, and it hands off
+to `archinstall`. The ISO has the base system's packages pre-cached, so
+a real install resolves them from local disk instead of downloading
+them.
+
+### From a stock Arch ISO
+
+Alternatively, boot the [official Arch Linux ISO](https://archlinux.org/download/),
 connect to the network (`iwctl` for Wi-Fi; wired works out of the box),
 then run:
 
     curl -fsSL http://installsobarch.antoinepoulin.com | bash
 
-This is the only manually-typed, unbranded step. It fetches this
-repository and launches the TUI installer, which walks through disk
-selection, account/locale setup, and optional software profiles before
-handing off to `archinstall`.
+This fetches this repository and launches the same TUI installer, always
+at its newest version. There is no package cache on this route, so the
+base packages download during the install.
 
 **Note:** by default, the installer partitions and wipes the entire
 target disk. It can also install into existing free space instead, for
@@ -108,14 +118,8 @@ docs](https://sobarch.antoinepoulin.com/docs/installer/pxe-netboot/).
 
 ### Prebuilt ISO
 
-A monthly-built ISO with the installer and the
-base system's packages pre-cached is published on the [Releases
-page](https://github.com/Dwarf1er/sobarch/releases), letting a real
-install resolve those packages from local disk instead of downloading
-them. Optional software profiles still install over the network at
-first boot either way. Boot it the same way as the official ISO;
-everything else above still applies. This doesn't replace the
-bootstrap command above, which stays the primary, always-current path.
+The ISO is built monthly. Optional software profiles still install over
+the network at first boot either way.
 
 Each release is signed with a project-dedicated key (fingerprint
 `9CC2 2D5E C575 F128 628E  A8F6 AFC1 54B3 F842 8676`), whose public key

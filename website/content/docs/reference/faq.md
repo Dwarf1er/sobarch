@@ -39,6 +39,38 @@ yet. Anything else in the official repositories is a normal
 `pacman -S`. There's no AUR helper, so other AUR packages are yours to
 build by hand.
 
+## How do I update my laptop's firmware?
+
+`fwupd` is part of every install. Use **Super → System → Firmware** or
+`Super+Shift+F` to check for updates, install them, or list devices;
+the same actions are available from a terminal through `fwupdmgr`.
+See [Menu System](../../desktop/menu-system/).
+
+## What about battery life and power tuning?
+
+On a laptop, `tlp`, `tlp-rdw`, and `tlp-pd` are installed and enabled
+automatically, so power tuning works without any setup. The installer
+detects a laptop from the firmware's chassis type, so desktops and
+virtual machines don't get these packages or the menu entry below.
+
+- `tlp.service` applies the power settings at boot and switches between
+  AC and battery settings when you plug or unplug the charger.
+- `tlp-rdw` reacts to NetworkManager events to manage radios.
+  `systemd-rfkill` is masked because it competes with TLP for radio
+  state.
+- Run `tlp-stat -s` to check that TLP is active.
+- To pick Performance, Balanced, or Power Saver, click the battery module
+  in waybar or use **Super → System → Power Profile**. `tlp-pd` provides
+  the profile interface and `tlpctl` is its command-line client.
+
+If the chassis type is reported wrongly (some firmware does this), add
+the packages by hand with `sudo pacman -S tlp tlp-rdw tlp-pd`, then
+enable `tlp.service` and `tlp-pd.service`.
+
+For other tools, the **System Tuning** profile adds `lact`, `nvtop`,
+`smartmontools`, and `ethtool`; see [Software
+Profiles](../../installer/software-profiles/).
+
 ## Can I dual-boot with Windows or another OS?
 
 Yes, if you free up disk space for it yourself first (the installer

@@ -18,7 +18,7 @@ toggle in the installer's Options step if you're tight on disk space:
 - A larger ext4 partition holding the fetched Arch ISO itself, as a
   plain file.
 
-The installer only formats these partitions. The ISO itself (about 1.3GB) is
+The installer only formats these partitions. The ISO itself (about 1.5 GiB) is
 downloaded in the background after first boot, once the network is up, so it
 doesn't hold up the install. The rescue entry appears in the boot menu once
 that download finishes.
@@ -30,9 +30,9 @@ partition. The rescue kernel and initramfs are kept under
 
 The split exists because the bootloader (Limine) can't read ext4 and
 has no GRUB-style loopback command, and FAT32 has a hard 4GB per-file
-cap that the ISO itself would run into. During install, this is fetched
-from an official mirror, checksum-verified, and wired into a permanent
-boot menu entry, the same mechanism the official Arch installation
+cap that the ISO itself would run into. After first boot, the ISO is
+fetched from an official mirror, checksum-verified, and wired into a
+permanent boot menu entry, the same mechanism the official Arch installation
 media itself uses to loop-mount an ISO file at boot.
 
 The stored ISO is refreshed manually only, never automatically. A

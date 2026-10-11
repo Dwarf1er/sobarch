@@ -35,8 +35,9 @@ and bash-completion if it's installed. Two things extend it:
 ## fastfetch
 
 `fastfetch` runs once at the start of every new interactive shell,
-printing the sobarch logo next to the OS, kernel, uptime, package count,
-shell, display, desktop, terminal, CPU, GPU, memory, disk, and a row of color swatches. Its logo and
+printing the sobarch logo next to the OS, host, kernel, uptime, package
+count, shell, display, desktop, window manager, terminal, CPU, GPU,
+memory, disk, and a row of color swatches. Its logo and
 label colors come from the active [theme](../../desktop/theming/) like
 everything else. To stop it, remove that line from `~/.bashrc` (you'll
 be offered a merge if a later update touches the same file).

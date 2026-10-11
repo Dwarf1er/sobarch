@@ -36,8 +36,8 @@ throughout:
 3. If `sobarch-skel` changed, [boot and login theming](../boot-theming/)
    is re-applied, so branding changes ship through this same command
    as config changes.
-4. Your tinty templates are rebuilt and the merge described above
-   runs, walking you through any conflicts interactively: **K**eep
+4. The merge described above runs, then your tinty templates are
+   rebuilt, and you are walked through any conflicts interactively: **K**eep
    yours, **U**se the new version, view the **D**iff, **E**dit, **S**kip for now, or use the new
    version for **A**ll remaining conflicts.
 

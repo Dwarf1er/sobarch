@@ -38,6 +38,7 @@ CHROOT_SETUP_SCRIPTS = [
     "plymouth-setup.sh",
     "rescue-iso-setup.sh",
     "ly-theme-setup.sh",
+    "power-setup.sh",
 ]
 CHROOT_SETUP_DIR_IN_TARGET = Path("/root/sobarch-setup")
 

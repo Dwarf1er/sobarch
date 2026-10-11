@@ -39,9 +39,10 @@ background and notifies you if something goes wrong.
 The sync diffs the versions pinned in the repository against what's
 actually installed and rebuilds anything behind. It only ever touches
 vendored packages that are already installed, so it never installs a
-profile package you didn't pick. A second trigger while one sync is
-still running simply waits its turn, and the hook does nothing inside
-a chroot or when the sync script's own pacman calls fire it again.
+profile package you didn't pick. The hook is refused rather than stacked if a
+sync is already running, a hand-run sync waits for the lock instead of
+overlapping, and the hook does nothing inside a chroot or when the sync
+script's own pacman calls fire it again.
 
 One gap is accepted on purpose: a `pacman -Syu` that upgrades nothing
 runs no transaction, so the hook doesn't fire. Vendored packages are

@@ -21,7 +21,7 @@ the left, the clock in the middle, and status modules on the right.
 | Network | Wi-Fi or Ethernet state; hover for the SSID and signal | Open the network menu |
 | Bluetooth | Power state, and how many devices are connected | Open the Bluetooth menu |
 | Volume | Output volume, shown muted when it is | Left click: audio menu. Right click: toggle mute. Scroll: volume up and down 5% |
-| Battery | Charge percent, with warning and critical colors at 20% and 10% | None |
+| Battery | Charge percent, with warning and critical colors at 20% and 10% | Opens the power profile menu |
 
 The menus are described in [Menu System](../menu-system/). Changing the
 [theme](../theming/) restarts the bar so its colors update, including
