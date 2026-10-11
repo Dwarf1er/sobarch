@@ -204,10 +204,12 @@ body.dark .home-terminal {
   margin-bottom: 2rem;
 
   .home-iso-button {
-    flex-basis: 100%;
-    max-width: 22rem;
-    padding: 1rem 2.5rem;
-    font-size: 1.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.8rem 2rem;
+    font-size: 1.1rem;
   }
 
   .btn {

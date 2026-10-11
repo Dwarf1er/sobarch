@@ -14,7 +14,7 @@
     <p class="home-lead">{{ section.extra.lead }}</p>
 
     <div class="home-cta">
-      <a class="btn btn-primary btn-lg home-iso-button" id="iso-download" href="{{ section.extra.iso_url | safe }}">Download the ISO</a>
+      <a class="btn btn-primary btn-lg home-iso-button" id="iso-download" href="{{ section.extra.iso_url | safe }}"><svg class="home-iso-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Download the ISO</a>
       <a class="btn btn-outline-primary" href="{{ get_url(path=section.extra.docs_url) | safe }}">Read the docs</a>
       <a class="btn btn-outline-primary" href="{{ section.extra.repo_url | safe }}">View on GitHub</a>
     </div>
