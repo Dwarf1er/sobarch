@@ -13,6 +13,14 @@
     <h1 class="home-tagline">{{ section.extra.tagline }}</h1>
     <p class="home-lead">{{ section.extra.lead }}</p>
 
+    <div class="home-cta">
+      <a class="btn btn-primary btn-lg home-iso-button" id="iso-download" href="{{ section.extra.iso_url | safe }}">Download the ISO</a>
+      <a class="btn btn-outline-primary" href="{{ get_url(path=section.extra.docs_url) | safe }}">Read the docs</a>
+      <a class="btn btn-outline-primary" href="{{ section.extra.repo_url | safe }}">View on GitHub</a>
+    </div>
+
+    <p class="home-iso-note">The prebuilt ISO is published monthly on the latest release. Already booted into a stock Arch ISO? Run this instead:</p>
+
     <div class="home-terminal" role="group" aria-label="Install command">
       <div class="home-terminal-bar">
         <span></span><span></span><span></span>
@@ -24,13 +32,6 @@
       <pre class="home-terminal-body"><code>{{ section.extra.install_command }}</code></pre>
     </div>
 
-    <p class="home-iso-note">Or boot the official Arch ISO and run the command above. The prebuilt ISO is published monthly on the latest release.</p>
-
-    <div class="home-cta">
-      <a class="btn btn-primary" id="iso-download" href="{{ section.extra.iso_url | safe }}">Download the ISO</a>
-      <a class="btn btn-outline-primary" href="{{ get_url(path=section.extra.docs_url) | safe }}">Read the docs</a>
-      <a class="btn btn-outline-primary" href="{{ section.extra.repo_url | safe }}">View on GitHub</a>
-    </div>
   </div>
 </section>
 
