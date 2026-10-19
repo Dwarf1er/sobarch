@@ -86,8 +86,8 @@ guide](https://wiki.t2linux.org/guides/startup-manager/) for details.
 - Fan control (`t2fanrd`), the Touch Bar (`tiny-dfr`), audio
   (`apple-t2-audio-config`) and the Wi-Fi/Bluetooth firmware fetcher
   (`apple-bcm-firmware-fetcher`).
-- `t2-touchid`, bound to the account you create, with fingerprint auth
-  on the lock screen only.
+- `t2-touchid`, bound to the account you create, and fingerprint auth
+  enabled on the lock screen.
 - Kernel parameters `intel_iommu=on iommu=pt pcie_ports=compat`, the T2
   keyboard modules in the initramfs (so a LUKS passphrase can be typed),
   and a `brcmfmac` option that keeps Wi-Fi working with `wpa_supplicant`.
@@ -98,14 +98,13 @@ guide](https://wiki.t2linux.org/guides/wifi-bluetooth/).
 
 ## Touch ID
 
-Touch ID unlocks the lock screen through the `t2-touchid` bridge. It is
-not used at the login prompt: logging in with your password is what
-unlocks the keyring, and a finger can't do that. Other limits:
+Touch ID works for the console login and the lock screen through the
+`t2-touchid` bridge, with these limits:
 
 - Only fingers enrolled in macOS work. Linux can't enroll or delete
   fingers.
-- Your password is still needed at every login and after a reboot, for
-  disk encryption and the keyring.
+- Your password is still needed after a reboot, for disk encryption and
+  to unlock the keyring; a fingerprint login doesn't unlock the keyring.
 - If no finger is recognized, the T2 wants the macOS account password
   once since it last lost power: boot macOS, log in with the password,
   then boot Linux again. Rebooting Linux doesn't reset this.

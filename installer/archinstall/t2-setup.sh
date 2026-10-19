@@ -11,13 +11,14 @@ mkdir -p /etc/kait2en
 sed "s/^T2_TOUCHID_BIND_USER=.*/T2_TOUCHID_BIND_USER=$SOBARCH_USERNAME/" /usr/share/kait2en/t2-touchid.conf > /etc/kait2en/t2-touchid.conf
 systemctl enable kait2en-t2-touchid.service
 
-# Fingerprint is for the lock screen only: this rule would let a finger skip the password pam_oo7 needs
-# at login. The empty marker pair stops the package re-adding it on upgrade.
+# The package adds this on install, but only if pambase was already in place.
 PAM_FILE=/etc/pam.d/system-local-login
-sed -i '/^# t2-touchid: begin$/,/^# t2-touchid: end$/d' "$PAM_FILE"
-sed -i -E '/^[[:space:]]*auth[[:space:]]+include[[:space:]]+system-login[[:space:]]*$/i\
+if ! grep -q "^# t2-touchid: begin$" "$PAM_FILE"; then
+    sed -i -E '/^[[:space:]]*auth[[:space:]]+include[[:space:]]+system-login[[:space:]]*$/i\
 # t2-touchid: begin\
+auth      sufficient pam_fprintd.so timeout=5 max-tries=1\
 # t2-touchid: end' "$PAM_FILE"
+fi
 
 # The T2 keyboard and trackpad sit behind t2bce; the initramfs needs them for a LUKS passphrase.
 cat > /etc/mkinitcpio.conf.d/apple-t2.conf <<'CONF'
