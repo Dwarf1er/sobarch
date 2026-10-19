@@ -1,14 +1,8 @@
 #!/usr/bin/env bash
-# Sourced by update-system.sh and sobarch-update-check.sh, never
-# run directly: the one place that decides whether an installed
-# vendored sobarch package (packages/custom/) is behind the version
-# pinned on GitHub's master branch. Reads the committed .SRCINFO, same
-# source aur-sync.sh's own version comparison uses, one small file per
-# package instead of the whole repo tarball. Needs no root.
+# Sourced, not run. Compares installed vendored packages (packages/custom/)
+# against the .SRCINFO pinned on GitHub master.
 
-# Prints the pinned [epoch:]pkgver-pkgrel of a packages/custom/ package,
-# or returns 1 (printing nothing) if it can't be determined (offline,
-# GitHub hiccup, malformed .SRCINFO).
+# Prints the pinned [epoch:]pkgver-pkgrel, or returns 1 if it can't be read.
 pinned_version() {
     local pkg="$1" srcinfo epoch pkgver pkgrel
     srcinfo="$(curl -fsSL "https://raw.githubusercontent.com/Dwarf1er/sobarch/master/packages/custom/$pkg/.SRCINFO" 2>/dev/null)" || return 1
@@ -23,11 +17,8 @@ pinned_version() {
     fi
 }
 
-# Succeeds only if PKG is installed AND the pinned version is newer. A
-# package that isn't installed, or whose pinned version can't be
-# determined, is "not pending": callers use this to decide whether to
-# ask for a password or show a notification, and both are wrong to do
-# on a guess.
+# Succeeds only if PKG is installed and the pinned version is newer. Any
+# uncertainty counts as "not pending" so callers never prompt on a guess.
 vendored_update_pending() {
     local pkg="$1" installed pinned
     installed="$(pacman -Q "$pkg" 2>/dev/null | awk '{print $2}')" || true

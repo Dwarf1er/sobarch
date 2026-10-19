@@ -53,9 +53,7 @@ class DiskSection(Section):
         self.query_one("#encryption-fields").display = self.query_one("#encryption-toggle", Toggle).value
 
     def _build_entries(self) -> list[_Entry]:
-        # Free-space installs are UEFI/GPT-only (see disk_probe.py), so a
-        # BIOS machine, or a disk with no usable free space, only ever
-        # gets the wipe-the-whole-disk entry.
+        # Free-space installs are UEFI/GPT only.
         is_uefi = self.sobarch_app.get_hardware().is_uefi
         entries: list[_Entry] = []
         for disk in list_disks():
@@ -117,7 +115,5 @@ class DiskSection(Section):
         state.free_space_start_bytes = free_space.start_bytes
         state.free_space_size_bytes = free_space.size_bytes
         state.free_space_at_disk_end = free_space.at_disk_end
-        # Rescue media is disabled for free-space installs, to avoid
-        # partition-count/size-budget edge cases on a disk shared with
-        # another OS (see docs/DECISIONS.md); OptionsSection enforces it.
+        # No rescue media on a shared disk; OptionsSection enforces it.
         state.rescue_media = False

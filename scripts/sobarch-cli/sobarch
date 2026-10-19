@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
-# `sobarch`: a thin dispatcher over the scripts sobarch-scripts already
-# ships in /usr/local/lib/sobarch/ (decision #21). It adds no update,
-# sync, or restore logic of its own: each subcommand only picks the
-# script and, where that script needs root, escalates for it. The
-# fuzzel menus under ~/.config/hypr/scripts/ call these same
-# subcommands, so each operation lives in exactly one place.
+# Thin dispatcher over the scripts in /usr/local/lib/sobarch/, shared with
+# the fuzzel menus.
 
 set -euo pipefail
 
@@ -30,9 +26,7 @@ Usage: sobarch <command> [args]
 USAGE
 }
 
-# Re-runs the given command as root: directly if already root, else
-# sudo when there's a terminal to ask for a password on, else pkexec
-# (the desktop menus, which have none).
+# sudo when there's a terminal for the password prompt, else pkexec.
 as_root() {
     if ((EUID == 0)); then
         exec "$@"

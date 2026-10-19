@@ -1,30 +1,6 @@
-"""Unattended install: builds a WizardState from a JSON answer file
-instead of the interactive wizard screens, then drives the exact same
-generate_configs()/run_install() pair ReviewScreen/ProgressScreen call,
-with plain print()s standing in for the TUI's log widget.
+"""Unattended install from a local JSON answer file.
 
-Deliberately scoped down from what the wizard supports, rather than
-mirroring every screen:
-
-- No dual-boot/free-space install. Reusing an existing ESP or a
-  detected free-space gap (screens/disk.py, disk_probe.py) is exactly
-  the kind of judgment call disk_probe.py's own free-space floor and
-  ESP-detection heuristics were written for a human to confirm on the
-  review screen, not to run blind on unknown hardware.
-- Whole-profile selection only (a list of profile slugs), not the
-  per-package granularity screens/profiles.py offers -- there's no
-  real use case yet for picking individual packages out of a profile
-  without a human present to do it.
-
-No network fetch of the answer file here: __main__.py takes
---answer-file as a local path, staged on the live ISO however the
-operator got it there. PXE-netbooting the official installer artifacts
-straight into this path is documented (website/content/docs/installer/
-pxe-netboot.md), by chaining a PXE-side wrapper script into the same
-bootstrap.sh --answer-file invocation a human would otherwise type; a
-first-party fetch of the answer file itself over the network (so one
-PXE menu entry doesn't need an operator-hosted wrapper script) is still
-not built -- see docs/DECISIONS.md decision #18.
+No free-space installs (they need a human to confirm), and whole profiles only.
 """
 
 import json
@@ -62,8 +38,7 @@ def _resolve_disk(selector: str, confirm_erase: bool) -> tuple[str, int]:
         raise UnattendedConfigError("no disks detected")
 
     if selector == "largest":
-        # Removable media (USB sticks, SD cards) are never picked
-        # implicitly; name one by path to target it on purpose.
+        # Removable media is only used when named by path.
         fixed = [disk for disk in disks if not disk.removable]
         if not fixed:
             raise UnattendedConfigError('"largest" found no non-removable disk; give an exact device path')
@@ -101,9 +76,7 @@ def _resolve_profiles(slugs: object) -> dict[str, list[str]]:
 
 
 def _resolve_mirror_regions(data: dict) -> list[str]:
-    """`mirror_regions` is a list of region names; the single-string
-    `mirror_region` from before multiple regions were supported still
-    works. Empty or absent means automatic."""
+    """Accept `mirror_regions` (list) or legacy `mirror_region` (string); empty means automatic."""
     value = data.get("mirror_regions", data.get("mirror_region", []))
     if isinstance(value, str):
         value = [value] if value else []

@@ -1,6 +1,4 @@
-"""Runs installer/archinstall/hardware-detect.sh and parses its
-KEY=VALUE stdout, rather than reimplementing detection logic the shell
-script already owns."""
+"""Runs installer/archinstall/hardware-detect.sh and parses its KEY=VALUE output."""
 
 import shlex
 import subprocess
@@ -9,9 +7,7 @@ from pathlib import Path
 
 HARDWARE_DETECT_SCRIPT = Path(__file__).resolve().parent.parent / "archinstall" / "hardware-detect.sh"
 
-# Same check archinstall's own SysInfo.has_uefi() makes; a plain
-# directory check needs no shell script of its own the way the other
-# hardware facts below do.
+# Same check as archinstall's SysInfo.has_uefi().
 EFI_VARS_DIR = Path("/sys/firmware/efi")
 
 
@@ -22,12 +18,10 @@ class HardwareInfo:
     gpu_packages: list[str]
     nvidia_present: bool
     nvidia_proprietary_driver: bool
-    # Maxwell/Pascal/Volta: needs the vendored nvidia-580xx-* AUR
-    # packages, built after archinstall (not installable via pacstrap).
+    # Maxwell/Pascal/Volta: AUR nvidia-580xx-*, built after archinstall.
     nvidia_legacy_580xx: bool
     bluetooth_detected: bool
     is_laptop: bool
-    # Power-management packages (TLP) only a laptop gets.
     laptop_packages: list[str]
     is_uefi: bool
 
@@ -49,9 +43,7 @@ def detect_hardware(script_path: Path = HARDWARE_DETECT_SCRIPT) -> HardwareInfo:
         line = line.strip()
         if not line or "=" not in line:
             continue
-        # shlex.split on the whole "KEY=value" assignment, not just the
-        # value half, so a quoted value containing spaces (e.g.
-        # GPU_VENDORS="amd intel") is unquoted without being word-split.
+        # Split the whole assignment so a quoted value with spaces stays one token.
         tokens = shlex.split(line)
         if not tokens:
             continue

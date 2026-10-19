@@ -1,15 +1,7 @@
-"""Live-environment network connectivity: a real reachability check
-plus iwd/iwctl-driven WiFi connect, for hardware with no wired link.
-Direct subprocess calls (mirroring disks.py's style), not a shell
-script: iwctl/curl/ip already do everything needed without an
-intermediate parser layer of our own.
+"""Live-environment connectivity check and iwctl WiFi connect.
 
-iwctl has no JSON output mode (checked `iwctl --help` directly -- no
-such flag exists), unlike `lsblk -J` disks.py already relies on. Its
-table output is ANSI-colored text; scan_networks() below is
-best-effort against that format and degrades to an empty list rather
-than raising, since this can't be validated against real WiFi hardware
-in every environment this runs in."""
+iwctl has no machine-readable output, so its tables are parsed best-effort.
+"""
 
 import re
 import subprocess
@@ -38,9 +30,7 @@ def _strip_ansi(text: str) -> str:
 
 
 def is_connected() -> bool:
-    """A real reachability check (DNS + TLS + HTTP), not just "is
-    there a route" -- a route can exist with no actual upstream, e.g.
-    an access point with no internet behind it."""
+    """Fetch a real URL, since a route can exist with no internet behind it."""
     result = _run(
         ["curl", "-fsS", "--max-time", str(CONNECTIVITY_CHECK_TIMEOUT_SECONDS), "-o", "/dev/null", CONNECTIVITY_CHECK_URL],
         timeout=CONNECTIVITY_CHECK_TIMEOUT_SECONDS + 2,
@@ -49,9 +39,7 @@ def is_connected() -> bool:
 
 
 def list_station_devices() -> list[str]:
-    """Wireless adapters in station (client) mode. Only the first one
-    found is ever used by this screen -- multiple WiFi adapters on one
-    machine is out of scope."""
+    """Wireless adapters in station mode."""
     result = _run(["iwctl", "station", "list"])
     devices = []
     for line in _strip_ansi(result.stdout).splitlines():
@@ -65,10 +53,7 @@ def list_station_devices() -> list[str]:
 
 
 def scan_networks(device: str, max_wait_seconds: float = 10.0) -> list[NetworkInfo]:
-    """Best-effort: triggers a scan, waits for it to finish (bounded,
-    not indefinitely), then parses `get-networks`. Any failure here
-    just means the caller gets an empty list -- manual SSID entry is
-    always the real fallback, this is a convenience on top."""
+    """Scan and list networks; returns [] on any failure (manual SSID entry is the fallback)."""
     try:
         _run(["iwctl", "station", device, "scan"])
 
@@ -85,12 +70,7 @@ def scan_networks(device: str, max_wait_seconds: float = 10.0) -> list[NetworkIn
             line = line.strip()
             if not line or line.startswith("-") or line.startswith("Network") or line.startswith("Available"):
                 continue
-            # Columns are right-padded and separated by variable
-            # whitespace; the security token (psk/open/8021x/...) is
-            # always the second-to-last field, signal bars/dBm last,
-            # and the SSID is everything before that -- more robust
-            # than splitting on fixed column widths, which drift with
-            # SSID length.
+            # Security and signal are the last two fields; the SSID may contain spaces.
             parts = line.split()
             if len(parts) < 3:
                 continue

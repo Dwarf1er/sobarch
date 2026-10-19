@@ -23,8 +23,7 @@ def _list_locales() -> list[str]:
     try:
         from archinstall.lib.locale.utils import list_locales
 
-        # Each line is "en_US.UTF-8 UTF-8"; base.json's sys_lang only
-        # wants the locale name, the first field.
+        # "en_US.UTF-8 UTF-8" -> "en_US.UTF-8"
         names = [line.split()[0] for line in list_locales() if line.strip()]
         return names or DEFAULT_LOCALES
     except Exception:
@@ -41,11 +40,7 @@ def _list_timezones() -> list[str]:
 
 
 def _list_mirror_regions() -> list[str]:
-    """Queries archlinux.org's own mirror-status data (falling back to
-    the live system's local mirrorlist if offline), the same source
-    archinstall itself uses to validate mirror_regions: a network call,
-    so only ever run off the UI thread, and an empty/failed result just
-    means the Select offers Automatic only."""
+    """Fetch region names from archinstall's mirror handler. Blocking; run off the UI thread."""
     try:
         from archinstall.lib.mirror.mirror_handler import MirrorListHandler
 
@@ -95,8 +90,7 @@ class LocaleSection(Section):
 
     def _apply_mirror_regions(self, regions: list[str]) -> None:
         chosen = set(self.sobarch_app.state.mirror_regions)
-        # A selected region the fetch no longer offers is dropped rather
-        # than kept invisibly in the state.
+        # A selected region the fetch no longer offers is dropped.
         self.query_one("#mirror-list", SelectionList).add_options(
             [(region, region, region in chosen) for region in regions]
         )

@@ -1,12 +1,7 @@
 #!/usr/bin/env bash
-# Replaces packages/aur/NAME/'s vendored files with a fresh clone of
-# that package's AUR git repo, then regenerates .SRCINFO. Mutates the
-# working tree only; the actual review (diff, namcap, branch/PR) is
-# .github/workflows/aur.yml's job, not this script's.
-#
-# Must run as a non-root user: makepkg refuses outright to run as root
-# (no override flag), same constraint aur-sync.sh's own build step
-# works around with a dedicated build user.
+# Replaces packages/aur/NAME/ with a fresh clone of its AUR repo and
+# regenerates .SRCINFO. Review happens in .github/workflows/aur.yml.
+# makepkg refuses to run as root.
 
 set -euo pipefail
 shopt -s inherit_errexit
@@ -23,9 +18,7 @@ trap 'rm -rf "$clone_dir"' EXIT
 
 git clone --depth 1 "https://aur.archlinux.org/${name}.git" "$clone_dir"
 
-# Full replace, not a merge: whatever AUR currently tracks for this
-# pkgbase is the new vendored snapshot, including any file it stopped
-# shipping.
+# Full replace, so files the AUR stopped shipping are dropped too.
 rm -rf "${dest:?}"/*
 find "$clone_dir" -mindepth 1 -maxdepth 1 -not -name '.git' -exec cp -a {} "$dest/" \;
 

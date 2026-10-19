@@ -1,9 +1,6 @@
 #!/bin/bash
-# Audio control panel: output volume as a meter in the header, mute
-# toggles named for what they'll do next, current output/input devices
-# shown inline, and per-app volume for whatever is playing. Stays open
-# after every action (cursor kept in place), so pressing Enter on
-# "Volume Up" a few times works like a stepper.
+# Audio panel: volume, mute, default devices and per-app volume. Stays
+# open after each action so Volume Up can be pressed repeatedly.
 
 source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
@@ -27,10 +24,8 @@ meter() {
     printf '%s' "$bar"
 }
 
-# NAME<\037>NICK per sink or source, monitors left out. node.nick is
-# the short human name ("LS27AG30x", "fifine Microphone") where
-# device.description is the long chipset one ("Navi 21/23 HDMI/DP
-# Audio Controller Digital Stereo (HDMI) [LS27AG30x]").
+# NAME<\037>NICK per sink or source, monitors excluded. node.nick is the
+# short device name; device.description is the fallback.
 nodes() {
     pactl list "$1" 2>/dev/null | awk '
         function val() { v = $0; sub(/^[^"]*"/, "", v); sub(/"$/, "", v); return v }
@@ -49,8 +44,6 @@ nick_of() {
     done
 }
 
-# Picker for the default sink or source; returns to the panel after a
-# choice, since there's nothing more to do here once one is picked.
 device_menu() {
     local kind="$1" current name nick icon
     if [ "$kind" = sinks ]; then

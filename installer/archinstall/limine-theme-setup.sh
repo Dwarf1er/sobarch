@@ -1,78 +1,21 @@
 #!/bin/bash
-# Limine boot menu theming: term palette/background matching the
-# OneDark accents used everywhere else in the session (Waybar, mako,
-# fuzzel, hyprlock), a small centered logo mark, and branded interface
-# text.
-#
-# Earlier version of this script dropped the logo entirely because it
-# clashed with the menu text at some resolutions. Two actual bugs
-# caused that, both fixed here instead of giving up on a logo:
-#   - It used the full opaque 1920x1080 desktop wallpaper as the boot
-#     background. Now uses sobarch-logo.png instead, the same small,
-#     mostly-transparent mark hyprlock uses - centered at its native
-#     512x512 size (`wallpaper_style: centered`) it only occupies a
-#     modest chunk of screen space.
-#   - `term_background` was set to a bare 6-digit RRGGBB value, but per
-#     Limine's CONFIG.md that field is `TTRRGGBB` (leading transparency
-#     byte). A malformed value there meant the menu's text background
-#     never got the transparency needed to let the logo show through.
-#     Now set as `80282c34`: alpha 0x80, matching the semi-transparent
-#     alpha Limine itself defaults to whenever a `wallpaper` is set.
-#   - `term_font_scale` was forced to `2x2` (double size), inflating
-#     the menu's on-screen footprint well beyond what it needs. Left
-#     unset now so it falls back to Limine's own resolution-based
-#     default (1x1 below 2560x1440, 2x2 above).
-#
-# Runs twice in this script's lifetime, unmodified either time: once
-# raw-copied into the target and run inside arch-chroot at install time
-# (install_runner.py's CHROOT_SETUP_SCRIPTS), and later, packaged as
-# /usr/local/lib/sobarch/limine-theme-setup.sh by sobarch-scripts,
-# re-run by update-system.sh (via pkexec) whenever sobarch-skel
-# refreshes so an already-installed system picks up branding changes
-# too. Nothing here depends on being inside a fresh chroot specifically
-# (no archinstall-only env vars), and the block-replace logic below is
-# already idempotent, so no separate "refresh" variant was needed.
-#
-# UNVERIFIED on real hardware since the changes above: the branding
-# text and color palette were confirmed working before, but the
-# reinstated wallpaper/transparency/font-scale changes have not been
-# checked against an actual boot yet. If the logo still collides with
-# the menu or is still hidden, delete the block between the
-# START/END markers below from limine.conf (/boot/EFI/BOOT/limine.conf
-# on UEFI, /boot/limine/limine.conf on BIOS; rescue-media/live-USB
-# access, same recovery path scripts/snapshot-rollback.sh already
-# documents) and file a fix rather than trusting this script blindly.
-#
-# Deliberately narrow: only additive directives Limine has no config
-# from archinstall to conflict with (term colors, wallpaper, branding
-# text). `timeout`/`default_entry` are left alone since archinstall's
-# own _add_limine_bootloader() may already set them and duplicate keys'
-# behavior isn't confirmed.
+# Limine boot menu theming: OneDark colors, centered logo, branding text.
+# Also re-run by update-system.sh on installed systems, so it must stay idempotent.
+# Only sets keys archinstall doesn't write; timeout/default_entry are left alone.
 
 set -euo pipefail
 
-# Same has_uefi() check archinstall's own _add_limine_bootloader() makes
-# to decide where it writes limine.conf in the first place: EFI/BOOT
-# on the ESP when UEFI, /boot/limine otherwise. /sys/firmware/efi is
-# bind-mounted into the chroot from the live environment by arch-chroot,
-# so this reflects the same boot mode archinstall saw, both at install
-# time and later when this script is re-run on the installed system.
+# Same boot-mode check archinstall uses to choose where limine.conf lives.
 if [ -d /sys/firmware/efi ]; then
     LIMINE_CONF="/boot/EFI/BOOT/limine.conf"
 else
     LIMINE_CONF="/boot/limine/limine.conf"
 fi
-# Same package payload path ly-theme-setup.sh reads its ASCII logo
-# from: sobarch-skel installs both under /usr/share/sobarch/branding/,
-# built earlier in this same chroot session (see install_runner.py's
-# CHROOT_SETUP_SCRIPTS ordering), well before the target user's $HOME
-# exists, so neither script can read from a skel-deployed path instead.
+# Read from the sobarch-skel package: the user's $HOME doesn't exist yet at install time.
 WALLPAPER_SRC="/usr/share/sobarch/branding/sobarch-logo.png"
 WALLPAPER_DEST="/boot/sobarch-logo.png"
 
-# Leftover from the full-wallpaper version of this script; a machine
-# that already ran that version has this file sitting on its ESP with
-# nothing referencing it anymore.
+# Unreferenced image left on the ESP by older installs.
 rm -f /boot/sobarch-wallpaper.png
 
 cp -f "$WALLPAPER_SRC" "$WALLPAPER_DEST"
@@ -103,9 +46,7 @@ if grep -qF "$START_MARKER" "$LIMINE_CONF"; then
     ' "$LIMINE_CONF" > "${LIMINE_CONF}.sobarch-new"
     mv "${LIMINE_CONF}.sobarch-new" "$LIMINE_CONF"
 else
-    # Global directives must precede every /Title entry block, so this
-    # goes at the top of the file, not appended like
-    # rescue-iso-setup.sh's own entry block.
+    # Global directives must precede every /Title entry, so prepend.
     printf '%s\n\n%s' "$block" "$(cat "$LIMINE_CONF")" > "${LIMINE_CONF}.sobarch-new"
     mv "${LIMINE_CONF}.sobarch-new" "$LIMINE_CONF"
 fi

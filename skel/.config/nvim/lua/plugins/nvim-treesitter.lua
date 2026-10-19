@@ -1,6 +1,4 @@
--- Pinned to "master": upstream's default branch is "main", a rewrite that
--- dropped the "nvim-treesitter.configs" API this file and the extras
--- accumulating into it (see extras/init.lua) rely on.
+-- Pinned to "master": "main" dropped the nvim-treesitter.configs API used here.
 vim.pack.add({
 	{ src = "https://github.com/nvim-treesitter/nvim-treesitter", version = "master" },
 }, { confirm = false })

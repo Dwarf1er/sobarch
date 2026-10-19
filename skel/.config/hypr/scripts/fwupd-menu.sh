@@ -1,8 +1,6 @@
 #!/bin/bash
-# Firmware: every device fwupd knows a version for, with its update
-# status in the header and a details view per device. Everything shown
-# comes from fwupd's local metadata cache (fast, offline); only "Check
-# for Updates" touches the network.
+# Firmware menu. Only "Check for Updates" touches the network; the rest
+# reads fwupd's local cache.
 
 source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
@@ -10,11 +8,7 @@ MENU_TITLE="sobarch: firmware"
 MENU_ICON="cpu.svg"
 
 # NAME, VERSION, UPDATABLE, VENDOR, SUMMARY per device, \037-separated
-# (not tabs: read collapses runs of whitespace IFS, so an empty vendor
-# would shift every field after it),
-# from get-devices' tree output (one "├─Name:" line per device, then
-# indented "Key: value" lines). Devices without a version (monitors
-# hanging off a GPU, mostly) are left out: nothing to show or update.
+# because read collapses empty tab fields. Devices without a version are skipped.
 devices() {
     timeout 15 fwupdmgr get-devices --no-unreported-check 2>/dev/null | awk '
         function flush() {
@@ -29,8 +23,7 @@ devices() {
         END { flush() }'
 }
 
-# Monochrome set icons only, so these rows match every other menu
-# rather than mixing in full-colour icon-theme ones.
+# Monochrome icons only, to match the other menus.
 device_icon() {
     case "$1" in
         *Processor*|*CPU*|*Radeon*|*GeForce*|*Graphics*|*GPU*) echo "cpu.svg" ;;

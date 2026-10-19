@@ -1,23 +1,7 @@
-# The only ongoing trigger for keeping vetted AUR/custom packages
-# current (decision 3): no daily timer, no other polling. A
-# `pacman -Syu` that upgrades nothing at all runs no transaction and so
-# fires no hook, including this one; accepted as a rare, known gap on a
-# rolling-release system rather than adding a second, independent
-# trigger.
-#
-# PostTransaction hooks run inside pacman's own transaction commit,
-# while pacman still holds /var/lib/pacman/db.lck. Running aur-sync
-# inline would make every pacman -S/-U it issues fail on that lock
-# (and stall the user's upgrade for minutes while it builds). So the
-# hook only starts aur-sync as a detached systemd unit and returns at
-# once; aur-sync's own pacman calls then run after pacman has exited
-# and released the lock.
-#
-# Skipped when SOBARCH_AUR_SYNC_RUNNING is set (the hook was fired by
-# aur-sync's own pacman call, which inherits that marker) and when
-# systemd isn't running (a chroot during install). The fixed unit name
-# means a second trigger while a sync is still running is refused
-# instead of stacking up.
+# Runs aur-sync after upgrades. pacman still holds db.lck during
+# PostTransaction, so aur-sync is started as a detached systemd unit.
+# Skipped for aur-sync's own pacman calls and when systemd isn't running
+# (install chroot).
 [Trigger]
 Operation = Upgrade
 Type = Package

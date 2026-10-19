@@ -1,20 +1,7 @@
 #!/usr/bin/env bash
-# Read-only: compares each vendored packages/aur/*/.SRCINFO pinned
-# version against the AUR's current released version (RPC v5 info, one
-# batched request), never touches the working tree. Prints one line per
-# package that's behind, "name pinned upstream", to stdout. Used by
-# .github/workflows/aur.yml to pick which packages need
-# apply-aur-update.sh.
-#
-# -git packages can't use the version comparison: their pkgver()
-# recomputes from a live clone at build time (see aur-sync.sh's own
-# pinned_version() note), so AUR's Version field is just whatever the
-# maintainer last set by hand, not a real signal that upstream moved.
-# What can still matter is the maintainer changing the PKGBUILD itself
-# (new dependency, source URL, build fix), so each is checked by
-# content instead: a shallow clone of its AUR repo, compared against
-# the vendored copy with pkgver/pkgrel lines and .SRCINFO ignored.
-# Prints "name content-changed" for one that differs.
+# Prints "name pinned upstream" for each packages/aur/ package behind the
+# AUR. -git packages have no meaningful version, so they are compared by
+# content instead and printed as "name content-changed".
 
 set -euo pipefail
 shopt -s inherit_errexit
@@ -63,9 +50,8 @@ for name in "${names[@]}"; do
     fi
 done
 
-# Copies a package dir to $2 with the lines a VCS package's own
-# bookkeeping rewrites (pkgver/pkgrel) and the regenerated .SRCINFO
-# removed, so what's left is only the maintainer's actual content.
+# Copies a package dir minus .SRCINFO and the pkgver/pkgrel lines, leaving
+# only the maintainer's content.
 normalized_copy() {
     mkdir -p "$2"
     find "$1" -mindepth 1 -maxdepth 1 -not -name '.git' -not -name '.SRCINFO' -exec cp -a {} "$2/" \;

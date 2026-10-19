@@ -1,20 +1,12 @@
 #!/usr/bin/env bash
-# Keeps packages/custom/vesktop-integrity-launch's pinned _commit on
-# the upstream default branch's HEAD. The package pins an exact commit
-# (a vetted snapshot, see its PKGBUILD) and its pkgver is that
-# commit's date, so a new upstream commit is a manual bump this script
-# automates.
+# Moves packages/custom/vesktop-integrity-launch's pinned _commit to
+# upstream HEAD.
 #
-#   update-vesktop-integrity-launch.sh --check   prints
-#                       "vesktop-integrity-launch <pinned> <head>" if
-#                       upstream HEAD differs from the pin, else nothing
-#   update-vesktop-integrity-launch.sh           rewrites _commit,
-#                       pkgver and pkgrel, and regenerates .SRCINFO
+#   update-vesktop-integrity-launch.sh --check   prints "<name> <pinned> <head>" if different
+#   update-vesktop-integrity-launch.sh           bumps _commit, pkgver, pkgrel and .SRCINFO
 #
-# pkgver is HEAD's committer date (UTC, YYYYMMDD); when that equals the
-# current pkgver (a second commit the same day) pkgrel is bumped
-# instead, same rule validate-custom-pkgbuilds.sh --fix uses, so the
-# version always increases. Must run as a non-root user (makepkg).
+# pkgver is HEAD's UTC commit date; a second commit on the same day bumps
+# pkgrel instead so the version always increases.
 
 set -euo pipefail
 

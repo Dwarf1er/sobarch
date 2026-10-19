@@ -1,30 +1,7 @@
 #!/bin/bash
-# One-time hardware detection, run by the TUI before generating
-# the archinstall JSON config from base.json.
-#
-# Prints shell variable assignments to stdout. The caller sources or
-# evals the output, then uses it to fill in base.json's placeholder
-# tokens (extra packages appended to the "packages" array,
-# __BLUETOOTH_DETECTED__ substituted with true/false).
-#
-# AMD and Intel are fully supported. NVIDIA is best-effort only
-# as I do not own any NVIDIA hardware to verify this path
-# against, and this script does not attempt to distinguish NVIDIA GPU
-# generations beyond the three tiers below.
-#
-# The NVIDIA generation split (device ID thresholds) matches Omarchy's
-# own detection (bin/omarchy-hw-nvidia-gsp / omarchy-hw-nvidia-without-gsp:
-# 0x1e00 for Turing/GSP, 0x1340 for Maxwell) and CachyOS's chwd
-# (profiles/pci/graphic_drivers/profiles.toml; ids/nvidia-580.ids spans
-# exactly 0x1340-0x1df6). Package lists (nvidia-settings, opencl-nvidia,
-# lib32-vulkan-icd-loader, the mkinitcpio "kms" hook removal for
-# proprietary driver tiers below) follow CachyOS's fuller reference.
-# Hybrid-laptop-specific GPU handling (PRIME/switcheroo-control, an
-# NVIDIA RTD3 power-management workaround) is deliberately not included
-# here: real value, but laptop-specific scope beyond GPU-generation
-# detection, and again, I do not own that kind of hardware so I can't
-# test it. The chassis type is read only to decide whether the laptop
-# power-management packages (TLP) belong on this machine.
+# Detects hardware for the TUI; prints shell variable assignments to be sourced.
+# NVIDIA support is best-effort and untested on real hardware. Device ID
+# thresholds match Omarchy and CachyOS chwd (0x1e00 Turing, 0x1340 Maxwell).
 
 set -euo pipefail
 
@@ -63,33 +40,18 @@ while IFS= read -r -d '' card; do
             device_id=$(cat "$card/device/device" 2>/dev/null || echo "0x0")
 
             if (( device_id >= 0x1e00 )); then
-                # Turing (RTX 20xx) and newer: GSP-firmware capable,
-                # mandatory for RTX 50xx (no proprietary driver path at
-                # all for it otherwise).
+                # Turing and newer: open kernel modules (required for RTX 50xx).
                 gpu_packages="$gpu_packages linux-headers nvidia-open-dkms nvidia-utils lib32-nvidia-utils egl-wayland libva-nvidia-driver nvidia-settings opencl-nvidia lib32-opencl-nvidia lib32-vulkan-icd-loader"
                 nvidia_proprietary_driver=true
             elif (( device_id >= 0x1340 )); then
-                # Maxwell/Pascal/Volta: no GSP firmware. Needs the
-                # pinned legacy 580xx driver branch specifically, plain
-                # nvidia-dkms dropped support for this generation as of
-                # driver 590.
-                # None of the 580xx packages are in the official repos
-                # (AUR only), so they can't go in the pacstrap package
-                # list; install_runner.py builds the vendored copies in
-                # packages/aur/ after archinstall instead. Only what
-                # they depend on, from the official repos, goes here.
+                # Maxwell/Pascal/Volta: driver 590 dropped them, so use the 580xx
+                # branch. It is AUR-only and built after archinstall; only its
+                # official-repo dependencies go here.
                 gpu_packages="$gpu_packages linux-headers dkms egl-wayland libva-nvidia-driver lib32-vulkan-icd-loader"
                 nvidia_legacy_580xx=true
                 nvidia_proprietary_driver=true
             else
-                # Kepler and older: no proprietary driver family
-                # packaged for this generation. Falls back to nouveau
-                # (open-source), which needs no extra driver package
-                # itself (already covered by the mesa/lib32-mesa
-                # packages installed unconditionally) on this pure-
-                # Wayland stack, just its firmware blobs and Mesa's
-                # OpenCL support. Not a bail-out: the card still ends
-                # up with a working, if less performant, driver.
+                # Kepler and older: nouveau via mesa, only firmware and OpenCL needed.
                 gpu_packages="$gpu_packages nouveau-fw opencl-mesa lib32-opencl-mesa"
             fi
             ;;
@@ -105,11 +67,8 @@ else
     bluetooth_detected=false
 fi
 
-# SMBIOS chassis type (the same table `dmidecode -t chassis` prints):
-# 8 portable, 9 laptop, 10 notebook, 11 handheld, 14 sub-notebook, 30
-# tablet, 31 convertible, 32 detachable. Checked instead of "has a
-# battery": a wireless mouse or headset also shows up under
-# /sys/class/power_supply, and a VM reports no battery at all.
+# SMBIOS portable chassis types. Not a battery check: wireless peripherals
+# also appear under /sys/class/power_supply.
 laptop_packages=""
 case "$(cat /sys/class/dmi/id/chassis_type 2>/dev/null || true)" in
     8|9|10|11|14|30|31|32)

@@ -1,18 +1,10 @@
-"""Detects an existing GPT partition table's free space, to support
-installing sobarch into it alongside another OS instead of wiping the
-whole disk (see sections/disk.py). Parses `sfdisk -J`'s own JSON rather than sgdisk's or
-parted's text output, and rather than a second `sfdisk -F` call for
-free space specifically: one JSON source already carries everything
-needed (each partition's start/size in sectors, plus the disk's
-firstlba/lastlba) to compute every gap in Python directly."""
+"""Finds free space in an existing GPT table for installing alongside another OS."""
 
 import json
 import subprocess
 from dataclasses import dataclass
 
-# Below this, installing sobarch's full default package set alongside
-# another OS isn't realistic, so the free-space install option simply
-# isn't offered under this floor. One module constant, easy to retune.
+# Smallest gap worth offering for a free-space install.
 MIN_FREE_SPACE_BYTES = 20 * 1024**3
 
 
@@ -20,16 +12,13 @@ MIN_FREE_SPACE_BYTES = 20 * 1024**3
 class FreeSpaceRegion:
     start_bytes: int
     size_bytes: int
-    # Whether this gap runs to the physical end of the disk: only then
-    # does config_gen.py's GPT-tail reserve apply (a mid-disk gap, e.g.
-    # between two Windows partitions, needs no such reserve at all).
+    # Only a gap at the end of the disk needs the backup GPT reserve.
     at_disk_end: bool
 
 
 @dataclass
 class DiskProbe:
     has_gpt: bool
-    # The largest free gap on the disk, if any clears MIN_FREE_SPACE_BYTES.
     free_space: FreeSpaceRegion | None
 
 
@@ -42,19 +31,14 @@ def probe_disk(path: str) -> DiskProbe:
     )
     table = json.loads(result.stdout)["partitiontable"]
 
-    # MBR/BIOS free-space installs are out of scope (see docs/DECISIONS.md):
-    # BIOS already has a tight 3-primary-partition budget, and dual-boot
-    # alongside an existing OS is overwhelmingly a UEFI+GPT scenario anyway.
+    # Free-space installs on MBR are out of scope (see docs/DECISIONS.md).
     if table.get("label") != "gpt":
         return DiskProbe(has_gpt=False, free_space=None)
 
     sector_size = table["sectorsize"]
     partitions = sorted(table.get("partitions", []), key=lambda p: p["start"])
 
-    # Walk the sorted partition list, recording the gap before each one
-    # and, at the end, the gap between the last partition and the last
-    # usable sector (lastlba is inclusive, hence the +1 to get an
-    # exclusive end boundary matching the gaps' own start+size math).
+    # lastlba is inclusive.
     disk_end_sector = table["lastlba"] + 1
     cursor = table["firstlba"]
     gaps: list[tuple[int, int]] = []

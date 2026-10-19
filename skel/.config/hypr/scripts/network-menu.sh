@@ -1,8 +1,5 @@
 #!/bin/bash
-# Network control panel: connection status in the header, Wi-Fi scan
-# and join, saved networks (connect, disconnect, forget), IP copy and a
-# Wi-Fi QR share. Wi-Fi rows only appear on machines that have a Wi-Fi
-# device, so a desktop on Ethernet doesn't get a list of dead entries.
+# Network panel. Wi-Fi rows only appear when a Wi-Fi device exists.
 
 source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
@@ -12,8 +9,7 @@ MENU_ICON="wifi.svg"
 wifi_dev=$(nmcli -t -f DEVICE,TYPE dev status 2>/dev/null | awk -F: '$2 == "wifi" { print $1; exit }')
 
 # NAME<\037>TYPE<\037>DEVICE of the first active non-loopback connection.
-# -e no: names are shown verbatim (no "\:" escaping), so TYPE and DEVICE
-# are taken from the end and everything before them is the name.
+# -e no leaves names unescaped, so TYPE and DEVICE are read from the end.
 primary() {
     nmcli -e no -t -f NAME,TYPE,DEVICE connection show --active 2>/dev/null | awk -F: '
         $(NF - 1) != "loopback" {
@@ -24,9 +20,8 @@ primary() {
 
 ip_of() { nmcli -g IP4.ADDRESS dev show "$1" 2>/dev/null | head -n1 | cut -d/ -f1; }
 
-# IN-USE<\037>SSID<\037>SIGNAL<\037>SECURITY per visible network, strongest
-# first, each SSID once. SSID may itself contain a colon, so the fixed
-# fields are taken from both ends and everything between is the SSID.
+# IN-USE<\037>SSID<\037>SIGNAL<\037>SECURITY per network, strongest first.
+# SSIDs can contain colons, so fixed fields are read from both ends.
 scan_results() {
     nmcli -e no -t -f IN-USE,SSID,SIGNAL,BARS,SECURITY dev wifi list --rescan yes 2>/dev/null | awk -F: '
         NF < 5 { next }
@@ -37,10 +32,8 @@ scan_results() {
         }'
 }
 
-# Joins a network that has no saved profile yet. A failed attempt (wrong
-# password, mostly) still leaves a half-made profile behind under the
-# SSID's name; it's removed, so the next try asks for the password again
-# instead of silently retrying the bad one.
+# A failed join leaves a half-made profile behind; delete it so the next
+# try asks for the password again.
 join_new() {
     local ssid="$1" security="$2" pass
     if [ -n "$security" ] && [ "$security" != "--" ]; then
@@ -54,8 +47,7 @@ join_new() {
     fi
 }
 
-# Writes into a file rather than stdout: menu_progress swallows a
-# successful command's output.
+# menu_progress discards a successful command's stdout, so write to a file.
 scan_to() { scan_results >"$1"; }
 
 wifi_menu() {
@@ -64,8 +56,7 @@ wifi_menu() {
     results=$(mktemp)
     menu_progress "Scanning for Wi-Fi networks..." "Scan complete." scan_to "$results"
     menu_reset
-    # Signal as a percentage: nmcli's own BARS glyphs (▂▄▆█) render as
-    # illegible slivers at this font size.
+    # nmcli's BARS glyphs are illegible at this font size.
     while IFS=$'\037' read -r in_use ssid signal security; do
         sec["$ssid"]="$security"
         if [ "$in_use" = "*" ]; then
@@ -124,16 +115,8 @@ saved_menu() {
     done
 }
 
-# Rendered as text directly in a fuzzel pane instead of imv/PNG, to
-# match the small centered floating look fuzzel gets for free (a
-# layer-shell surface, unlike a real window, which would need its own
-# float+size+center window rule). --mesg-mode=expand sizes the window to
-# the message, and with no list rows that message is the whole window;
-# any key dismisses it. fuzzel.ini's line-height=22 leaves a gap between
-# each row of half-block glyphs, which breaks the code up; 15-17 render
-# it seamless in the configured font (checked live), 16 leaves margin
-# both ways. Drawn in the theme's text colour rather than the dimmer
-# default message colour, for scanning contrast.
+# QR code drawn as text in a fuzzel message. line-height=16 keeps the
+# half-block rows seamless.
 share_qr() {
     local conn="$1" ssid psk payload
     ssid=$(nmcli -g 802-11-wireless.ssid connection show "$conn")

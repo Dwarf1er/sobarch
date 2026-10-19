@@ -1,19 +1,6 @@
 #!/bin/bash
-# Adds another OS's UEFI bootloader (e.g. Windows) to the Limine boot
-# menu, for a free-space (dual-boot) install. sobarch always has its
-# own ESP (mounted at /boot) there, so the other OS's bootloader lives
-# on a different EFI System Partition: this script finds those other
-# ESPs, mounts each read-only, scans it for *.efi applications, and
-# writes a Limine chainload entry addressing the partition by its GPT
-# partition GUID (guid(<PARTUUID>):/path). Interactive by design
-# (asks which detected .efi application to add), so this is a manual,
-# post-first-boot command (`sudo limine-add-os-entry.sh`), never run
-# from the scripted installer pipeline (install_runner.py's chroot
-# steps have no TTY to prompt on).
-#
-# UEFI-only, matching disk_probe.py's own scope cut (free-space
-# installs are never offered on a BIOS/MBR disk), so unlike its
-# siblings this script has no BIOS-mode limine.conf path branch.
+# Adds another OS's bootloader (e.g. Windows) from a different ESP to the
+# Limine menu. Interactive, so run manually after first boot. UEFI only.
 
 set -euo pipefail
 
@@ -37,8 +24,7 @@ cleanup() {
     for mnt in "$scan_root"/*/; do
         if [ -d "$mnt" ] && mountpoint -q "$mnt"; then umount "$mnt" || true; fi
     done
-    # rmdir, never rm -rf: a mount that failed to unmount must not be
-    # recursed into.
+    # rmdir, never rm -rf: a mount that failed to unmount must not be recursed into.
     rmdir "$scan_root"/* "$scan_root" 2>/dev/null || true
 }
 trap cleanup EXIT
@@ -81,10 +67,7 @@ chosen_path="${chosen#*|}"
 read -rp "Entry name to show in the boot menu [Windows]: " entry_name
 entry_name="${entry_name:-Windows}"
 
-# Slugged from the entry name, not a single fixed marker like
-# limine-theme-setup.sh/rescue-iso-setup.sh use: re-running this for a
-# second OS (or a different pick) adds its own block instead of
-# clobbering a previous one.
+# Per-entry markers so adding a second OS doesn't replace the first.
 slug=$(echo "$entry_name" | tr -c 'A-Za-z0-9' '-' | tr -s '-' | sed 's/^-//;s/-$//' | tr '[:lower:]' '[:upper:]')
 START_MARKER="#### SOBARCH OS ENTRY START ($slug, added by limine-add-os-entry.sh) ####"
 END_MARKER="#### SOBARCH OS ENTRY END ($slug) ####"

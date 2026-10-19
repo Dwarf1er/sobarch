@@ -1,10 +1,7 @@
 vim.pack.add({ "https://github.com/tinted-theming/tinted-nvim" }, { confirm = false })
 
--- lualine's own "base16" theme (picked by its "auto" theme whenever
--- colors_name starts with "base16-") expects colors via the classic
--- tinted-vim/base16-vim g:tinted_gui0X globals, not tinted-nvim's own API.
--- Registered before setup() below so it also catches the very first load,
--- which setup() fires synchronously.
+-- lualine's base16 theme reads the g:tinted_gui0X globals. Registered before
+-- setup() so it catches the first load too.
 vim.api.nvim_create_autocmd("ColorScheme", {
 	desc = "Expose tinted-nvim's palette via the tinted-vim/base16-vim global convention",
 	group = vim.api.nvim_create_augroup("tinted-nvim-vim-globals", { clear = true }),

@@ -10,10 +10,8 @@ __pycache__/
 # Installer test output
 sobarch-install-output/*
 
-# tinty-rendered theme output for sobarch's own local template items
-# (skel/.config/sobarch/tinty-templates/*/), rebuilt locally via
-# build-tinty-templates.sh instead of being committed
+# Rendered by build-tinty-templates.sh
 skel/.config/sobarch/tinty-templates/*/colors/
 
-# Zola build output (website/), rebuilt by CI for GitHub Pages
+# Zola build output, rebuilt by CI
 website/public/

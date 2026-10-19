@@ -1,22 +1,15 @@
 # Maintainer: Dwarf1er
 pkgname=vesktop-integrity-launch
-# Launcher fetched from its own repo, pinned to an exact commit (same
-# vetted-snapshot stance as packages/aur/: aur-sync only acts when this
-# file's committed .SRCINFO version changes, so a floating HEAD would
-# never be picked up anyway). To update: bump _commit and set pkgver to
-# that commit's date (YYYYMMDD), or pkgrel for a packaging-only change.
-# The pacman hook and desktop-entry script alongside this file are
-# sobarch-side glue, not part of the upstream repo.
+# To update: bump _commit and set pkgver to that commit's date (YYYYMMDD).
 pkgver=20260926
-pkgrel=1
+pkgrel=2
 _commit=b287aca3e869868d44af5424b0ab24dcfcdcaba1
 pkgdesc="Self-healing launch wrapper for Vesktop: verifies Vencord files against a local baseline, runs --repair on mismatch"
 arch=('any')
 url="https://github.com/Dwarf1er/vesktop-integrity-launch"
 license=('MIT')
-# No hard dependency on vesktop-bin (an AUR package, so a dependency
-# would make install order within one aur-sync run matter): the hook
-# and launcher both no-op/fail soft when Vesktop is absent.
+# Not a hard dependency, so aur-sync install order doesn't matter; the
+# hook and launcher no-op without Vesktop.
 optdepends=('vesktop-bin: the app being wrapped')
 options=('!debug')
 makedepends=('git')

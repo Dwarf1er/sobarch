@@ -1,8 +1,6 @@
 #!/bin/bash
-# Bluetooth control panel: adapter power, every paired device listed
-# inline with its live state, and a scan for new ones. Enter on a device
-# toggles its connection, custom-1 (Alt+1) removes it; the header names
-# both. Escape exits, or returns to system-menu.sh when opened from there.
+# Bluetooth panel: power, paired devices, and scan/pair. Enter toggles a
+# device's connection, Alt+1 removes it.
 
 source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
@@ -19,9 +17,8 @@ devices() {
 
 info_field() { sed -nE "s/^\s*$1: //p" <<<"$2"; }
 
-# One row per paired device, its own freedesktop icon name (audio-headset,
-# input-mouse, ...) resolved through the icon theme first, falling back to
-# a generic one. Appends connected devices' names to $connected.
+# Paired devices, using each device's own icon name with a generic fallback.
+# Appends connected devices' names to $connected.
 add_device_rows() {
     local mac name info state battery
     while IFS=$'\t' read -r mac name; do
@@ -65,11 +62,8 @@ pair_device() {
     done
 }
 
-# A fixed-length scan, then a list of what turned up: fuzzel can't update
-# a list while it's open, so results can't stream in live. Devices that
-# need a passkey confirmed or typed (some keyboards and phones) can't pair
-# here either, no agent outlives a one-shot bluetoothctl call; those
-# still need `bluetoothctl` in a terminal.
+# fuzzel can't update an open list, so scan first, then list results.
+# Devices that need a passkey can't pair here; use bluetoothctl.
 scan_and_pair() {
     local mac name paired
     menu_progress "Scanning for devices..." "Scan complete." scan

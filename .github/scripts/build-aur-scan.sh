@@ -1,13 +1,6 @@
 #!/usr/bin/env bash
-# Builds ks-aur-scanner's aur-scan binary from source into DEST.
-# https://github.com/KiefStudioMA/ks-aur-scanner ships no prebuilt
-# binary on any release (checked every tag), so this is the only way
-# to get it. Used by .github/workflows/aur.yml; the
-# pinned version lives in aur-scan.version, next to this script.
-#
-# Only builds the aur-scan binary (crate aur-scanner-cli), not the
-# aur-scan-wrap/aur-scan-hook shell-integration binaries this repo has
-# no use for.
+# Builds ks-aur-scanner's aur-scan binary into DEST. Upstream ships no
+# prebuilt binaries. The pinned version is in aur-scan.version.
 
 set -euo pipefail
 shopt -s inherit_errexit

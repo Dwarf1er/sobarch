@@ -1,12 +1,7 @@
 #!/usr/bin/env bash
-# Run by vesktop-integrity-launch.hook (PostTransaction). Keeps a
-# system-wide override of vesktop-bin's menu entry pointed at the
-# launcher wrapper: /usr/local/share precedes /usr/share in the default
-# XDG_DATA_DIRS, so a same-named .desktop file there wins, without
-# touching (or conflicting with) the file vesktop-bin itself owns.
-# Regenerated from the packaged entry on every vesktop-bin change so
-# Name/Icon/MimeType never drift; removed again when either package
-# goes away.
+# Run by vesktop-integrity-launch.hook. Writes an override of vesktop.desktop
+# in /usr/local/share, which wins over /usr/share in XDG_DATA_DIRS, with Exec
+# pointed at the launcher. Removed when either package goes away.
 
 set -euo pipefail
 
@@ -16,8 +11,7 @@ LAUNCHER=/usr/bin/vesktop-integrity-launch
 
 if [[ -x "$LAUNCHER" && -f "$SRC" ]]; then
     install -dm755 "$(dirname "$DEST")"
-    # Rewrite only the binary token of Exec=, keeping trailing args
-    # (%U): the launcher resolves the real vesktop itself.
+    # Replace only the binary, keeping args like %U.
     sed -E "s|^Exec=[^ ]+(.*)|Exec=$LAUNCHER\\1|" "$SRC" >"$DEST.tmp"
     chmod 644 "$DEST.tmp"
     mv "$DEST.tmp" "$DEST"

@@ -1,42 +1,15 @@
 #!/usr/bin/env bash
-# Privileged worker behind Sobarch -> Refresh Rescue ISO
-# (skel/.config/hypr/scripts/refresh-rescue-menu.sh), run via
-# pkexec. Re-fetches a current Arch ISO and re-extracts its
-# kernel/initramfs onto the rescue media
-# installer/archinstall/rescue-iso-setup.sh laid out at install time
-# (RESCUE: the .iso itself; RESCUEBOOT, on UEFI only, or /boot/rescue
-# on BIOS: vmlinuz-linux/initramfs-linux.img), overwriting content in
-# place. No mkfs, no partition-table change, no limine.conf edit: the
-# UUID/PARTUUID or boot()-relative path rescue-iso-setup.sh's Limine
-# entry already addresses these files by stays untouched, so that entry
-# keeps working against the refreshed files with nothing else to
-# update.
-#
-# RESCUE found by filesystem label, not a device path: unlike
-# rescue-iso-setup.sh (a TUI-driven install-time step with
-# RESCUE_PARTITION/RESCUE_BOOT_PARTITION passed in as env vars), this
-# runs standalone against an already-installed system with no such
-# input available. rescue-iso-setup.sh labels it RESCUE specifically so
-# this script can find it again later; same for RESCUEBOOT when it
-# exists (UEFI). On BIOS there's no dedicated rescue-boot partition to
-# label at all (config_gen.py's own MBR 3-primary-partition workaround,
-# see rescue-iso-setup.sh), so firmware mode is what decides which case
-# this is, same has_uefi() check used everywhere else in this project.
+# Privileged worker behind Sobarch -> Refresh Rescue ISO, run via pkexec.
+# Overwrites the ISO and kernel/initramfs on the existing rescue media in
+# place, so the Limine entry keeps working unchanged. Partitions are found by
+# label since no device paths are available after install.
 
 set -euo pipefail
 
 source /usr/local/lib/sobarch/rescue-iso-fetch.sh
 source /usr/local/lib/sobarch/durable-replace.sh
 
-# Runs as root via pkexec, same as the first-boot units notify-user.sh
-# was written for: a desktop notification back into the invoking user's
-# session needs the same runuser dance, not just an echo to a log
-# nobody's watching mid-refresh. 󱊞 (nf-md-usb_flash_drive) matches
-# setup-menu.sh's own "Refresh Rescue ISO" entry icon. Success/failure
-# themselves stay refresh-rescue-menu.sh's job (it already reports
-# both once pkexec returns); these are just the in-progress steps of
-# what is otherwise a silent multi-minute download+write with nothing
-# to show for it until the very end.
+# nf-md-usb_flash_drive. Success/failure is reported by refresh-rescue-menu.sh.
 GLYPH="󱊞"
 source /usr/local/lib/sobarch/notify-user.sh
 
@@ -83,12 +56,7 @@ echo "refresh-rescue-iso: writing the refreshed ISO to $RESCUE_DEV..."
 id=$(notify_user normal "sobarch: refresh rescue iso" "Writing the refreshed ISO to $RESCUE_DEV..." "$id")
 mkdir -p "$RESCUE_MNT"
 mount "$RESCUE_DEV" "$RESCUE_MNT"
-# durable_replace, not a plain cp: the same crash-safety this project
-# already needed for apply-skel.sh's reconciliation (a real run once
-# died mid-write and left touched files zero-length on reboot) applies
-# just as much to overwriting the one file img_dev=/img_loop= loop-mounts
-# at boot. Both partitions have room to spare for the temp copy this
-# needs (5GiB RESCUE against a ~1.3GB ISO).
+# Crash-safe: this is the file img_loop= loop-mounts at boot.
 durable_replace 644 "$WORK_DIR/archlinux-x86_64.iso" "$RESCUE_MNT/archlinux-x86_64.iso"
 umount "$RESCUE_MNT"
 

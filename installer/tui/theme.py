@@ -1,5 +1,4 @@
-"""OneDark color palette, kept identical to skel/.config/kitty/onedark.conf
-so the installer looks like the rest of the distribution, not a different theme."""
+"""OneDark palette, kept identical to skel/.config/kitty/onedark.conf."""
 
 from textual.theme import Theme
 

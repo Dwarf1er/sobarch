@@ -1,8 +1,6 @@
 # Base16 OneDark
 # Author: Lalit Magant (http://github.com/tilal6991)
-#
-# starship.toml has no include directive, so this template renders the
-# whole file, static settings included, rather than just a color snippet.
+# Renders the whole file: starship has no include directive.
 
 format = """
 $directory\

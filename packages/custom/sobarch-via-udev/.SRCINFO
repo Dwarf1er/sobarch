@@ -1,6 +1,6 @@
 pkgbase = sobarch-via-udev
 	pkgdesc = Opt-in udev rule granting hidraw access for VIA keyboard configuration (usevia.app)
-	pkgver = 20260905
+	pkgver = 20261019
 	pkgrel = 1
 	url = https://github.com/Dwarf1er/sobarch
 	arch = any

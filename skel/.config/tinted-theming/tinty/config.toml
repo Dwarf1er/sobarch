@@ -1,20 +1,7 @@
 # Configuration for Tinty (https://github.com/tinted-theming/tinty)
 #
-# One [[items]] block per themed app. Reused upstream templates for
-# kitty/hyprland; everything else is authored locally under
-# ~/.config/sobarch/tinty-templates/ (no upstream template exists for
-# them). `tinty apply`/`install`/`sync` never render a template on
-# their own (confirmed by reading tinty's own source: `apply` only
-# copies an already-rendered file out of each item's `themes-dir`), so
-# every scheme for these local items has to be built explicitly via
-# `tinty build <item-dir>` before `apply` can find it -- done by
-# build-tinty-templates.sh, not committed to the repo as static output
-# (see docs/DECISIONS.md).
-#
-# `revision` below pins the schemes repo tinty renders these local
-# items against, independently of whatever revision is compiled into
-# whichever tinty binary is installed, so the rendered output stays
-# reproducible across installs/updates.
+# Local items under ~/.config/sobarch/tinty-templates/ must be rendered with
+# build-tinty-templates.sh before `tinty apply` can use them.
 
 default-scheme = "base16-onedark"
 
@@ -33,14 +20,7 @@ path = "~/.config/sobarch/tinty-templates/waybar-css"
 name = "sobarch-waybar-css"
 themes-dir = "colors"
 write-to-file = ["~/.config/waybar/colors.css"]
-# Authored locally instead of reused from tinted-theming/base16-waybar:
-# see waybar-css/templates/default.mustache's own comment on why.
-#
-# apply-wallpaper.sh's own hook is attached here rather than to a
-# dedicated tinty item: it reads base00/base0D straight out of this
-# item's own colors.css (no separate wallpaper-specific template to
-# keep in sync), so hooking its own write is the actual dependency,
-# not a borrowed one.
+# The wallpaper is colored from this item's colors.css.
 hook = "~/.config/hypr/scripts/apply-wallpaper.sh"
 supported-systems = ["base16", "base24", "tinted8"]
 
@@ -49,22 +29,8 @@ path = "~/.config/sobarch/tinty-templates/waybar-jsonc"
 name = "sobarch-waybar-jsonc"
 themes-dir = "colors"
 write-to-file = ["~/.config/waybar/config.jsonc"]
-# Unlike hyprland's `hyprctl reload`/mako's `makoctl reload`, waybar has
-# no live file-watcher for colors.css or config.jsonc. A prior version
-# of this hook sent SIGUSR2, on the assumption that's a full reload;
-# it isn't -- per waybar(5), SIGUSR2 only reloads style.css, config.jsonc
-# changes need the process actually restarted, and even the style-only
-# reload has a known bug where it doesn't apply fully
-# (Alexays/Waybar#3986). Since this item's own template renders the
-# whole config.jsonc, not just CSS vars (see waybar-jsonc/templates/
-# default.mustache's own comment on why), a real restart is required,
-# not optional. Waits for the old process to actually exit (bounded to
-# 1s) before relaunching, rather than racing a `waybar &` against a
-# not-yet-dead old instance for the same layer-shell surface. Placed on
-# this item, not sobarch-waybar-css's (colors.css), since this one runs
-# last and both files (colors.css, just written by that earlier item,
-# and config.jsonc, written here) need to already be on disk before the
-# restart happens.
+# SIGUSR2 doesn't reload config.jsonc, so waybar must be restarted. Kept on
+# the item after waybar-css so both files are written first.
 hook = "pkill -x waybar; i=0; while pgrep -x waybar >/dev/null 2>&1 && [ $i -lt 20 ]; do sleep 0.05; i=$((i+1)); done; waybar &"
 supported-systems = ["base16", "base24", "tinted8"]
 
@@ -116,12 +82,7 @@ supported-systems = ["base16", "base24", "tinted8"]
 path = "~/.config/sobarch/tinty-templates/btop"
 name = "sobarch-btop"
 themes-dir = "colors"
-# Written under btop's own user themes dir and picked by name
-# (color_theme = "sobarch" in ~/.config/btop/btop.conf) rather than
-# rendering btop.conf itself: btop's own options menu saves to
-# btop.conf, so a tinty-rendered copy would wipe those settings on
-# every scheme switch. No hook: btop has no reload signal, and a
-# running instance keeps its colors until relaunched.
+# A theme file, not btop.conf: btop saves its own settings there.
 write-to-file = ["~/.config/btop/themes/sobarch.theme"]
 supported-systems = ["base16", "base24", "tinted8"]
 
@@ -132,9 +93,7 @@ themes-dir = "colors"
 write-to-file = ["~/.config/fastfetch/config.jsonc"]
 supported-systems = ["base16", "base24", "tinted8"]
 
-# Tabler-icons (MIT, https://github.com/tabler/tabler-icons) SVGs, one
-# item per icon since tinty renders exactly one file per scheme per
-# item -- see TABLER-ICONS-LICENSE.txt alongside the templates.
+# Tabler Icons (MIT), see TABLER-ICONS-LICENSE.txt. One item per icon.
 
 [[items]]
 path = "~/.config/sobarch/tinty-templates/icon-apps"

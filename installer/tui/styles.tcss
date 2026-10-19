@@ -1,7 +1,4 @@
-/* ratatui-style: plain box-drawing borders with the title set into the
-   top edge, a bright border on whatever has focus, `>` highlight bars,
-   one-line label/control rows, and a key-chip footer. Palette comes
-   from theme.py. */
+/* ratatui-style layout. Palette comes from theme.py. */
 
 Screen {
     background: $background;
@@ -61,9 +58,7 @@ Section {
     padding: 0 1;
 }
 
-/* Dimmed text stays at 70% or more: on the 16-color Linux console anything
-   fainter downgrades to the same bright-black as the background and
-   disappears. */
+/* Keep dim text at 70%+: fainter becomes invisible on the 16-color console. */
 
 /* Lists: a solid highlight bar instead of Textual's default tint */
 

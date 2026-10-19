@@ -1,12 +1,6 @@
 #!/bin/bash
-# Cheat sheet: greps keybinds.lua for "-- kb: <combo> | <description>"
-# tags, one per real hl.bind() call, so this list can't drift far from
-# the actual binds. A short manual tail covers fuzzel's own vim-style
-# additions (fuzzel.ini's [key-bindings] section) and the menus' shared
-# keys, since those aren't Hyprland binds at all and have no hl.bind()
-# call to tag. Read-only: selecting an entry does nothing, Escape leaves.
-# Both columns are searchable, so typing "shift" or "screenshot" both
-# narrow it down.
+# Keybind cheat sheet built from the "-- kb:" tags in keybinds.lua, plus
+# fuzzel's own menu keys, which aren't Hyprland binds.
 
 source "$HOME/.config/hypr/scripts/menu-lib.sh"
 

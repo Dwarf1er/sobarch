@@ -1,18 +1,14 @@
 # Maintainer: Dwarf1er
 pkgname=sobarch-limine-snapshots
-# No upstream release of its own; pkgver tracks the date these scripts
-# last changed in this monorepo, same convention as sobarch-skel.
-pkgver=20261004
-pkgrel=2
+# pkgver tracks the date these scripts last changed.
+pkgver=20261019
+pkgrel=1
 pkgdesc="Bespoke Limine boot-entry sync for Snapper snapshots (Limine equivalent of grub-btrfs, decision #12)"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
 license=('MIT')
 depends=('bash' 'inotify-tools' 'snapper' 'btrfs-progs')
-# Pure source package (bash scripts + a unit file), nothing to strip or
-# generate debug info for; disabling debug avoids needing the
-# debugedit package on the build host (not present on a fresh
-# archinstall base), same as sobarch-skel/sobarch-via-udev.
+# Nothing to strip; also avoids needing debugedit on a fresh archinstall base.
 options=('!debug')
 source=()
 sha256sums=()

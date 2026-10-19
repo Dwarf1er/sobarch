@@ -1,5 +1,4 @@
-# Overrides /usr/share/applications/kbd-layout-viewer5.desktop: hides "Keyboard layout viewer" from
-# the app launcher without touching the system package's own file.
+# Hides "Keyboard layout viewer" from the app launcher.
 [Desktop Entry]
 Type=Application
 Name=Keyboard layout viewer

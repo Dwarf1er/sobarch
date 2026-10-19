@@ -9,10 +9,7 @@ from widgets import RadioList, Row
 
 
 class NetworkSection(Section):
-    """Only offered when there is no connectivity at startup, so
-    ethernet users never see it. Manual SSID entry is the guaranteed
-    path; Scan is a best-effort convenience on top (see network.py on
-    why its parsing can't be verified against real hardware here)."""
+    """WiFi setup, shown only when there is no connectivity at startup."""
 
     title = "Network"
 

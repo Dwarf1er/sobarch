@@ -1,8 +1,5 @@
 #!/bin/bash
-# tlpctl talks to tlp-pd, which exposes the same profile names
-# power-profiles-daemon does (performance, balanced, power-saver). Stays
-# open after a switch so the "active" marker visibly moves, instead of a
-# toast confirming what the list already shows.
+# Power profiles via tlpctl (tlp-pd). Stays open so the "active" marker moves.
 
 source "$HOME/.config/hypr/scripts/menu-lib.sh"
 

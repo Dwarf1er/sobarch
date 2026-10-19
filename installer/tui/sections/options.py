@@ -5,9 +5,7 @@ from sections.base import Section
 from validators import EMAIL_RE
 from widgets import Row, Toggle
 
-# Approximate, not live-fetched: the actual monthly ISO size drifts a
-# little release to release, and this screen shouldn't gain a network
-# dependency (and its failure mode) just to size a checkbox.
+# Approximate on purpose, to avoid a network fetch just to size a checkbox.
 _RESCUE_NOTE = (
     "Rescue media stores a full Arch ISO (~1.5 GiB) on its own partition so the "
     "machine can boot a rescue environment with no USB drive around. "

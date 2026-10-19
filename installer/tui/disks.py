@@ -1,19 +1,13 @@
-"""Real block device listing for the disk-selection screen, via lsblk
-rather than /sys parsing, since lsblk already resolves model names and
-whole-disk vs. partition distinctions correctly."""
+"""Block device listing for the disk-selection screen, via lsblk."""
 
 import json
 import subprocess
 from dataclasses import dataclass
 
-# zram (compressed swap in RAM) and loop devices are never valid
-# install targets; excluded by name prefix rather than by absence of a
-# "model" field, since some real disks also report no model.
+# Matched by name, not by a missing model: some real disks report no model.
 _EXCLUDED_NAME_PREFIXES = ("zram", "loop")
 
-# Where the Arch live ISO mounts the medium it booted from; any disk
-# carrying a partition mounted here is the installer's own USB/CD and is
-# never a valid target.
+# A disk mounted here is the live ISO's own boot medium.
 _LIVE_MEDIUM_MOUNTS = ("/run/archiso/bootmnt", "/run/archiso/airootfs")
 
 
@@ -23,9 +17,7 @@ class DiskInfo:
     size_bytes: int
     model: str
     removable: bool = False
-    # One human-readable line per existing partition ("sda1  ntfs
-    # \"Windows\"  476.0 GiB"), shown on the final confirmation so the
-    # user sees what is on the disk they're about to modify.
+    # One summary line per existing partition, shown on the confirmation.
     partitions: tuple[str, ...] = ()
 
     @property

@@ -1,12 +1,6 @@
 // Base16 {{scheme-name}}
 // Author: {{scheme-author}}
-//
-// base16-waybar (the upstream template already wired for style.css)
-// only covers CSS custom properties, not this file: waybar's clock
-// module colors its calendar cells via inline Pango markup spans
-// (no CSS class hook exists for them), so this local template renders
-// the whole config.jsonc, non-color settings included, the same way
-// the hyprlock/starship/fastfetch local templates do.
+// Renders the whole file so the calendar's Pango colors follow the scheme.
 {
   "layer": "top",
   "position": "top",

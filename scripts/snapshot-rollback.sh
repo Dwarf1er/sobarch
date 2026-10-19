@@ -1,67 +1,19 @@
 #!/bin/bash
-# Restore the root (@) subvolume to a previous Snapper snapshot.
-#
-# Disk encryption (Phase 22): rescue mode detects a LUKS-encrypted
-# <device> (`cryptsetup isLuks`) and opens it interactively
-# (`cryptsetup open`, prompting for the passphrase on the controlling
-# tty) before mounting, then closes it again on exit. --online mode
-# needs no such handling: findmnt already resolves to the mapper
-# device on a system that's already unlocked and running.
-#
-# Two modes:
-#
-#   snapshot-rollback.sh <device> <snapshot-number>
-#     Rescue mode: run from a live ISO (or any rescue environment with
-#     btrfs-progs), when the installed system doesn't boot at all.
-#     This is the only mode that always works, regardless of whether
-#     the installed system can start.
-#
-#   snapshot-rollback.sh --online <snapshot-number>
-#     Online mode: run directly on the currently booted, working
-#     system, no live ISO needed. This is safe because `subvol=@` in
-#     fstab is only resolved by name once, at mount time; the
-#     currently-running system stays bound to its subvolume by
-#     internal ID regardless of what the top-level directory entry
-#     named "@" gets renamed to on a separate, secondary mount of the
-#     same volume. The current session keeps running completely
-#     unaffected either way; only the next boot picks up the change.
-#     This is taken from https://github.com/hirak99/yabsnap as this
-#     tool showed how to perform this.
-#
-# Both modes perform the same underlying operation (rename the current
-# @, create a new writable @ from the chosen snapshot); only how the
-# target device is determined, and whether an extra confirmation
-# prompt applies, differs. A reboot is required afterward regardless
-# of which mode was used.
-#
-# Implements the Arch Wiki's documented manual procedure, not `snapper
-# rollback`, which the Wiki's own suggested filesystem layout (the
-# @snapshots top-level subvolume this project also uses) is explicitly
-# described as not intended to be used with:
+# Restores the root (@) subvolume from a Snapper snapshot, following the
+# Arch Wiki's manual procedure rather than `snapper rollback`:
 # https://wiki.archlinux.org/title/Snapper#Restoring_/_to_its_previous_snapshot
-#
-# The previous @ is renamed, not deleted, so this is reversible if the
-# chosen snapshot turns out to be wrong. Remove the renamed copy
-# manually once you've confirmed the restore actually worked. This also
-# means /var/log and the pacman cache (which live inside @, not their
-# own subvolumes) aren't lost on rollback: they're still there under
-# the renamed copy for as long as you keep it around.
 #
 # Usage:
 #   snapshot-rollback.sh <device> <snapshot-number>
-#     e.g. snapshot-rollback.sh /dev/nvme0n1p2 6
+#     Rescue mode, from a live ISO. <device> is the BTRFS partition, or
+#     the LUKS partition wrapping it (unlocked interactively).
 #   snapshot-rollback.sh --online [--yes] <snapshot-number>
-#     e.g. snapshot-rollback.sh --online 6
-#     --yes skips the typed confirmation, for callers with no
-#     terminal (the snapshot-boot notification's click action, which
-#     asks for confirmation in its own fuzzel prompt first).
+#     On the running system. The mounted @ is bound by subvolume ID, so
+#     renaming it doesn't affect the current session (approach from
+#     https://github.com/hirak99/yabsnap). --yes skips the confirmation.
 #
-# <device> is the BTRFS partition (not the whole disk, not /dev/nvme0n1
-# but its partition, e.g. /dev/nvme0n1p2) -- or, on an encrypted
-# install, the LUKS partition wrapping it; this script opens it for
-# you. <snapshot-number> matches the directory name under @snapshots/
-# (visible via `snapper -c root list` on the installed system, or by
-# inspecting @snapshots/ directly from a rescue context once unlocked).
+# The old @ is renamed, not deleted, so the restore is reversible. A
+# reboot is required afterward.
 
 set -euo pipefail
 
@@ -97,9 +49,7 @@ if [ "$ONLINE" = true ] && [ "$ASSUME_YES" = false ]; then
     fi
 fi
 
-# Rescue mode only: --online's $DEVICE already came from findmnt on a
-# live, unlocked system, so it's never itself a locked LUKS device
-# (cryptsetup isLuks correctly says no and this is a no-op there).
+# Rescue mode only: --online's device is already unlocked.
 MOUNT_DEVICE="$DEVICE"
 LUKS_MAPPER_NAME="sobarch-rollback"
 LUKS_OPENED_HERE=false
@@ -115,8 +65,7 @@ if [ "$ONLINE" = false ] && cryptsetup isLuks "$DEVICE"; then
 fi
 
 MOUNT_POINT=$(mktemp -d)
-# Extra mounts made inside the restored root while repairing /boot,
-# unmounted (newest first) before the top-level mount itself.
+# Mounts made under the restored root, unmounted newest first.
 EXTRA_MOUNTS=()
 cleanup() {
     for ((i = ${#EXTRA_MOUNTS[@]} - 1; i >= 0; i--)); do
@@ -149,11 +98,8 @@ fi
 echo "Creating a new writable @ from snapshot $SNAPSHOT_NUM..."
 btrfs subvolume snapshot "$SNAPSHOT_SRC" "$MOUNT_POINT/@"
 
-# /boot (the ESP, outside every snapshot) still holds whatever kernel
-# and initramfs were installed last. If the restored root predates a
-# kernel upgrade, that kernel has no modules under the restored
-# /usr/lib/modules, and the system boots without GPU, wifi, USB, etc.
-# Put the restored root's own kernel back and rebuild its initramfs.
+# /boot is outside every snapshot, so its kernel may not match the
+# restored root's modules. Restore that kernel and rebuild the initramfs.
 repair_boot_kernel() {
     local new_root="$MOUNT_POINT/@" version="" dir
     for dir in "$new_root"/usr/lib/modules/*/; do

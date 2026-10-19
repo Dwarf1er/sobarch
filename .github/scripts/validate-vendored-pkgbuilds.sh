@@ -1,24 +1,9 @@
 #!/usr/bin/env bash
-# Validates every packages/aur/*/ directory (AUR-sourced content only --
-# packages/custom/ is this project's own PKGBUILD, out of scope here):
-#
-#   - Regenerates .SRCINFO via makepkg and fails if it doesn't match
-#     what's committed. The concrete failure mode this guards against:
-#     a hand-edited PKGBUILD whose .SRCINFO was never regenerated --
-#     aur-sync.sh trusts .SRCINFO as its sole source of truth for a
-#     package's pinned version (see that script's pinned_version()),
-#     so a stale one means it silently compares against the wrong
-#     version.
-#   - Runs namcap against the PKGBUILD. Advisory only, never fails the
-#     run: namcap findings need a human's judgment (e.g. this repo
-#     deliberately sets options=(!debug) on some packages, which
-#     namcap flags), same treatment aur.yml gives ks-aur-scanner.
-#
-# Takes optional package names to restrict the run to; with none, every
-# packages/aur/*/ directory is checked.
-#
-# Must run as a non-root user: makepkg refuses outright to run as
-# root.
+# Validates packages/aur/*/ (or only the named packages):
+#   - fails if the committed .SRCINFO is stale (aur-sync.sh trusts it for
+#     the pinned version)
+#   - runs namcap, advisory only
+# makepkg refuses to run as root.
 
 set -uo pipefail
 

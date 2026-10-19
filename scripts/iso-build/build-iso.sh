@@ -1,16 +1,10 @@
 #!/usr/bin/env bash
-# Builds the monthly sobarch ISO: Arch's own `releng` archiso profile,
-# fetched fresh (never a persisted fork, so upstream releng/kernel drift
-# is absorbed automatically), layered with this project's installer and
-# the prebuilt package cache from build-package-cache.sh.
+# Builds the sobarch ISO from a fresh copy of Arch's releng profile plus
+# the installer and the package cache from build-package-cache.sh.
 #
 # Usage: build-iso.sh REPO_DIR CACHE_DIR OUTPUT_DIR
-#   REPO_DIR    an existing checkout of this repo
-#   CACHE_DIR   output dir from build-package-cache.sh
-#   OUTPUT_DIR  where the finished .iso is written
 #
-# Must run inside a privileged container: mkarchiso needs loop devices
-# and squashfs tooling, a real Arch userland, and root.
+# Needs root in a privileged container (loop devices for mkarchiso).
 
 set -euo pipefail
 shopt -s inherit_errexit
@@ -26,19 +20,8 @@ OUTPUT_DIR="$3"
 mkdir -p "$OUTPUT_DIR"
 OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 
-# Single canonical build timestamp, captured once and reused for every
-# date this script embeds. releng's own profiledef.sh (confirmed by
-# reading it directly) computes both iso_version and iso_label as
-# `date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" ...` -- honoring
-# SOURCE_DATE_EPOCH when set, falling back to wall-clock `now`
-# otherwise. Exporting it here means mkarchiso's own sourcing of
-# profiledef.sh picks it up automatically; the release filename below
-# reuses this exact same value instead of calling `date` a second,
-# independent time after mkarchiso finishes. Without this, a long build
-# (minutes of squashfs compression) that happens to straddle midnight
-# UTC would leave the ISO's own internal iso_version/iso_label
-# disagreeing with the filename this script publishes the release
-# under.
+# releng's profiledef.sh honors SOURCE_DATE_EPOCH; sharing it keeps the
+# ISO's internal version and the release filename on the same date.
 SOURCE_DATE_EPOCH="$(date -u +%s)"
 export SOURCE_DATE_EPOCH
 
@@ -47,25 +30,13 @@ pacman -Sy --noconfirm --needed archiso git
 WORK_DIR="$(mktemp -d /var/tmp/sobarch-iso-build.XXXXXX)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
-# The releng profile isn't its own repo -- it ships inside the archiso
-# project itself, at configs/releng/ (confirmed by extracting the real
-# archiso-90-1-any.pkg.tar.zst package and checking its file list; the
-# archiso package's own pacman -Si URL field is
-# gitlab.archlinux.org/archlinux/archiso, not .../releng, which is a
-# different, unrelated repo -- that mismatch is what "missing
-# profiledef.sh" actually meant).
+# The releng profile ships inside the archiso repo at configs/releng/.
 echo "build-iso: fetching archiso profile source"
 git clone --depth 1 https://gitlab.archlinux.org/archlinux/archiso.git "$WORK_DIR/archiso"
 PROFILE="$WORK_DIR/archiso/configs/releng"
 
-# Every "Arch Linux" string a user actually sees before/at login --
-# confirmed by extracting the real profile and grepping it, not
-# guessed: these are plain static text in each file, never templated
-# from profiledef.sh at build time, so each one needs its own edit.
-# install_dir ("arch", the ISO's internal /arch/boot/... path) is left
-# alone deliberately: it's never displayed to a user, only referenced
-# internally by the boot APPEND/options lines, so changing it is pure
-# risk for zero visible benefit.
+# User-visible "Arch Linux" strings are static text in each file. The
+# internal install_dir "arch" is left alone.
 echo "build-iso: rebranding boot text (Arch Linux -> Sobarch)"
 sed -i \
     -e 's/iso_name="archlinux"/iso_name="sobarch"/' \
@@ -87,23 +58,8 @@ sed -i 's/title    Arch Linux install medium/title    Sobarch installer/' \
 
 echo "sobarch" > "$PROFILE/airootfs/etc/hostname"
 
-# The whole source tree (installer/, packages/, skel/, branding/,
-# scripts/), not a hand-picked subset within it: install_runner.py's own
-# post-archinstall build step reaches several paths by relative position
-# in that tree (packages/custom/sobarch-skel, packages/aur/<pkg> for
-# each base-required AUR package, skel/, branding/, installer/firstboot/,
-# scripts/aur-sync/ -- see install_runner.py's own staging list), the
-# same shape bootstrap.sh's tarball fetch already gives at runtime.
-# Copying it wholesale means that relationship never needs to be
-# re-enumerated or kept in sync by hand as install_runner.py evolves.
-#
-# What IS excluded is project-meta content the installer genuinely never
-# touches at install time (docs, the website, CI/dev-tooling config) plus
-# gitignored local build litter (checked directly against this repo:
-# packages/custom/sobarch-skel/pkg/ alone was 18MB of leftover `makepkg`
-# output on a dev machine -- actions/checkout never produces this in CI,
-# but excluding it defensively costs nothing and matters if this script
-# is ever run against a real local checkout instead).
+# Copy the whole tree since the installer reaches several paths by
+# relative position; only project-meta content and build litter are excluded.
 echo "build-iso: layering sobarch checkout into airootfs"
 mkdir -p "$PROFILE/airootfs/root/sobarch"
 rsync -a \
@@ -129,23 +85,10 @@ echo "build-iso: adding python/python-textual to the profile package list"
     echo "python-textual"
 } >> "$PROFILE/packages.x86_64"
 
-# archiso's default releng root shell auto-execs ~/.automated_script.sh
-# on login if present -- TODO(first real CI run): confirm this is still
-# how the current releng profile's root autologin works before relying
-# on it; if it's changed, this needs a systemd getty@tty1 drop-in or
-# equivalent instead.
-#
-# This used to overwrite that file outright with a bare TUI launch,
-# which silently dropped the stock script=<url> kernel-cmdline handling
-# releng's own .automated_script.sh provides (fetch and exec a script,
-# the hook PXE-driven unattended installs chain into, see
-# website/content/docs/installer/pxe-netboot.md). That forced anyone
-# doing an unattended PXE install to fall back to the vanilla Arch ISO
-# instead of sobarch's own faster, pre-cached one. script_cmdline()/the
-# script= branch below are copied verbatim from releng's
-# .automated_script.sh (confirmed against archlinux/archiso's master
-# branch); only the final dispatch is sobarch's own, falling back to
-# the TUI solely when no script= was given, never on a failed fetch.
+# releng's root autologin runs ~/.automated_script.sh. TODO: confirm this
+# still holds for current releng. The script= handling is copied from
+# releng's own script so PXE unattended installs keep working; the TUI
+# launches only when no script= was given.
 echo "build-iso: wiring auto-launch of the installer TUI (with a script= PXE override)"
 cat > "$PROFILE/airootfs/root/.automated_script.sh" <<'SCRIPT'
 #!/usr/bin/env bash
@@ -205,11 +148,7 @@ fi
 iso_name="sobarch-$(date -u --date="@$SOURCE_DATE_EPOCH" +%Y.%m.%d)-x86_64.iso"
 cp "$built_iso" "$OUTPUT_DIR/$iso_name"
 
-# GitHub's real per-release-asset limit is 2GiB (confirmed against
-# GitHub's own docs, decision #20's addendum) -- logged loudly here
-# rather than only discovered later when `gh release create` rejects
-# the upload, since that failure mode gives no indication of how close
-# or far over the real number was.
+# GitHub rejects release assets over 2GiB.
 iso_size="$(stat -c%s "$OUTPUT_DIR/$iso_name")"
 iso_size_mib=$((iso_size / 1024 / 1024))
 echo "build-iso: wrote $OUTPUT_DIR/$iso_name ($iso_size_mib MiB)"

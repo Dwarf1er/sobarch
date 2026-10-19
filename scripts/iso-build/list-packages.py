@@ -1,23 +1,7 @@
 #!/usr/bin/env python3
-"""Enumerates the packages the prebuilt-ISO package cache needs to
-build/cache: base-required only, not any optional profile. A real CI
-run measured the full every-profile cache at 3.25GB and still growing
-before it even finished building, against GitHub's real 2GiB-per-
-release-asset limit (confirmed against GitHub's own docs) -- pruning
-that down to fit would gut most of the large profiles anyway (Steam's
-multilib deps, Blender, OBS, LibreOffice, Brave are each sizeable on
-their own), so decision #20 was revised to base-required-only rather
-than spend real CI time/bandwidth building packages that just get
-thrown away. See docs/DECISIONS.md decision #20's addendum.
-
-Sources: installer/archinstall/base.json's `packages` array (official)
-and scripts/aur-sync/base-required-packages.txt (AUR), plus the
-packages installer/tui/install_runner.py always builds regardless of
-base-required-packages.txt (sobarch-skel/sobarch-scripts/
-sobarch-limine-snapshots).
+"""Lists the base-required packages for the ISO package cache.
 
 Usage: list-packages.py --official | --aur
-Prints one package name per line, sorted, deduplicated.
 """
 
 import argparse
@@ -29,9 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 BASE_JSON = REPO_ROOT / "installer" / "archinstall" / "base.json"
 BASE_AUR_PACKAGES_FILE = REPO_ROOT / "scripts" / "aur-sync" / "base-required-packages.txt"
 
-# Built unconditionally on every install (install_runner.py's
-# _build_and_install_base_packages), regardless of base-required-packages.txt,
-# so the ISO cache always carries them too.
+# Always built by the installer, independent of base-required-packages.txt.
 ALWAYS_BUILT_PACKAGES = ("sobarch-skel", "sobarch-scripts", "sobarch-limine-snapshots")
 
 

@@ -1,19 +1,7 @@
 #!/usr/bin/env bash
-# Run once per Hyprland login (hyprland.lua's autostart). If this boot
-# is a Limine snapshot entry (sobarch-limine-snapshot-sync's
-# `rootflags=...,subvol=/@snapshots/N/snapshot`), shows a persistent
-# notification saying so; clicking it offers to make that snapshot the
-# permanent root via snapshot-rollback.sh --online, the same restore a
-# terminal user would run by hand.
-#
-# Detection: `findmnt -no FSROOT /` is the subvolume path / is mounted
-# from. A normal boot reports "/@"; a snapshot boot reports
-# "/@snapshots/N/snapshot". A no-op (exits immediately) on anything
-# else, including non-BTRFS roots.
-#
-# Critical urgency is what makes the notification persistent: mako's
-# own config (skel/.config/mako/config) sets default-timeout=0 for
-# [urgency=critical], so it stays until clicked or dismissed.
+# Run at login. On a Limine snapshot boot (FSROOT /@snapshots/N/snapshot),
+# shows a persistent notification offering to make that snapshot permanent.
+# mako keeps critical notifications until dismissed.
 
 set -uo pipefail
 

@@ -62,9 +62,7 @@ jobs:
       - name: Install check dependencies
         if: steps.diff.outputs.changed == 'true'
         run: pacman -Sy --needed --noconfirm namcap
-      # The compiled scanner only changes when aur-scan.version does, so
-      # the rust toolchain install and ~2.5 minute build happen once per
-      # version bump instead of once per matrix package per run.
+      # Cached per aur-scan.version to skip the rust install and slow build.
       - name: Cache aur-scan
         if: steps.diff.outputs.changed == 'true'
         id: aur-scan-cache
@@ -90,8 +88,7 @@ jobs:
             pacman -S --needed --noconfirm rust clang openssl
             .github/scripts/build-aur-scan.sh /usr/local/bin/aur-scan
           fi
-          # Advisory only, same as namcap: findings need a human's
-          # judgment, never block the update on their own.
+          # Advisory only, like namcap.
           aur-scan scan "packages/aur/$PKG/" --format text 2>&1 | tee "$RUNNER_TEMP/scan.log" || true
       - name: Fail if validation failed
         if: steps.diff.outputs.changed == 'true' && steps.validate.outputs.rc != '0'
@@ -107,15 +104,13 @@ jobs:
           title="aur: update $PKG to $newver"
           desc="Automated update of \`$PKG\` to \`$newver\`, fetched from its AUR git repo."
           if [[ "$PKG" == *-git ]]; then
-            # A VCS package's pkgver is stale bookkeeping, not a real
-            # version; the update is the maintainer's PKGBUILD content.
+            # A VCS package's pkgver is meaningless; the update is the PKGBUILD content.
             title="aur: content update for $PKG"
             desc="Automated content update of \`$PKG\` (VCS package, so no meaningful version), fetched from its AUR git repo."
           fi
           .github/scripts/open-update-pr.sh "aur-update/${PKG}-${newver//:/-}" "$title" "$desc" "packages/aur/$PKG" validate scan
 
-  # tinty-bin repackages upstream's GitHub release binary (the AUR has
-  # only tinty-git), so the AUR check above can't see it.
+  # tinty-bin isn't on the AUR, so the check above can't see it.
   tinty-bin:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
@@ -141,8 +136,7 @@ jobs:
           fi
       - name: Validate PKGBUILD
         if: steps.diff.outputs.changed == 'true'
-        # bash explicitly: its pipefail is what lets a validator failure
-        # survive the pipe into tee.
+        # bash so pipefail keeps a validator failure through tee.
         shell: bash
         run: runuser -u builder -- .github/scripts/validate-custom-pkgbuilds.sh 2>&1 | tee "$RUNNER_TEMP/validate.log"
       - name: Open pull request
@@ -157,8 +151,7 @@ jobs:
             "Automated update of \`tinty-bin\` to upstream release \`v$newver\`, from https://github.com/tinted-theming/tinty/releases/tag/v$newver. Checksums were computed from the downloaded files; the binary's was cross-checked against the release's own published \`.sha256\`." \
             packages/custom/tinty-bin validate
 
-  # vesktop-integrity-launch pins an exact commit of its own upstream
-  # repo; this bumps the pin to that repo's current HEAD.
+  # vesktop-integrity-launch pins an upstream commit; bump it to HEAD.
   vesktop-integrity-launch:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
@@ -184,8 +177,7 @@ jobs:
           fi
       - name: Validate PKGBUILD
         if: steps.diff.outputs.changed == 'true'
-        # bash explicitly: its pipefail is what lets a validator failure
-        # survive the pipe into tee.
+        # bash so pipefail keeps a validator failure through tee.
         shell: bash
         run: runuser -u builder -- .github/scripts/validate-custom-pkgbuilds.sh 2>&1 | tee "$RUNNER_TEMP/validate.log"
       - name: Open pull request

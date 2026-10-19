@@ -1,7 +1,4 @@
-"""Two selection levels: install everything, or choose specific
-profiles, each either taken whole or expanded to hand-pick packages.
-There is deliberately no separate flat-package mode: picking inside a
-profile already reaches past its boundary."""
+"""Software selection: install everything, or whole profiles, or hand-picked packages."""
 
 from rich.text import Text
 from textual.app import ComposeResult
@@ -68,7 +65,6 @@ class SoftwareSection(Section):
             self.query_one("#profile-detail", ContentSwitcher).current = f"pkgs-{event.option.id}"
 
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
-        # Enter on a profile moves into its package list.
         if event.option_list.id == "profile-nav" and event.option.id:
             event.stop()
             self._list(event.option.id).focus()

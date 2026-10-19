@@ -1,16 +1,7 @@
 #!/usr/bin/env bash
-# Lists every base16/base24/tinted8 scheme tinty knows about (populated
-# by `tinty install`, run self-healingly from hyprland.lua's autostart
-# hook on every login -- there is no separate tinty post-install
-# step) and applies the chosen one. Each tinty
-# config.toml item's own `hook` (see
-# ~/.config/tinted-theming/tinty/config.toml) handles reloading the app
-# it themes; nothing extra to do here beyond the apply itself.
-#
-# Stays open after applying, cursor kept on the scheme just applied and
-# marked current: an apply takes well under a second, and every fuzzel
-# launch re-reads its own colors.ini, so the picker itself reopens in
-# the new theme. Browsing is Enter, Down, Enter... as a live preview.
+# Theme picker over every scheme tinty knows. Each tinty item's own hook
+# reloads its app. Stays open after applying, so Enter, Down, Enter
+# previews themes in turn.
 
 source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
@@ -23,11 +14,7 @@ if ! command -v tinty >/dev/null 2>&1; then
     exit 1
 fi
 
-# tinty list prints raw <scheme_system>-<scheme_name> ids (e.g.
-# base16-atelier-forest-light), which read as clutter in a picker;
-# reformat each into "Pretty Name" (only tagging non-base16 systems,
-# since base16 is the common case) while keeping the raw id around
-# (tab-separated; it becomes the row id) for the actual tinty apply call.
+# "base16-atelier-forest-light" -> "Atelier Forest Light", raw id kept as the row id.
 entries=$(tinty list | awk -F'-' '
     length($0) == 0 { next }
     {
@@ -44,23 +31,9 @@ entries=$(tinty list | awk -F'-' '
         print pretty "\t" raw
     }' | sort -f)
 
-# A 4-color swatch per scheme (background/foreground/red/blue, the same
-# four `tinty info` already reports as base00/base05/base08/base0D),
-# cached by raw scheme id so a warm cache costs nothing but a stat.
-# Same best-effort rsvg-convert dependency apply-wallpaper.sh's own SVG
-# rasterizing already relies on: a missing rsvg-convert just means this
-# menu falls back to a plain list, not a broken one. Unlike wallpaper
-# thumbnails, there's no existing image file per theme to point fuzzel
-# at, so this builds one: a tiny inline SVG, rasterized the same way an
-# SVG wallpaper already is.
-#
-# tinty knows 500+ schemes; generating a swatch for every one of them
-# synchronously (confirmed directly: ~10-20s for a cold cache) would
-# make the menu itself feel broken. Only a cache hit is used to
-# decorate THIS run's list; anything missing shows as a plain row for
-# now, and a detached background pass (below) fills the cache in for
-# every future open -- self-healing the same way tinty's own install
-# step already is, not a new persistent service.
+# A cached 4-color swatch per scheme. Building 500+ swatches takes too
+# long to do inline, so missing ones are generated in the background for
+# the next open. Without rsvg-convert the list just has no swatches.
 SWATCH_DIR="$HOME/.cache/sobarch/theme-swatches"
 have_rsvg=0
 command -v rsvg-convert >/dev/null 2>&1 && have_rsvg=1
@@ -103,18 +76,37 @@ if [[ "$have_rsvg" = 1 ]]; then
     fi
 fi
 
-selected=""
-while :; do
-    current=$(tinty current 2>/dev/null)
-    [[ -n "$selected" ]] || selected="$current"
-    menu_reset
-    while IFS=$'\t' read -r pretty raw; do
-        [[ -n "$raw" ]] || continue
-        swatch=""
-        [[ "$have_rsvg" = 1 && -f "$SWATCH_DIR/$raw.png" ]] && swatch="$SWATCH_DIR/$raw.png"
-        menu_add "$raw" "$pretty" "$swatch" "$([[ "$raw" = "$current" ]] && echo current)"
-    done <<<"$entries"
-    menu_show theme "" "$selected" || break
+# Rows are built once; a pick only moves the "current" marker.
+current=$(tinty current 2>/dev/null)
+declare -A row_of
+menu_reset
+while IFS=$'\t' read -r pretty raw; do
+    [[ -n "$raw" ]] || continue
+    swatch=""
+    [[ "$have_rsvg" = 1 && -f "$SWATCH_DIR/$raw.png" ]] && swatch="$SWATCH_DIR/$raw.png"
+    row_of["$raw"]=${#MENU_IDS[@]}
+    menu_add "$raw" "$pretty" "$swatch" "$([[ "$raw" = "$current" ]] && echo current)"
+done <<<"$entries"
+
+# Copy fuzzel's colors first so the picker reopens in the new scheme at
+# once, and run the slow full apply in the background. Waiting on the
+# previous apply keeps two applies from interleaving.
+FUZZEL_COLORS="$HOME/.config/sobarch/tinty-templates/fuzzel/colors"
+apply_pid=""
+apply_scheme() {
+    [[ -n "$apply_pid" ]] && wait "$apply_pid"
+    [[ -f "$FUZZEL_COLORS/$1.ini" ]] && cp "$FUZZEL_COLORS/$1.ini" "$HOME/.config/fuzzel/colors.ini"
+    menu_run tinty apply "$1" &
+    apply_pid=$!
+}
+
+selected="$current"
+while menu_show theme "" "$selected"; do
     selected="$MENU_ID"
-    menu_run tinty apply "$MENU_ID"
+    [[ "$MENU_ID" = "$current" ]] && continue
+    [[ -n "$current" && -n "${row_of[$current]:-}" ]] && MENU_STATES[${row_of[$current]}]=""
+    MENU_STATES[${row_of[$MENU_ID]}]="current"
+    current="$MENU_ID"
+    apply_scheme "$MENU_ID"
 done
+[[ -n "$apply_pid" ]] && wait "$apply_pid"

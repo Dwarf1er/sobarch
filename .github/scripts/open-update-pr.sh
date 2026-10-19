@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
-# Commits PATH on a fresh branch and opens a pull request for it, for
-# the update jobs in .github/workflows/aur.yml. Skips (created=false)
-# if a PR for BRANCH is already open.
+# Commits PATH on a fresh branch and opens a PR for it, unless one is
+# already open for BRANCH.
 #
 #   open-update-pr.sh BRANCH TITLE DESCRIPTION PATH [CHECK_NAME...]
 #
-# Each CHECK_NAME is a log at $RUNNER_TEMP/<name>.log whose tail is
-# attached to the PR body. Needs GH_TOKEN, and the workspace marked
-# safe.directory for git.
+# The tail of each $RUNNER_TEMP/<CHECK_NAME>.log is attached to the PR body.
 
 set -euo pipefail
 
@@ -26,11 +23,8 @@ git config user.email "github-actions[bot]@users.noreply.github.com"
 git checkout -B "$branch"
 git add "$path"
 git commit -m "$title"
-# Force: this branch name is entirely derived from the package+version
-# by the caller, so it's owned by this automation alone -- a stale ref
-# left by an earlier run that pushed but failed before/at `gh pr create`
-# (no open PR, so the guard above didn't catch it) must never block this
-# run from reaching the same state.
+# Force: the branch is owned by this automation, and a stale ref from a
+# run that failed before `gh pr create` must not block this one.
 git push --force origin "$branch"
 
 {

@@ -1,43 +1,10 @@
 #!/usr/bin/env bash
-# Applies whatever wallpaper is currently selected (~/.config/sobarch/
-# current-wallpaper, a plain text file holding one absolute path,
-# written by wallpaper-menu.sh; defaults to sobarch's own shipped
-# ~/.local/share/backgrounds/sobarch-wallpaper.svg if that file doesn't
-# exist yet) to every connected monitor.
+# Applies the selected wallpaper (~/.config/sobarch/current-wallpaper) to
+# every monitor. Run by the tinty colors hook and on monitor hotplug.
 #
-# hyprpaper links against librsvg, libpng, libjpeg, libwebp and libjxl
-# directly (confirmed via `ldd`) and its `wallpaper` IPC request takes
-# a fit_mode (confirmed via `hyprctl hyprpaper --help`), and its own
-# raster-image cover-scaling genuinely works (confirmed directly this
-# session). Its own SVG decoding does not, though: a file with a
-# separate background rect plus a mark path rendered as flat black
-# straight through hyprpaper's IPC, while rasterizing that exact same
-# file to PNG first and handing hyprpaper the PNG displayed correctly
-# (also confirmed directly this session, on a real machine, after
-# every other part of this pipeline, recoloring included, checked out
-# fine). So an SVG selection is always rasterized to PNG here before
-# ever reaching hyprpaper. A convention-following SVG (see below) is
-# rasterized once per distinct monitor size, fitted to that monitor
-# itself (see fit_to_monitor); anything else is rasterized once at the
-# design's own native resolution and left to hyprpaper's own (working)
-# raster cover-scaling, the same way an ordinary JPG/PNG wallpaper is.
-#
-# An SVG selection is expected to follow one convention: an element
-# with id="sobarch-bg" and one with id="sobarch-accent", each carrying
-# a plain fill="#RRGGBB" attribute (not a `style="fill:...` shorthand,
-# see the substitution below for why). Those two get recolored to the
-# current theme's base00/base0D before rasterizing; a plain raster
-# image is used as-is, no recoloring possible or expected. sobarch's
-# own reference design (branding/sobarch-wallpaper.svg, deployed to
-# the backgrounds dir above) follows this convention; anyone can drop
-# their own SVG or image alongside it.
-#
-# Run both as the sobarch-waybar-css tinty item's hook (colors
-# changed, see that item's own comment in config.toml for why its hook
-# and not a dedicated one) and from hyprland.lua's monitor.added/
-# monitor.removed handlers (monitor set changed); always re-applies to
-# every connected monitor fresh rather than diffing against previous
-# state.
+# SVGs are rasterized here because hyprpaper renders some SVGs as flat
+# black. An SVG with fill="#RRGGBB" on elements id="sobarch-bg" and
+# id="sobarch-accent" is recolored to base00/base0D and fitted per monitor.
 set -euo pipefail
 
 CURRENT_FILE="$HOME/.config/sobarch/current-wallpaper"
@@ -51,13 +18,7 @@ wallpaper="$DEFAULT_WALLPAPER"
 [[ -f "$CURRENT_FILE" ]] && wallpaper="$(<"$CURRENT_FILE")"
 [[ -f "$wallpaper" ]] || exit 0
 
-# WORKDIR holds only this script's own intermediate renders (the
-# recolored SVG and its PNG), so it's emptied outright on every run
-# rather than pruned selectively: nothing in it ever needs to survive
-# past the render that replaces it. It's its own subdirectory, not
-# ~/.cache/sobarch itself, since themes-menu.sh keeps its swatches
-# there. The second rm drops renders left directly in ~/.cache/sobarch
-# by versions of this script from before the subdirectory existed.
+# The second rm cleans up renders from older versions of this script.
 rm -rf "$WORKDIR"
 rm -f "$HOME/.cache/sobarch"/wallpaper.svg "$HOME/.cache/sobarch"/wallpaper*.png
 
@@ -71,13 +32,8 @@ if [[ "$wallpaper" == *.svg ]]; then
     if [[ -n "${base00:-}" && -n "${base0d:-}" ]]; then
         mkdir -p "$WORKDIR"
         recolored="$WORKDIR/wallpaper.svg"
-        # Rewrites fill="#......" to the current theme's colors, but
-        # only within whichever element actually carries
-        # id="sobarch-bg"/id="sobarch-accent". Scans the whole file as
-        # one string rather than line by line: Inkscape sometimes closes
-        # one element and opens the next on the very same line (e.g.
-        # `.../><path`), which a line-oriented tag scan can miss
-        # entirely, silently leaving that element unrecolored.
+        # Scan the whole file as one string: Inkscape can put several
+        # tags on one line.
         awk -v bg="$base00" -v accent="$base0d" '
             BEGIN { RS = "\0" }
             {
@@ -101,16 +57,8 @@ if [[ "$wallpaper" == *.svg ]]; then
 
     command -v rsvg-convert >/dev/null 2>&1 || exit 0
     mkdir -p "$WORKDIR"
-    # hyprpaper caches decoded images by path and never re-reads a path
-    # it has already loaded (v0.8.4 has no unload/reload request either,
-    # confirmed via `hyprctl hyprpaper --help`): overwriting one fixed
-    # wallpaper.png in place on a theme switch left every monitor
-    # showing the previous theme's render until hyprpaper restarted.
-    # Naming the PNG after a checksum of the exact SVG being rasterized
-    # gives every distinct theme/source combination its own path, while
-    # an unchanged one (e.g. monitor.added re-applying) keeps the same
-    # path hyprpaper already has (re-rendered identically, since WORKDIR
-    # was emptied above).
+    # hyprpaper never reloads a path it has already loaded, so name the
+    # PNG after the SVG's checksum.
     sum=$(cksum <"$path_to_apply" | cut -d' ' -f1)
     rasterized="$WORKDIR/wallpaper-$sum.png"
     rsvg-convert "$path_to_apply" -o "$rasterized" || exit 0
@@ -122,24 +70,15 @@ if [[ "$wallpaper" == *.svg ]]; then
     # following SVG guarantees (its sobarch-bg, recolored to base00).
     if [[ -n "${base00:-}" ]] && grep -q 'id="sobarch-bg"' "$wallpaper"; then
         fill_color="#$base00"
-        # The native render's pixel size, read straight from its PNG
-        # IHDR chunk (bytes 16-23: big-endian width, then height).
+        # Width and height from the PNG IHDR chunk (bytes 16-23).
         read -r native_w native_h < <(od -An -tu1 -j16 -N8 "$rasterized" |
             awk '{ print $1*16777216 + $2*65536 + $3*256 + $4, $5*16777216 + $6*65536 + $7*256 + $8 }')
     fi
 fi
 
-# hyprpaper's own cover-scaling of the single native render looked wrong
-# on any monitor whose aspect ratio differs from the design's (a 1080x1920
-# portrait monitor next to a 1920x1080 landscape one blew the 16:9 design
-# up ~1.8x and cropped its middle, slicing the mark apart). Instead, this
-# renders the design to the monitor's exact pixel size, scaled so the
-# canvas's short edge matches the monitor's short edge, centered, with
-# fill_color behind it. The mark then comes out the same size on every
-# monitor sharing a short edge whatever its orientation (on a portrait
-# monitor only the canvas's empty left/right margins get cropped), and
-# proportionally larger on a bigger one. One render per distinct size,
-# shared by every monitor of that size; echoes the path to apply.
+# Render at the monitor's exact size, scaling the canvas's short edge to
+# the monitor's short edge, so the mark keeps its size in portrait mode.
+# Prints the path to apply.
 fit_to_monitor() {
     local w=$1 h=$2 short native_short rw rh out
     out="$WORKDIR/wallpaper-$sum-${w}x${h}.png"
@@ -148,9 +87,7 @@ fit_to_monitor() {
         native_short=$((native_w < native_h ? native_w : native_h))
         rw=$((native_w * short / native_short))
         rh=$((native_h * short / native_short))
-        # --left=/--top= (not a separate argument): either can be
-        # negative, which rsvg-convert's parser would otherwise take
-        # for an unknown flag.
+        # --left=/--top= form so a negative value isn't parsed as a flag.
         rsvg-convert --page-width "$w" --page-height "$h" -w "$rw" -h "$rh" \
             --left="$(((w - rw) / 2))" --top="$(((h - rh) / 2))" \
             -b "$fill_color" "$svg_to_fit" -o "$out" || out="$path_to_apply"
@@ -158,21 +95,7 @@ fit_to_monitor() {
     echo "$out"
 }
 
-# hyprland.lua's own autostart launches `hyprpaper &` in the background
-# (one exec_cmd among several -- waybar, mako, hypridle, udiskie all
-# starting at the same moment) and `tinty init` (whose sobarch-waybar-css
-# hook is what runs this very script) as a separate, independently
-# scheduled exec_cmd right after. Nothing orders the two against each
-# other, so on a login busy enough to slow hyprpaper's own startup, this
-# script's first real run can hit hyprctl before hyprpaper's IPC socket
-# exists yet -- under `set -e`, that failure used to abort the whole
-# script outright, leaving every monitor with no wallpaper set until the
-# next full re-login or theme switch happened to run late enough to win
-# the race. Retried here instead, bounded to 2s (same shape as
-# sobarch-waybar-jsonc's own wait-for-old-process-exit hook in
-# config.toml): a real "hyprpaper isn't installed/running at all" case
-# still degrades to no wallpaper rather than hanging login, same as this
-# script's other `|| exit 0` guards above.
+# hyprpaper's IPC socket may not exist yet at login, so retry for 2s.
 set_wallpaper() {
     local attempt
     for attempt in {1..20}; do
@@ -182,10 +105,7 @@ set_wallpaper() {
     return 1
 }
 
-# Each monitor's name plus its effective pixel size: the active mode's
-# width/height, swapped for an odd `transform` (90/270 degrees, flipped
-# or not), since a rotated monitor's mode line still reports its
-# unrotated panel size.
+# Rotated monitors still report the unrotated mode, so swap w/h for odd transforms.
 while read -r name width height; do
     [[ -z "$name" ]] && continue
     monitor_path="$path_to_apply"

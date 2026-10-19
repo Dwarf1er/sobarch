@@ -2,10 +2,7 @@
 ---- KEYBINDINGS ----
 ---------------------
 
--- Split out of hyprland.lua so scripts/keybinds-menu.sh can grep just
--- this one file for the "kb:" tag prefix without also parsing colors/
--- monitor/window-rule config. Each tag sits directly above the bind
--- it documents, formatted as combo, a pipe, then a description.
+-- "-- kb: <combo> | <description>" above a bind lists it in keybinds-menu.sh.
 
 local terminal = "kitty"
 local fileManager = "pcmanfm"

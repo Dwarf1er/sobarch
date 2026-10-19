@@ -1,19 +1,6 @@
-"""Regenerates the package-list table in
-content/docs/installer/software-profiles.md from
-packages/custom/sobarch-skel/data/profiles.txt.
-
-Deliberately reads that plain pipe-delimited file, not
-installer/tui/profiles_data.py directly: profiles.txt is already the
-language-agnostic contract setup-profile-menu.sh (plain bash, no
-Python assumed) depends on, so this script rides along on the same
-contract instead of parsing installer internals. If the installer is
-ever rewritten in something other than Python, this keeps working
-unchanged as long as whatever replaces it still emits profiles.txt in
-this format, which it has to anyway for that bash script's sake.
-
-Not run automatically by anything, same as
-installer/tui/generate_profile_data.py: re-run that script first if
-PROFILES changed, then re-run this one by hand.
+"""Regenerates the package table in content/docs/installer/software-profiles.md
+from packages/custom/sobarch-skel/data/profiles.txt. Run by hand after
+installer/tui/generate_profile_data.py.
 """
 
 from pathlib import Path

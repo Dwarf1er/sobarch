@@ -1,34 +1,16 @@
 # Maintainer: Dwarf1er
 pkgname=sobarch-scripts
-# Pure-data-adjacent meta-package (plain bash, no build() step) with no
-# upstream releases of its own; pkgver tracks the date
-# installer/firstboot/*.sh, scripts/aur-sync/aur-sync.sh, or
-# installer/archinstall/{limine,ly}-theme-setup.sh,
-# installer/archinstall/plymouth-setup.sh, or
-# installer/archinstall/limine-add-os-entry.sh last changed in this
-# monorepo. Gives these scripts the same real pacman version tracking
-# sobarch-skel already has, instead of aur-sync.sh unconditionally
-# re-`install`ing them from a fresh checkout on every run regardless of
-# whether anything actually changed.
-#
-# *.service unit files under installer/firstboot/ are the one thing
-# deliberately NOT packaged here: sobarch-firstboot-skel.service needs
-# __USERNAME__ substituted in per install, something a package's
-# payload (identical across installs) can't do; install_runner.py
-# keeps deploying those directly. The NetworkManager dispatcher script
-# and the pacman hook have no such per-install variation, so both are
-# packaged below.
+# pkgver tracks the date any packaged script last changed.
+# The firstboot *.service units are not packaged: they need __USERNAME__
+# substituted per install, so install_runner.py deploys them.
 pkgver=20261019
-pkgrel=1
+pkgrel=2
 pkgdesc="Sobarch first-boot reconciliation scripts and the local AUR/custom package sync mechanism"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
 license=('MIT')
-# diffutils: apply-skel.sh's diff3 three-way merge. less: the pager
-# update-system.sh's [D] Diff option opens (`kitty -e less`).
-# Neither is part of base or base-devel (checked against both
-# directly), so both must be declared here rather than assumed.
-# pacman-contrib: `checkupdates`, used by sobarch-update-check.sh.
+# diffutils: diff3 in apply-skel.sh. less: update-system.sh's diff pager.
+# pacman-contrib: checkupdates in sobarch-update-check.sh.
 depends=('diffutils' 'less' 'pacman-contrib')
 options=('!debug')
 source=()
@@ -41,31 +23,22 @@ package() {
         install -Dm755 "$startdir/../../../installer/firstboot/$script" "$pkgdir/usr/local/lib/sobarch/$script"
     done
 
-    # Sourced by apply-skel.sh/update-system.sh,
-    # rescue-iso-setup.sh/refresh-rescue-iso.sh, and
-    # apply-security-baseline.sh/install-profile-packages.sh
-    # respectively, never run directly.
+    # Sourced libraries, not run directly.
     install -Dm644 "$startdir/../../../installer/firstboot/durable-replace.sh" "$pkgdir/usr/local/lib/sobarch/durable-replace.sh"
     install -Dm644 "$startdir/../../../installer/firstboot/rescue-iso-fetch.sh" "$pkgdir/usr/local/lib/sobarch/rescue-iso-fetch.sh"
     install -Dm644 "$startdir/../../../installer/firstboot/notify-user.sh" "$pkgdir/usr/local/lib/sobarch/notify-user.sh"
     install -Dm644 "$startdir/../../../installer/firstboot/pinned-version.sh" "$pkgdir/usr/local/lib/sobarch/pinned-version.sh"
 
-    # Daily update-availability check: a systemd *user* timer, enabled
-    # for every user by shipping the same symlink `systemctl --global
-    # enable` would create (works for already-installed users on package
-    # update, no per-user setup step).
+    # User timer enabled for every user by shipping the symlink
+    # `systemctl --global enable` would create.
     install -Dm755 "$startdir/../../../scripts/update-check/sobarch-update-check.sh" "$pkgdir/usr/local/lib/sobarch/sobarch-update-check.sh"
     install -Dm644 "$startdir/../../../scripts/update-check/sobarch-update-check.service" "$pkgdir/usr/lib/systemd/user/sobarch-update-check.service"
     install -Dm644 "$startdir/../../../scripts/update-check/sobarch-update-check.timer" "$pkgdir/usr/lib/systemd/user/sobarch-update-check.timer"
     install -dm755 "$pkgdir/usr/lib/systemd/user/timers.target.wants"
     ln -s ../sobarch-update-check.timer "$pkgdir/usr/lib/systemd/user/timers.target.wants/sobarch-update-check.timer"
 
-    # --online mode is what the snapshot-boot notification's click
-    # action (skel's snapshot-boot-check.sh) runs via pkexec.
     install -Dm755 "$startdir/../../../scripts/snapshot-rollback.sh" "$pkgdir/usr/local/lib/sobarch/snapshot-rollback.sh"
 
-    # The `sobarch` dispatcher (decision #21) and the update flow it
-    # and the fuzzel menu share (update-system.sh).
     install -Dm755 "$startdir/../../../scripts/sobarch-cli/sobarch" "$pkgdir/usr/local/bin/sobarch"
     install -Dm755 "$startdir/../../../installer/firstboot/update-system.sh" "$pkgdir/usr/local/lib/sobarch/update-system.sh"
 
@@ -73,25 +46,15 @@ package() {
 
     install -Dm644 "$startdir/../../../scripts/aur-sync/sobarch-aur-sync.hook" "$pkgdir/etc/pacman.d/hooks/sobarch-aur-sync.hook"
 
-    # Same scripts install_runner.py raw-copies into CHROOT_SETUP_SCRIPTS
-    # at install time (see its own module docstring), packaged here too
-    # so update-system.sh can re-run them against an already
-    # installed system whenever sobarch-skel's branding assets change.
-    # All three are idempotent and install-time-agnostic already (no
-    # archinstall-only env vars, no chroot-only paths), so the same
-    # script works unmodified in either context.
+    # Also run at install time; packaged so update-system.sh can re-run
+    # them when branding assets change.
     install -Dm755 "$startdir/../../../installer/archinstall/limine-theme-setup.sh" "$pkgdir/usr/local/lib/sobarch/limine-theme-setup.sh"
     install -Dm755 "$startdir/../../../installer/archinstall/ly-theme-setup.sh" "$pkgdir/usr/local/lib/sobarch/ly-theme-setup.sh"
     install -Dm755 "$startdir/../../../installer/archinstall/plymouth-setup.sh" "$pkgdir/usr/local/lib/sobarch/plymouth-setup.sh"
 
-    # Unlike the three scripts above, never run automatically by
-    # install_runner.py: adding another OS's boot entry needs the user
-    # to pick which detected .efi binary it is, so this is a manual
-    # `sudo limine-add-os-entry.sh` command, documented in
-    # website/content/docs/installer/dual-boot.md.
+    # Manual command only: the user has to pick which .efi binary to add.
     install -Dm755 "$startdir/../../../installer/archinstall/limine-add-os-entry.sh" "$pkgdir/usr/local/lib/sobarch/limine-add-os-entry.sh"
 
-    # Must be executable: NetworkManager only runs dispatcher.d scripts
-    # it itself considers executable.
+    # NetworkManager skips dispatcher scripts that aren't executable.
     install -Dm755 "$startdir/../../../installer/firstboot/90-sobarch-firstboot" "$pkgdir/etc/NetworkManager/dispatcher.d/90-sobarch-firstboot"
 }

@@ -1,23 +1,14 @@
 #!/usr/bin/env bash
-# Applies the security baseline: a default-deny nftables firewall,
-# root login locked unconditionally, and SSH disabled unless the TUI's
-# SSH screen (installer/tui/screens/ssh.py) enabled it.
-#
-# Run once by sobarch-firstboot-security.service (ConditionPathExists
-# on MARKER below, same pattern as the other first-boot units): a
-# failure here leaves MARKER unwritten, so it retries on the next boot
-# instead of being silently skipped.
+# Applies the security baseline: default-deny nftables firewall, locked root
+# account, and SSH only if enabled in the TUI. MARKER stays unwritten on
+# failure so the next boot retries.
 
 set -euo pipefail
 
 MARKER="/var/lib/sobarch/security-baseline-applied"
 SSH_FLAG="/etc/sobarch/ssh-enabled"
 
-# md-shield_lock (Nerd Fonts Material Design Icons, same family as
-# skel's own menu scripts): prefixed on every notification
-# title here, same as install-profile-packages.sh's own md-package_down
-# prefix, for consistent branding across both first-boot notification
-# sources.
+# md-shield_lock
 GLYPH=$'\U000F099D'
 source /usr/local/lib/sobarch/notify-user.sh
 
@@ -28,33 +19,19 @@ trap 'rc=$?; [[ $rc -eq 0 ]] || notify_user critical "sobarch: security baseline
 mkdir -p "$(dirname "$MARKER")"
 id=$(notify_user normal "sobarch: security baseline" "Applying the security baseline...")
 
-# Absent (e.g. a hand-run archinstall config outside the TUI) defaults
-# to disabled, matching SSH's own "off unless explicit" default.
+# Absent defaults to disabled.
 ssh_enabled="false"
 if [[ -f "$SSH_FLAG" ]]; then
     ssh_enabled="$(<"$SSH_FLAG")"
 fi
 
-# Root login is locked unconditionally, independent of SSH's state or
-# how the base system was installed: `passwd -l`
-# prepends "!" to the shadow entry, disabling password auth outright.
-# Harmless to repeat if already locked.
 echo "sobarch-firstboot: locking the root account..."
 id=$(notify_user normal "sobarch: security baseline" "Locking the root account..." "$id")
 passwd -l root
 
-# ly's own shipped /etc/pam.d/{ly,ly-autologin} still reference
-# pam_gnome_keyring.so, not oo7's pam_oo7.so (decision #9 switched the
-# Secret Service implementation but never touched ly's PAM stack to
-# match). Since pam_gnome_keyring.so isn't installed on a sobarch
-# system, that line is a silent no-op ("optional" swallows the missing
-# module), so the login keyring is never auto-unlocked with the login
-# password: every Secret Service request from then on blocks on an
-# interactive unlock prompt that has nothing to answer it, which is
-# what actually broke Chromium-based browsers (their password/cookie
-# encryption goes through the same Secret Service call). Confirmed by
-# reproducing the hang directly with `secret-tool store` on a real
-# install and finding the default collection still locked post-login.
+# ly's PAM files still reference pam_gnome_keyring.so, which isn't installed,
+# so the keyring never unlocks at login and Secret Service clients (e.g.
+# Chromium) hang on an unlock prompt.
 echo "sobarch-firstboot: wiring oo7 into ly's PAM stack..."
 id=$(notify_user normal "sobarch: security baseline" "Wiring oo7 into the login PAM stack..." "$id")
 
@@ -62,37 +39,16 @@ for pam_file in /etc/pam.d/ly /etc/pam.d/ly-autologin; do
     sed -i 's/pam_gnome_keyring\.so/pam_oo7.so/g' "$pam_file"
 done
 
-# pam_oo7.so alone isn't enough: if oo7-daemon isn't already running by
-# the time PAM's session phase hands off the login password, pam_oo7.so
-# falls back to forking oo7-daemon directly itself, then immediately
-# tries to connect to its not-yet-created $XDG_RUNTIME_DIR/oo7-pam.sock
-# and gives up (confirmed in the journal: "Socket not found, attempting
-# to start daemon" followed by "Failed to connect to daemon socket: No
-# such file or directory" two seconds later, password discarded, no
-# retry) -- oo7-daemon.service is disabled by default, only ever
-# D-Bus-activated on first demand, which loses this race every time.
-# The ArchWiki's oo7 page documents the fix directly: "To enable it to
-# start at login, enable the oo7-daemon.service user unit." `--global`
-# (rather than `--user`, which needs an active session/bus for the
-# target account that doesn't exist yet at first boot) enables it for
-# every user account up front, the same way `enable --now` is used for
-# system-level units just below.
+# pam_oo7 forks oo7-daemon itself if it isn't running, then gives up before
+# its socket exists, discarding the password. Start it at login instead.
+# --global because no user session exists yet at first boot.
 echo "sobarch-firstboot: enabling oo7-daemon.service so it's already running by login..."
 id=$(notify_user normal "sobarch: security baseline" "Enabling the oo7 keyring daemon..." "$id")
 systemctl --global enable oo7-daemon.service
 
-# systemd's own shipped policy already grants power-off/reboot/suspend
-# to an active local session for free (`pkaction --action-id
-# org.freedesktop.login1.power-off --verbose` shows "implicit active:
-# yes"), but a manually-launched compositor session (no display
-# manager PAM/session integration beyond ly's own) can fail to resolve
-# as "active" to polkit, falling back to an auth_admin prompt instead.
-# This rule makes the grant explicit rather than depending on that
-# resolution. Scoped to wheel, not a blanket grant (unlike
-# empower.rules' "yes to anything" for its own group): a wheel member
-# can already reach root via sudo, so this doesn't cross a new
-# privilege boundary, just drops a redundant password step for an
-# action every desktop distro grants active sessions by default.
+# systemd already grants power actions to active sessions, but a session
+# started without full display-manager integration may not resolve as active
+# to polkit. Wheel members can sudo anyway, so this crosses no new boundary.
 echo "sobarch-firstboot: installing the polkit power rule..."
 id=$(notify_user normal "sobarch: security baseline" "Installing the polkit power rule..." "$id")
 
@@ -112,13 +68,8 @@ polkit.addRule(function(action, subject) {
 });
 EOF
 
-# Base ruleset from Arch's own "Simple & Safe" nftables example:
-# default-drop inbound, always allow loopback and established/related
-# traffic, explicit exceptions only for required packages. LocalSend
-# (packages/aur/localsend-bin, not yet vendored) is a required
-# package, so its port
-# is opened unconditionally rather than gated on whether it happens to
-# be installed yet. SSH's exception is appended only when enabled.
+# Based on the ArchWiki "Simple & Safe" nftables example. The LocalSend port
+# is always open since it's a required package.
 echo "sobarch-firstboot: installing the nftables baseline ruleset..."
 id=$(notify_user normal "sobarch: security baseline" "Installing the firewall ruleset..." "$id")
 
@@ -173,17 +124,13 @@ if [[ "$ssh_enabled" == "true" ]]; then
 
     mkdir -p /etc/ssh/sshd_config.d
     cat > /etc/ssh/sshd_config.d/10-sobarch-no-root-login.conf <<'EOF'
-# Root login is locked at the account level regardless (passwd -l
-# root), but this is the belt-and-suspenders SSH-specific guarantee:
-# it must not depend on SSH's own state.
+# Root is also locked with passwd -l; this keeps SSH from ever allowing it.
 PermitRootLogin no
 EOF
 
     systemctl enable --now sshd.service
 else
-    # Defensive even though Arch doesn't auto-enable sshd: matches
-    # the same policy exactly, and is a no-op if openssh isn't installed or
-    # sshd was never enabled.
+    # Defensive; a no-op if sshd was never installed or enabled.
     systemctl disable --now sshd.service 2>/dev/null || true
 fi
 

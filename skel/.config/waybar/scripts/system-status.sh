@@ -1,7 +1,5 @@
 #!/bin/bash
-# The icon itself comes from style.css's background-image, keyed off
-# "class" below (see waybar-css's tinty template); "text" only carries
-# the volume percentage now, no glyph concatenated into it.
+# The icon comes from style.css, keyed off "class".
 
 vol_raw=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null)
 volpct=$(echo "$vol_raw" | awk '{printf "%d", $2*100}')

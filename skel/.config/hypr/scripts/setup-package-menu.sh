@@ -1,26 +1,6 @@
 #!/usr/bin/env bash
-# Installs a single optional package, individually, bypassing profile
-# boundaries -- the same escape hatch Omarchy's own Install menu offers
-# (pick one app, not a whole bundle), adapted to fuzzel/dmenu's flat-list
-# shape instead of Omarchy's nested Quickshell/QML tree. Deliberately
-# scoped to the same package set setup-profile-menu.sh used to draw
-# from (every profile's packages, deduped), not a live search over all
-# of Arch's official repos or arbitrary AUR: those packages are the ones
-# this project has actually reviewed and vendored, and going further
-# would turn this into a general-purpose package-manager frontend, which
-# is not what sobarch is for (decision 3 already rejects arbitrary AUR
-# installs for the same reason).
-#
-# Reads /usr/share/sobarch/profiles.txt, the same data file the old
-# profile-bundle menu used (see git history for its format and
-# regeneration note).
-#
-# Each row carries the profile it comes from as its state, so the list
-# reads as a small catalog ("steam ... Gaming"); installed packages are
-# listed last and marked installed instead of being hidden, now that
-# rows have a state column to say so (fuzzel itself has no per-row
-# styling to dim them with). Each row's icon is the app's own icon-theme
-# entry, falling back to a generic package icon.
+# Installs one optional package from the curated profile list
+# (/usr/share/sobarch/profiles.txt), not arbitrary repo or AUR packages.
 
 source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
@@ -48,7 +28,6 @@ while IFS='|' read -r _ profile pkgs; do
 done <"$DATA_FILE"
 
 mapfile -t names < <(printf '%s\n' "${!pkg_is_aur[@]}" | sort)
-# One pacman call for the whole set, not one per package.
 mapfile -t installed < <(pacman -Qq "${names[@]}" 2>/dev/null)
 declare -A is_installed
 for name in "${installed[@]}"; do is_installed["$name"]=1; done
@@ -73,8 +52,7 @@ if [[ -n "${is_installed[$choice]:-}" ]]; then
     exit 0
 fi
 
-# Hands off to the install and closes every open menu level: a from-source
-# AUR build can take minutes, tracked by its own progress notification.
+# An AUR build can take minutes, so hand off and close every menu level.
 if [[ "${pkg_is_aur[$choice]}" == 1 ]]; then
     menu_progress "Installing $choice..." "$choice installed." sobarch aur-sync "$choice" ||
         menu_notify "Check /var/log/sobarch/aur-sync.log for the full build output." critical

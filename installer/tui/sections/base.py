@@ -1,7 +1,4 @@
-"""One section of the single-screen installer. Every section owns a
-pane of widgets and reads/writes its slice of WizardState; the main
-screen only ever asks it four things: does it apply right now, is it
-valid, copy my widgets into the state, and refresh from the state."""
+"""Base class for one section of the single-screen installer."""
 
 from typing import TYPE_CHECKING
 
@@ -13,8 +10,6 @@ if TYPE_CHECKING:
 
 class Section(VerticalScroll):
     title = ""
-    # Shown in the steps list; sections that can be left entirely alone
-    # (everything has a sane default) never show as incomplete.
     required = False
 
     @property
@@ -35,6 +30,5 @@ class Section(VerticalScroll):
         """Called when the section becomes the active one."""
 
     def neutral(self) -> bool:
-        """True while the section is valid but nothing has been done in
-        it yet, so the steps list shouldn't claim it is complete."""
+        """True while valid but untouched, so it isn't marked complete."""
         return False

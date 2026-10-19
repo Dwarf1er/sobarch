@@ -1,7 +1,4 @@
-"""Small ratatui-flavoured building blocks shared by every section:
-a one-line label+control row, a `[x]` toggle, and a single-choice list
-marked with `(*)`. Plain Textual widgets underneath, restyled in
-styles.tcss, so nothing new has to be installed on the live ISO."""
+"""Small widgets shared by the sections, built on plain Textual widgets."""
 
 import time
 
@@ -108,10 +105,7 @@ class RadioList(OptionList):
 
 
 class TypeAheadSelectionList(SelectionList):
-    """SelectionList where typing a name moves the cursor to the first
-    entry starting with it (as the dropdowns already do). The buffer
-    resets after a pause. Space keeps toggling, except mid-search, where
-    it is part of the name ("United States")."""
+    """SelectionList with type-ahead search. Space is part of the search while typing."""
 
     TYPE_AHEAD_TIMEOUT = 1.0
 

@@ -1,10 +1,11 @@
 pkgbase = sobarch-skel
 	pkgdesc = Sobarch distribution-owned default desktop configuration (skel)
 	pkgver = 20261019
-	pkgrel = 4
+	pkgrel = 5
 	url = https://github.com/Dwarf1er/sobarch
 	arch = any
 	license = MIT
 	options = !debug
+	backup = etc/xdg/mimeapps.list
 
 pkgname = sobarch-skel

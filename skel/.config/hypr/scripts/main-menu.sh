@@ -1,27 +1,13 @@
 #!/bin/bash
-# Bound to bare Super in place of a raw `fuzzel` call (hyprland.lua's
-# `menu` variable). Fuzzel's own native app-launcher mode has no way to
-# show a curated set of entries at the top level and fold everything
-# else behind one of them (`hide-before-typing` in fuzzel.ini is a
-# global on/off, not per-entry), so that folding has to happen here
-# instead: this is a plain `--dmenu` picker, and "Apps" is just a
-# second, separate `fuzzel` invocation, one level in. Escape in the app
-# launcher comes back here; launching something closes everything.
-#
-# Power is inlined here rather than shelling out to wlogout: wlogout
-# has no CLI mode of its own (`--help` only lists layout/styling
-# flags), and its actual layout file just ran these same five plain
-# commands. Reusing them directly needs no separate themed GUI tool
-# and no package to vendor for it at all.
+# Main menu, bound to a tap of Super. fuzzel's app launcher can't fold
+# entries behind a submenu, so "Apps" opens it one level in.
 
 source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
 MENU_TITLE="sobarch: power"
 MENU_ICON="power.svg"
 
-# Every action here ends the session or leaves the desktop, so each one
-# closes the whole menu stack once it returns (hyprlock, for instance,
-# returns only after unlocking).
+# Each action leaves the desktop, so close the whole menu stack after it.
 power_menu() {
     local selected=""
     while menu_show power "" "$selected"; do

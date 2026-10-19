@@ -3,19 +3,10 @@
 # requires-python = ">=3.11"
 # dependencies = ["archinstall"]
 # ///
-"""Entry point. Run directly (`python3 installer/tui/__main__.py`) from
-anywhere; the sys.path insert below is what makes that work without
-needing the repo installed as a package or PYTHONPATH set up by hand,
-since this is fetched and run straight out of a git checkout, not
-pip-installed.
+"""Installer entry point, run straight from a git checkout.
 
-The inline metadata above (PEP 723) is for `uv run installer/tui/
-__main__.py`: `archinstall` alone is listed since it already depends on
-`python-textual`, so `uv` resolves both from one declared dependency.
-On the live ISO both are already installed system-wide (archinstall's
-own pacman dependency), so plain `python3` works there with no `uv`
-involved at all; the inline metadata only matters for running this
-outside that environment."""
+archinstall pulls in textual, so the PEP 723 block lists only archinstall.
+"""
 
 import argparse
 import sys

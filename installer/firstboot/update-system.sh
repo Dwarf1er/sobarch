@@ -1,31 +1,12 @@
 #!/usr/bin/env bash
-# The full system update: a `pacman -Syu`, then aur-sync.sh in sync mode
-# for vendored AUR/custom packages, then (via apply-skel.sh, decision
-# 11) the diff3 skel reconciliation, then an interactive walk through
-# any resulting conflicts so nothing is left silently unresolved.
-# Additive: a raw `pacman -Syu` from a terminal still works on its own,
-# with the pacman hook as its safety net for vendored packages
-# (decision #3).
+# Full system update: pacman -Syu, aur-sync.sh, apply-skel.sh, then an
+# interactive walkthrough of any .sobarch-new conflicts.
 #
-# One implementation behind two front ends, chosen by flag:
-#   update-system.sh [--review]         terminal: plain prompts, sudo,
-#                                       works over SSH. This is what
-#                                       `sobarch update` /
-#                                       `sobarch review-conflicts` run.
-#   update-system.sh --gui [--review]   desktop: fuzzel pickers, mako
-#                                       notifications, pkexec. What
-#                                       Sobarch -> Update System / Review
-#                                       Conflicts runs (update-system-
-#                                       menu.sh, via `sobarch update
-#                                       --gui`).
-# --review skips the update itself and re-enters just the conflict
-# walkthrough for whatever .sobarch-new files are still on disk
-# (skipped earlier, or the session was closed partway through).
+#   update-system.sh [--review]         terminal (sudo); `sobarch update`
+#   update-system.sh --gui [--review]   desktop (fuzzel, pkexec)
+# --review only runs the conflict walkthrough.
 #
-# Runs as the logged-in user throughout (apply-skel.sh must, since it
-# writes into $HOME); the privileged steps go through sudo (terminal)
-# or pkexec (desktop, the same PolicyKit path hyprpolkitagent already
-# provides for every other GUI-triggered privileged action).
+# Runs as the user since apply-skel.sh writes into $HOME.
 
 set -euo pipefail
 
@@ -44,22 +25,10 @@ if ((EUID == 0)); then
     exit 1
 fi
 
-# `install` (used throughout apply-skel.sh and the walkthrough below)
-# replaces a file via a fresh inode, not an in-place write. Hyprland's
-# own config auto-reload is documented to break on exactly that replace
-# pattern (hyprwm/Hyprland discussion #11848), which is what produced a
-# transient "cannot open .../hyprland.lua" error on a real run.
-# `hyprctl reload` doesn't depend on that watch, so it's run
-# unconditionally on every exit path: cheap, idempotent, and a no-op
-# when `hyprctl` is missing or there's no running compositor (an SSH
-# session, say).
+# Replacing files breaks Hyprland's config auto-reload, so always reload on exit.
 empty_file="$(mktemp)"
 trap 'hyprctl reload >/dev/null 2>&1 || true; rm -f "$empty_file"' EXIT
 
-# Shared with apply-skel.sh: a crash-safe replacement for `install -Dm"$mode"
-# src dest`. A real run hit the gap plain `install` calls used to have:
-# the desktop froze mid-update, was force shut down, and every file the
-# walkthrough had touched so far came back zero-length on reboot.
 source /usr/local/lib/sobarch/durable-replace.sh
 source /usr/local/lib/sobarch/pinned-version.sh
 
@@ -76,8 +45,7 @@ ICONS="$HOME/.config/sobarch/icons"
 TITLE="sobarch: update system"
 
 # --- front end ------------------------------------------------------
-# Everything below this block is mode-agnostic: it only ever talks to
-# the user through these functions.
+# Everything below talks to the user only through these functions.
 PROG_ID=0
 if [[ "$MODE" == gui ]]; then
     source "$HOME/.config/hypr/scripts/confirm.sh"
@@ -89,12 +57,8 @@ if [[ "$MODE" == gui ]]; then
     progress_end() { notify_progress "$1" "$TITLE" "$2" "$PROG_ID" >/dev/null; }
     ask_yes() { confirm "$1" "${2:-Yes}"; }
     as_root() { pkexec "$@"; }
-    # Prints one of the canonical choice strings the walkthrough's
-    # `case` matches on; empty means skip. Drawn through menu-lib.sh
-    # (icons, the file being resolved as the header) like every other
-    # desktop menu, falling back to a plain list if that's missing: this
-    # script ships in sobarch-scripts, and can run once before the
-    # sobarch-skel update that adds menu-lib.sh has been applied.
+    # Prints the choice string matched by the walkthrough; empty means skip.
+    # Falls back to plain fuzzel when menu-lib.sh isn't deployed yet.
     if source "$HOME/.config/hypr/scripts/menu-lib.sh" 2>/dev/null; then
         pick_action() {
             menu_reset
@@ -149,15 +113,8 @@ else
     edit_file() { "${EDITOR:-nvim}" "$1"; }
 fi
 
-# Re-applies boot/greeter/splash theming from whatever branding
-# sobarch-skel is currently at. Limine/ly/Plymouth have no "reload" of
-# their own (a bootloader menu, a greeter, and an initramfs-baked
-# splash, none of which are running right now), so this is what makes
-# limine.conf/ly's config.ini/the Plymouth theme ever change on an
-# already-installed system at all -- otherwise they're install-time-
-# only. All three scripts already no-op cheaply when nothing changed,
-# so it runs whenever sobarch-skel was refreshed rather than trying to
-# detect whether branding/ itself was part of it.
+# Limine, ly, and Plymouth have no reload, so re-run their setup scripts
+# whenever sobarch-skel changes. Each no-ops when nothing changed.
 reapply_theming() {
     [[ -x "$LIMINE_THEME_SETUP" && -x "$LY_THEME_SETUP" && -x "$PLYMOUTH_SETUP" ]] || return 0
     if ! as_root bash -c "'$LIMINE_THEME_SETUP' && '$LY_THEME_SETUP' && '$PLYMOUTH_SETUP'"; then
@@ -166,13 +123,8 @@ reapply_theming() {
 }
 
 if ! $review_only; then
-    # Full system update first: official packages, then vendored
-    # AUR/custom ones, in one privileged call (one password prompt, not
-    # two). The exit codes distinguish which half failed. Neither
-    # failure aborts the rest of this script: skel reconciliation below
-    # only needs whatever sobarch-skel is already installed, the same
-    # continue-on-failure posture the targeted refresh further down
-    # already takes.
+    # One privileged call for both halves, so one password prompt. Exit
+    # codes say which half failed; neither aborts the config sync below.
     skel_before="$(pacman -Q sobarch-skel 2>/dev/null || true)"
     progress_start "Updating system packages (pacman -Syu)..."
     rc=0
@@ -185,39 +137,19 @@ if ! $review_only; then
     esac
     [[ "$(pacman -Q sobarch-skel 2>/dev/null || true)" != "$skel_before" ]] && reapply_theming
 
-    # aur-sync.sh's own version check (pinned .SRCINFO vs installed)
-    # needs no root at all -- only the rebuild/install it performs once
-    # one is actually pending does. Privilege escalation always prompts
-    # for authentication before the command even runs, regardless of
-    # whether it then finds nothing to do -- the overwhelmingly common
-    # case here. Checked unprivileged first, so a no-op run never asks
-    # for a password just to discover that.
-    #
-    # sobarch-scripts is checked alongside sobarch-skel, not just skel
-    # alone: as a real pacman-tracked package it only gets refreshed
-    # when actually named as an explicit target below, so a pending fix
-    # to it would otherwise go unnoticed whenever skel itself happened
-    # to be up to date.
+    # Check unprivileged first so a no-op run never prompts for a password.
+    # sobarch-scripts only updates when named explicitly, so check it too.
     update_pending=false
     to_refresh=()
     for pkg in sobarch-skel sobarch-scripts; do
-        # Offline/GitHub hiccup: vendored_update_pending says "not
-        # pending" -- escalation would only hit the same wall, so don't
-        # demand a password for a call this likely to fail anyway.
         if vendored_update_pending "$pkg"; then
             update_pending=true
             to_refresh+=("$pkg")
         fi
     done
 
-    # Base-required AUR packages (decision 3) added to
-    # base-required-packages.txt after this system's own install ran
-    # are never picked up by aur-sync.sh's own hook: its sync mode (no
-    # args) only updates packages already `pacman -Q`-installed, the
-    # same guarantee that stops it from force-installing an unselected
-    # profile package. So a name added after the fact would otherwise
-    # stay missing here forever. Checked on presence, not version: a
-    # missing package has no installed version to compare against.
+    # Base-required packages added after this system was installed are never
+    # installed by sync mode, which only touches installed packages.
     base_pkgs_url="https://raw.githubusercontent.com/Dwarf1er/sobarch/master/scripts/aur-sync/base-required-packages.txt"
     if base_pkgs_list="$(curl -fsSL "$base_pkgs_url" 2>/dev/null)"; then
         mapfile -t base_pkgs < <(sed 's/#.*//' <<<"$base_pkgs_list" | awk 'NF{$1=$1;print}')
@@ -230,10 +162,6 @@ if ! $review_only; then
     fi
 
     if $update_pending; then
-        # A pending refresh can mean a real from-source AUR rebuild
-        # (aur-sync.sh), not just a fast repo-package bump: worth a
-        # notification before escalation even starts, since otherwise
-        # this is silent the whole time it runs.
         progress_start "Refreshing ${to_refresh[*]}..."
         if ! as_root "$AUR_SYNC" "${to_refresh[@]}"; then
             progress_end normal "Refreshing ${to_refresh[*]} failed (offline?); continuing with the currently installed version(s)."
@@ -247,12 +175,7 @@ if ! $review_only; then
         exit 1
     fi
 
-    # A skel update can change sobarch's own local tinty templates
-    # (~/.config/sobarch/tinty-templates/); apply-skel.sh only writes
-    # the templates themselves, never re-renders them (tinty's own
-    # apply/install/sync never do that either, see config.toml), so
-    # every scheme has to be rebuilt here or theme switching keeps
-    # using the stale, previously-built output.
+    # apply-skel.sh only copies tinty templates; they must be re-rendered.
     if ! "$BUILD_TINTY_TEMPLATES"; then
         notice critical "Rebuilding tinty theme templates failed; run 'tinty build' on ~/.config/sobarch/tinty-templates/* manually to retry."
     fi
@@ -280,9 +203,7 @@ for f in "${conflicts[@]}"; do
     new="$SKEL_SRC/$rel"
 
     if [[ ! -e "$new" ]]; then
-        # The file no longer exists in the current sobarch-skel at all
-        # (removed upstream since the pending conflict was recorded):
-        # nothing sensible to offer beyond dropping the stale .sobarch-new.
+        # Removed from sobarch-skel since the conflict was recorded.
         rm -f "$f"
         resolved=$((resolved + 1))
         continue
@@ -316,14 +237,7 @@ for f in "${conflicts[@]}"; do
                 break
                 ;;
             "[D] Diff")
-                # A conflict recorded for the first time (e.g. a file
-                # like .bashrc whose baseline was never written because
-                # apply-skel.sh deliberately leaves it unset on
-                # conflict) has no baseline file on disk at all.
-                # Diffing against it would otherwise fail silently
-                # (stderr discarded below) and show nothing; an empty
-                # stand-in makes that case just show the whole
-                # current/new file as one big addition instead.
+                # A first-time conflict may have no baseline yet.
                 diff_baseline="$baseline"
                 [[ -e "$diff_baseline" ]] || diff_baseline="$empty_file"
                 diff_tmp="$(mktemp)"
@@ -339,9 +253,6 @@ for f in "${conflicts[@]}"; do
                 continue
                 ;;
             "[E] Edit now")
-                # Edits the pending merge (conflict markers and all, the
-                # same content pacdiff-style tools show for a .pacnew),
-                # not a blank slate: both sides are already visible in it.
                 edit_file "$f"
                 durable_replace "$mode" "$f" "$original"
                 durable_replace "$mode" "$new" "$baseline"

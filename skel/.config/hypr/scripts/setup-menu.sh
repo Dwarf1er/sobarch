@@ -1,16 +1,11 @@
 #!/bin/bash
-# Sobarch's own settings: system update, config conflicts, optional
-# packages, look and feel, default apps. Rows show their current state
-# (pending conflict count, active theme and wallpaper) so this doubles
-# as an at-a-glance status page.
+# Sobarch settings menu; rows show current state.
 
 source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
 SKEL_SRC="/usr/share/sobarch/skel"
 
-# Only paths sobarch-skel actually ships can hold a .sobarch-new
-# (apply-skel.sh writes nowhere else), so check exactly those instead of
-# walking all of $HOME the way the walkthrough itself does.
+# apply-skel.sh only writes .sobarch-new next to shipped skel paths.
 conflict_count() {
     local rel n=0
     [ -d "$SKEL_SRC" ] || return
@@ -20,8 +15,7 @@ conflict_count() {
     ((n > 0)) && echo "$n pending"
 }
 
-# "base16-gruvbox-dark-hard" -> "Gruvbox Dark Hard", same prettifying
-# themes-menu.sh does for its own list.
+# "base16-gruvbox-dark-hard" -> "Gruvbox Dark Hard"
 current_theme() {
     command -v tinty >/dev/null || return
     tinty current 2>/dev/null | awk -F- '{
@@ -31,7 +25,6 @@ current_theme() {
     }'
 }
 
-# Same title-cased name wallpaper-menu.sh shows for it.
 current_wallpaper() {
     local f out="" word
     f=$(cat "$HOME/.config/sobarch/current-wallpaper" 2>/dev/null) || return
@@ -43,8 +36,7 @@ current_wallpaper() {
     echo "$out"
 }
 
-# "Refresh Rescue ISO" only exists if rescue media was provisioned at
-# install (rescue-iso-setup.sh labels that partition RESCUE).
+# rescue-iso-setup.sh labels the rescue partition RESCUE.
 has_rescue=0
 lsblk -rno LABEL 2>/dev/null | grep -qx RESCUE && has_rescue=1
 
@@ -63,8 +55,7 @@ while :; do
     menu_show "sobarch settings" "" "$selected" || break
     selected="$MENU_ID"
     case "$MENU_ID" in
-        # Hands off to a long-running flow with its own pickers and
-        # progress notifications; nothing to come back to.
+        # Long-running flow with its own UI; nothing to return to.
         update) sobarch update --gui; menu_done ;;
         conflicts) sobarch review-conflicts --gui ;;
         install) menu_sub setup-package-menu.sh ;;

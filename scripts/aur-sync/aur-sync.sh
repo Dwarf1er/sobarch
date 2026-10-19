@@ -1,46 +1,13 @@
 #!/usr/bin/env bash
-# Builds and installs vendored packages/aur/ and packages/custom/
-# packages locally, no AUR helper, no hosted binary repository (decision
-# 3). Two modes, same underlying logic either way:
+# Builds and installs packages vendored in packages/aur/ and
+# packages/custom/. Never builds anything not vendored there.
 #
-#   aur-sync.sh [--local DIR] [--cache DIR] PKG...
-#       Explicit mode: build/install exactly the named packages,
-#       whether or not they're currently installed. Used for a
-#       package's first-ever install (base-required packages during the
-#       install session itself, profile packages at first boot).
+#   aur-sync.sh [--local DIR] [--cache DIR] PKG...      install the named packages
+#   aur-sync.sh [--local DIR] [--cache DIR] [--notify]  update installed ones only
 #
-#   aur-sync.sh [--local DIR] [--cache DIR] [--notify]
-#       Sync mode (no package names): only touches package names that
-#       are ALREADY installed. This is what the pacman hook runs on
-#       every `Operation = Upgrade` transaction; it must never
-#       force-install a vendored package onto a system that never
-#       asked for it (e.g. a profile package the user didn't select).
-#
-# --notify: on failure, also send the failure summary as a desktop
-# notification (notify-user.sh). Passed by the pacman hook only, where
-# no terminal is necessarily being watched; install-time and menu
-# callers have their own visibility and don't pass it.
-#
-# Either mode: --local DIR points at an existing checkout instead of
-# fetching one (used by the install-session call, which already has one
-# on disk); otherwise the current repo state is fetched fresh via the
-# same curl+tar mechanism bootstrap.sh uses, so the ongoing/first-boot
-# calls always see the actual current packages/aur/+packages/custom/
-# state, never a stale leftover checkout.
-#
-# --cache DIR points at a directory of already-built *.pkg.tar.*
-# files (decision #20's ISO package cache, staged in by the caller --
-# see install_runner.py's _build_and_install_base_packages): for each
-# target, a cache file whose own pkgname/pkgver matches or beats the
-# pinned .SRCINFO version is installed directly via `pacman -U`,
-# skipping makepkg entirely. Anything not found there falls straight
-# through to the normal build path below, unchanged. Never required;
-# omitted entirely on the bootstrap.sh curl path and the ongoing
-# pacman-hook/first-boot-profile calls, which always build from source.
-#
-# Hard scope limit: a package name is only ever acted on if it's
-# actually present under DIR's packages/aur/ or packages/custom/. This
-# script must never gain license to build arbitrary AUR packages.
+# --local DIR   use an existing checkout instead of fetching the repo
+# --cache DIR   install prebuilt *.pkg.tar.* files when they satisfy the pin
+# --notify      send a desktop notification on failure
 
 set -euo pipefail
 shopt -s inherit_errexit
@@ -55,24 +22,15 @@ LOG_FILE="/var/log/sobarch/aur-sync.log"
 mkdir -p "$(dirname "$LOG_FILE")"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-# Every pacman -S/-U this script runs below is itself an
-# Operation=Upgrade transaction, which re-fires sobarch-aur-sync.hook
-# (Target = * is deliberate there: a plain dependency, not just a
-# vendored package, must also retrigger a check). Left unhandled, that
-# nested run would redundantly redo this whole sync-mode pass (and
-# contend with this run's own in-flight pacman transaction) for no
-# reason. The nested pacman call inherits this process's exported
-# environment, so it always sees the marker and exits immediately
-# instead of racing the run that spawned it.
+# Our own pacman calls re-fire the pacman hook; the inherited marker makes
+# that nested run exit immediately.
 if [[ -n "${SOBARCH_AUR_SYNC_RUNNING:-}" ]]; then
     echo "aur-sync: nested run (own pacman transaction retriggered the hook), skipping"
     exit 0
 fi
 export SOBARCH_AUR_SYNC_RUNNING=1
 
-# One sync at a time across processes (the hook's detached run and
-# update-system.sh's explicit one can overlap). Blocking, not skipping:
-# a waiting run just finds nothing left to do once the first finishes.
+# One sync at a time; waiters find nothing left to do.
 mkdir -p /run/lock
 exec 9>/run/lock/sobarch-aur-sync.lock
 flock 9
@@ -92,12 +50,7 @@ done
 explicit_packages=("$@")
 
 cleanup_paths=()
-# makepkg refuses outright to run as root (no override flag), and this
-# script itself needs to run as root (pacman -U, useradd); a dedicated,
-# no-login system account isolates the actual build step instead of
-# reusing whichever human account happens to exist at call time (the
-# install session's new user, or nobody at all when run from the
-# pacman hook on an already-running system).
+# makepkg refuses to run as root, so builds run as a dedicated system user.
 ensure_build_user() {
     id -u "$BUILD_USER" >/dev/null 2>&1 && return 0
     echo "aur-sync: creating build user $BUILD_USER..."
@@ -105,11 +58,7 @@ ensure_build_user() {
         --shell /usr/bin/nologin "$BUILD_USER"
 }
 
-# Runs a command and logs how long it took as "[timing] aur-sync <label>:
-# Ns", on stderr (fetch_repo's stdout is a captured return value). The
-# lines land in the same log install_runner.py's install.log already
-# captures aur-sync.sh's output into, to show where a slow install
-# actually spends its time. Returns the command's own exit status.
+# Runs a command and logs its duration to stderr. Returns its exit status.
 timed() {
     local label="$1" start=$SECONDS rc=0
     shift
@@ -121,9 +70,7 @@ timed() {
 fetch_repo() {
     local dir start=$SECONDS
     dir="$(mktemp -d /var/tmp/sobarch-aur-sync-repo.XXXXXX)"
-    # stderr, not stdout: this function's stdout is captured whole as
-    # its return value (repo_dir="$(fetch_repo)"), so any status output
-    # mixed into stdout here would corrupt that path.
+    # stderr: stdout is the function's return value.
     echo "aur-sync: fetching current repo state from ${REPO}@${BRANCH}..." >&2
     curl -fsSL --connect-timeout 20 --max-time 600 "$ARCHIVE_URL" | tar -xz -C "$dir" --strip-components=1
     echo "[timing] aur-sync fetch repo: $((SECONDS - start))s" >&2
@@ -133,10 +80,7 @@ fetch_repo() {
 trap 'rm -rf "${cleanup_paths[@]}"' EXIT
 
 if [[ -z "$repo_dir" ]]; then
-    # Called via command substitution (its own subshell), so it can't
-    # append to this shell's cleanup_paths itself; done here instead,
-    # right after the path comes back, so the fetched checkout is still
-    # cleaned up at exit.
+    # fetch_repo runs in a subshell, so register the cleanup here.
     repo_dir="$(fetch_repo)"
     cleanup_paths+=("$repo_dir")
 elif [[ ! -d "$repo_dir" ]]; then
@@ -149,10 +93,7 @@ if [[ -n "$cache_dir" && ! -d "$cache_dir" ]]; then
     exit 1
 fi
 
-# The full set this script is ever allowed to touch: package name ->
-# its vendored source directory. Built once, up front, so the
-# scope-limit check below is a simple lookup rather than a filesystem
-# probe repeated per package.
+# Every package this script is allowed to touch: name -> source dir.
 declare -A pkg_dir
 for group in aur custom; do
     [[ -d "$repo_dir/packages/$group" ]] || continue
@@ -176,11 +117,8 @@ if ((${#explicit_packages[@]})); then
         echo "aur-sync: refusing to build unvendored package(s): ${scope_failures[*]}" >&2
     fi
 
-    # Companions: vendored packages that ride along with another one
-    # without being a selectable choice themselves (so they appear in
-    # no profile), e.g. the Vesktop launch wrapper. Only in explicit
-    # mode: once installed, a companion is a normal pacman -Q-installed
-    # package and sync mode keeps it current like any other.
+    # Companions ride along with another package and appear in no profile.
+    # Once installed, sync mode keeps them current.
     declare -A companion_of=(
         [vesktop-bin]=vesktop-integrity-launch
     )
@@ -195,21 +133,9 @@ else
     done
 fi
 
-# Version pinned in the vendored .SRCINFO, as pacman's own `vercmp`
-# expects it (epoch:pkgver-pkgrel, epoch omitted when absent). Reading
-# .SRCINFO rather than PKGBUILD itself: it's the same plain,
-# machine-readable snapshot `makepkg --printsrcinfo` produces, so no
-# bash parsing/sourcing of a vendored PKGBUILD is needed just to check
-# a version.
-#
-# Note on -git packages (quickemu-git): their PKGBUILD recomputes
-# pkgver() from a live git clone at build time, so the version actually
-# installed will usually be newer than whatever was pinned in .SRCINFO
-# at vendor time. This means version comparison alone won't reliably
-# detect "upstream moved" for a -git package once it's already
-# installed; it still builds and installs correctly on first install
-# (makepkg always builds the current pkgver() regardless of what this
-# comparison said). Revisit if that turns out to matter in practice.
+# Pinned version from .SRCINFO in vercmp's epoch:pkgver-pkgrel form.
+# -git packages recompute pkgver() at build time, so for them this
+# comparison won't notice upstream changes once installed.
 pinned_version() {
     local srcinfo="$1/.SRCINFO" epoch pkgver pkgrel
     if [[ ! -f "$srcinfo" ]]; then
@@ -231,21 +157,10 @@ pinned_version() {
 }
 
 installed_version() {
-    # Not being installed at all is an expected, normal outcome here
-    # (not an error): `|| true` keeps that from tripping pipefail under
-    # inherit_errexit, so the caller just sees an empty version.
     pacman -Q "$1" 2>/dev/null | awk '{print $2}' || true
 }
 
-# Looks for a pre-built package file for $1 in $cache_dir whose own
-# recorded version (via `pacman -Qp`, not the filename -- makepkg's
-# filename version encoding isn't worth re-deriving here) is at least
-# $2 (the pinned .SRCINFO version). Globbing by name prefix rather than
-# an exact filename: arch/compression-suffix aren't worth encoding here
-# either, since `pacman -Qp` already reads them out of the file itself.
-# Prints the matching path and returns 0, or returns 1 if nothing in
-# the cache satisfies $2 -- the caller falls through to a real build
-# either way, so this only ever saves time, never blocks correctness.
+# Prints a cached package file for $1 whose version is at least $2.
 cached_pkgfile() {
     local name="$1" pinned="$2" f qname qver
     [[ -n "$cache_dir" ]] || return 1
@@ -260,17 +175,9 @@ cached_pkgfile() {
     return 1
 }
 
-# depends/makedepends declared in .SRCINFO, stripped of version
-# constraints (e.g. "fuse2>=2.9.9" -> "fuse2") so they're plain names
-# pacman -S accepts. No arch-specific depends_x86_64-style variants are
-# handled: none of the currently vendored packages use them, and this
-# is meant to stay a thin reader of what's actually there, not a full
-# .SRCINFO parser.
-#
-# Names this same .SRCINFO's own split packages provide are dropped: a
-# package in a multi-package base may depend on a sibling built in the
-# same run (nvidia-580xx-dkms on nvidia-580xx-utils), which exists in no
-# sync repo and is installed together with it by one pacman -U.
+# depends/makedepends from .SRCINFO without version constraints. Names
+# provided by the same pkgbase's split packages are dropped, since they
+# are installed together by one pacman -U.
 build_deps() {
     awk -F' = ' '
         /^[[:space:]]*pkgname = / { own[$2] = 1 }
@@ -279,12 +186,8 @@ build_deps() {
     ' "$1/.SRCINFO"
 }
 
-# makepkg verifies a source's PGP signature (when validpgpkeys is set)
-# against gpg's own keyring, never fetching a missing key itself;
-# imported here, into the build user's own keyring, before
-# makepkg runs, rather than relying on it happening implicitly (a fresh
-# account's keyring starts empty, and gpg has no keyserver configured
-# by default to fall back on).
+# makepkg never fetches missing PGP keys and the build user's keyring
+# starts empty.
 import_pgp_keys() {
     local src="$1" key
     while IFS= read -r key; do
@@ -293,16 +196,7 @@ import_pgp_keys() {
     done < <(awk -F' = ' '/^[[:space:]]*validpgpkeys = /{print $2}' "$src/.SRCINFO")
 }
 
-# pacman's own transaction lock (db.lck) has no built-in retry: a
-# second, unrelated aur-sync process (e.g. two picks in quick
-# succession from setup-package-menu.sh, or the pacman hook's own
-# nested re-trigger slipping in before it can see the guard above) that
-# calls -S/-U at the same moment gets a hard "unable to lock database"
-# instead of simply waiting its turn. Retried here with a short
-# backoff instead of failing the whole package outright for what's
-# normally a sub-second window; only retried while db.lck is actually
-# present, so a real pacman failure (bad dependency, etc.) still fails
-# immediately rather than looping for no reason.
+# Retries while db.lck exists, since pacman fails immediately on a held lock.
 pacman_locked() {
     local attempt
     for attempt in {1..10}; do
@@ -314,17 +208,7 @@ pacman_locked() {
     return 1
 }
 
-# base-devel (a single meta-package on recent Arch, not a group) is the
-# full set of tools any PKGBUILD is entitled to assume is already
-# present without declaring it in makedepends, per Arch's own
-# packaging convention (a compiler/toolchain for a real build() step,
-# e.g. a `cargo build`; debugedit for makepkg's own default
-# debug-package generation, which sobarch-skel's PKGBUILD works around
-# with !debug precisely because base-devel isn't part of this minimal
-# base install otherwise). Installed once, up front, rather than
-# patching every vendored PKGBUILD's makedepends/options to spell out
-# what it assumes, which would pollute Phase 11's future upstream-diff
-# checks with a spurious, permanent local difference.
+# PKGBUILDs may assume base-devel without declaring it.
 ensure_makepkg_prereqs() {
     pacman_locked -S --needed --noconfirm base-devel
 }
@@ -332,22 +216,10 @@ ensure_makepkg_prereqs() {
 failures=()
 first_install=true
 
-# Built lazily, on the first target that actually needs a real build
-# (not unconditionally up front): a full copy of $repo_dir, as a whole
-# tree rather than just each package's own directory, since
-# sobarch-skel's PKGBUILD reaches skel via a relative path outside its
-# own package directory, so a package's build must keep its real
-# position in the repo tree, not be flattened into an isolated
-# per-package directory. A fresh mktemp -d per run, not a fixed shared
-# path: a separate concurrent aur-sync process (the reentrancy guard
-# above only catches the nested-hook case, not a second, unrelated
-# invocation) must never share, and so never race, this run's build
-# tree the way a fixed BUILD_ROOT once did (a concurrent run's rm -rf
-# wiping out an in-progress build/prepare() step it had no business
-# touching). Laziness matters specifically for --cache: a run where
-# every target is satisfied from the cache should never pay for
-# creating sobarch-build, installing base-devel, or cp -a'ing the whole
-# repo tree, since none of that is needed if nothing actually builds.
+# Created on the first real build only, so all-cached runs skip the
+# build user, base-devel and repo copy. The whole repo is copied because
+# sobarch-skel reaches skel/ through a relative path, and it's per-run so
+# concurrent runs never share a build tree.
 build_root_repo=""
 
 for name in $(printf '%s\n' "${targets[@]}" | sort); do
@@ -365,34 +237,17 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
 
     build_dir=""
     if cached="$(cached_pkgfile "$name" "$pinned")"; then
-        # Skips dependency pre-resolution and PGP-key import too: both
-        # exist only to satisfy makepkg's own build-time requirements,
-        # which don't apply here. `pacman -U` below still resolves any
-        # genuinely missing runtime deps itself, against the sync repos
-        # and whatever this same run has already installed -- the exact
-        # same two sources the manual -T/-S dance below exists to cover,
-        # so nothing is lost by skipping it for a cache hit.
+        # A cache hit needs no build deps or PGP keys; pacman -U resolves
+        # runtime deps itself.
         echo "aur-sync: $name found in cache, skipping build (${installed:-not installed} -> $pinned)..."
         pkgfiles=("$cached")
     else
         echo "aur-sync: building $name (${installed:-not installed} -> $pinned)..."
 
-        # Resolved as root, here, rather than via `makepkg --syncdeps`:
-        # that flag has makepkg itself invoke pacman, which would mean
-        # granting the unprivileged build user passwordless pacman/sudo
-        # rights just to build a package - a real privilege-escalation
-        # surface this project has no reason to open, since decision 3
-        # already rejects an AUR helper for the same class of concern.
-        #
-        # Filtered through `pacman -T` (deptest) rather than handed to
-        # `pacman -S` as-is: a dep can be satisfied locally by another
-        # vendored package's `provides` (quickgui-bin depends on
-        # `quickemu`, satisfied once quickemu-git, which provides it, is
-        # installed) without that name ever existing in any sync repo --
-        # `pacman -S quickemu` then fails outright with "target not
-        # found", since -S resolves targets against the sync repos, not
-        # what's already installed. `-T` reports only what's genuinely
-        # still unsatisfied, by either measure.
+        # Deps are installed as root rather than via `makepkg --syncdeps`,
+        # which would need the build user to have pacman rights.
+        # `pacman -T` filters out deps already satisfied by an installed
+        # package's provides, which `pacman -S` can't resolve.
         mapfile -t deps < <(build_deps "$src")
         missing_deps=()
         if ((${#deps[@]})); then
@@ -410,8 +265,6 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
             continue
         fi
 
-        # First real build this run: stand up the shared build root now
-        # (see its own comment above for why this stays lazy).
         if [[ -z "$build_root_repo" ]]; then
             timed "create build user" ensure_build_user
             timed "install base-devel" ensure_makepkg_prereqs
@@ -433,24 +286,15 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
         pkgfiles=("$build_dir"/*.pkg.tar.*)
     fi
 
-    # install_runner.py's _deploy_aur_sync deploys this very script as a
-    # raw bootstrap file at /usr/local/lib/sobarch/aur-sync.sh before
-    # sobarch-scripts (whose own package() owns that same path) can be
-    # built during a fresh install -- it has to, since this script is
-    # what builds sobarch-scripts in the first place. Pacman refuses to
-    # install over that file otherwise (on disk, but unowned by any
-    # package), so the one exact, known path is explicitly allowed to
-    # be replaced; nothing else about sobarch-scripts' file list is
-    # widened.
+    # The installer deploys this script unowned before sobarch-scripts
+    # exists, so pacman must be allowed to overwrite that one file.
     overwrite_args=()
     if [[ "$name" == "sobarch-scripts" ]]; then
         overwrite_args=(--overwrite /usr/local/lib/sobarch/aur-sync.sh)
     fi
 
-    # snap-pac creates a fresh Snapper snapshot pair per pacman
-    # transaction with no built-in debounce; skip it for every install
-    # in this run after the first to avoid snapshot spam from one
-    # aur-sync pass touching several packages back to back.
+    # Skip snap-pac after the first install to avoid one snapshot pair
+    # per package.
     if $first_install; then
         install_result=0
         timed "$name pacman -U" pacman_locked -U --noconfirm --ask=4 "${overwrite_args[@]}" "${pkgfiles[@]}" || install_result=$?
@@ -472,10 +316,7 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
 done
 
 if ((${#scope_failures[@]} + ${#failures[@]})); then
-    # Restated here, not just at the point of failure: the per-package
-    # error is easy to lose upstream of everything else a multi-package
-    # run prints (dependency installs, PGP imports, makepkg/pacman
-    # transaction noise), so the final verdict must be self-contained.
+    # Repeated at the end so the verdict isn't lost in build noise.
     echo "aur-sync: run finished with failures:" >&2
     for name in "${scope_failures[@]}"; do
         echo "  $name (not vendored)" >&2

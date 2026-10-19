@@ -10,14 +10,10 @@
 # - systemd-rfkill.service/.socket are masked because they compete with
 #   TLP for saving and restoring radio state (TLP's own documentation
 #   asks for this, and `tlp-stat -s` warns when they are left running).
-#
-# Runs via arch-chroot after archinstall completes, like the other
-# setup scripts, so /etc/fstab already exists.
 
 set -euo pipefail
 
-# TLP is only installed on laptops (hardware-detect.sh's IS_LAPTOP, via
-# config_gen.py), so on a desktop there is nothing to enable.
+# TLP is only installed on laptops.
 pacman -Q tlp >/dev/null 2>&1 || exit 0
 
 systemctl enable tlp.service tlp-pd.service NetworkManager-dispatcher.service

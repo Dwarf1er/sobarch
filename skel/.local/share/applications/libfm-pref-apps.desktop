@@ -1,5 +1,4 @@
-# Overrides /usr/share/applications/libfm-pref-apps.desktop: hides "Preferred Applications" from
-# the app launcher without touching the system package's own file.
+# Hides "Preferred Applications" from the app launcher.
 [Desktop Entry]
 Type=Application
 Name=Preferred Applications

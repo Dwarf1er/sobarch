@@ -12,11 +12,8 @@ window#waybar {
     color: @base05;
     border: 1px solid alpha(@base05, 0.12);
     border-radius: 20px;
-    /* Without this, the leftmost/rightmost module (workspace pills,
-       battery) sits inside the corner's rounding-clip zone on this
-       44px-tall bar, and its own independently-rounded edge doesn't
-       composite cleanly against the window's corner clip: a black
-       wedge shows through where the two roundings disagree. */
+    /* Keeps the end modules out of the rounded corners, which otherwise
+       show a black wedge. */
     padding: 0 10px;
 }
 
@@ -102,16 +99,8 @@ tooltip {
     transition: all 0.2s ease;
 }
 
-/* Icon-carrying modules (battery/network/bluetooth/custom-dnd/
-   custom-system) reserve extra left padding and paint their icon as a
-   background image instead of a Nerd Font glyph in the label text --
-   waybar has no built-in per-module icon-file field (confirmed against
-   upstream: open feature requests #944/#1330, never implemented), so a
-   background-image keyed off the module's own state class is the only
-   way to show a real icon file here. Paths are relative to this file
-   (~/.config/waybar/style.css), not absolute: GTK CSS has no $HOME/~
-   expansion, and a hardcoded /home/<user>/... path would break for any
-   username but the one this file happened to be authored under. */
+/* Icons are background images since waybar has no icon-file option.
+   Paths are relative to this file because GTK CSS can't expand ~. */
 #battery,
 #network,
 #bluetooth,
@@ -166,9 +155,7 @@ tooltip {
     animation: blink 1s linear infinite alternate;
 }
 
-/* Charging takes priority over a low-charge icon when both classes are
-   present at once (charging from a low state): listed after
-   .warning/.critical so its background-image wins the cascade. */
+/* Must come after .warning/.critical so the charging icon wins. */
 #battery.charging.warning,
 #battery.charging.critical {
     background-image: url("../sobarch/icons/battery-charging.svg");

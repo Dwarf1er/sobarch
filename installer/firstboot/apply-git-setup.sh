@@ -1,18 +1,6 @@
 #!/usr/bin/env bash
-# Generates an ed25519 SSH key for the new account (if it doesn't
-# already have one) and, if the TUI's Git screen (installer/tui/
-# screens/git.py) collected an identity, sets it as user.name/
-# user.email in the account's global git config.
-#
-# SSH-only, deliberately: no credential-helper/HTTPS path is set up
-# here (see docs/DECISIONS.md). ssh-keygen is already available since
-# openssh is a base dependency for the optional SSH server component
-# (installer/firstboot/apply-security-baseline.sh), so this needs no
-# new package.
-#
-# Must run as the target user, not root: it writes into that user's
-# $HOME. sobarch-firstboot-git.service runs it via systemd's User=,
-# which populates $HOME/$USER itself, same as apply-skel.sh.
+# Generates an ed25519 SSH key for the new user and applies the git identity
+# collected by the TUI, if any. Runs as the target user, not root.
 
 set -euo pipefail
 
@@ -30,10 +18,6 @@ if [[ ! -f "$SSH_KEY" ]]; then
     ssh-keygen -t ed25519 -N "" -C "$(whoami)@$(hostname)" -f "$SSH_KEY" -q
 fi
 
-# Absent (e.g. a hand-run archinstall config outside the TUI) means
-# "no identity", same default-to-off pattern as SSH_FLAG in
-# apply-security-baseline.sh: the SSH key above is still generated
-# either way, since it needs no identity to be useful.
 git_name=""
 git_email=""
 if [[ -f "$FLAG_FILE" ]]; then

@@ -4,8 +4,7 @@ Description=sobarch: daily update check
 [Timer]
 OnStartupSec=10min
 OnUnitActiveSec=1d
-# Not Persistent=: a missed run while the machine was off just waits for
-# the next login's OnStartupSec rather than firing the instant it wakes.
+# Not Persistent=, so a missed run waits for the next login.
 RandomizedDelaySec=15min
 
 [Install]

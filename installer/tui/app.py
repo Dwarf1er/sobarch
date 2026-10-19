@@ -1,5 +1,4 @@
-"""The installer App: owns the shared WizardState, detects hardware
-lazily once it's actually needed, and shows the single MainScreen."""
+"""The installer App: owns the shared WizardState and detects hardware lazily."""
 
 import os
 from pathlib import Path

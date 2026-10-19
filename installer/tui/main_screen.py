@@ -1,7 +1,4 @@
-"""The installer's one and only screen: a steps list on the left, the
-active section's form on the right, a status block and a key-hint
-footer below. Every section's widgets exist for the whole session, so
-nothing is lost by moving between steps in any order."""
+"""The installer's single screen: steps list, active section form, status and footer."""
 
 from rich.text import Text
 from textual.app import ComposeResult
@@ -38,9 +35,7 @@ class MainScreen(Screen):
     def __init__(self) -> None:
         super().__init__()
         self._locked = False
-        # Network is only offered when there is no connectivity at
-        # startup; the answer is fixed for the session rather than
-        # re-probed, so the steps list never shifts under the user.
+        # Probed once at startup so the steps list never shifts.
         self._sections: list[Section] = []
         if not is_connected():
             self._sections.append(NetworkSection())
@@ -78,8 +73,6 @@ class MainScreen(Screen):
         steps.highlighted = 0
         steps.focus()
         self.refresh_marks()
-
-    # -- steps list -----------------------------------------------------
 
     @staticmethod
     def _step_prompt(section: Section, mark: tuple[str, str]) -> Text:
@@ -121,12 +114,8 @@ class MainScreen(Screen):
         status.update(Text("✗ " + reason, style="red") if reason else Text("✓ Ok", style="green"))
 
     def set_locked(self, locked: bool) -> None:
-        """While the install runs, stepping elsewhere would only hide
-        the log."""
         self._locked = locked
         self.query_one("#steps", OptionList).disabled = locked
-
-    # -- events ---------------------------------------------------------
 
     def on_option_list_option_highlighted(self, event: OptionList.OptionHighlighted) -> None:
         if event.option_list.id != "steps" or self._locked or not event.option.id:
@@ -149,8 +138,6 @@ class MainScreen(Screen):
     on_radio_list_chosen = _after_change
     on_selection_list_selected_changed = _after_change
 
-    # -- actions --------------------------------------------------------
-
     def _focus_section(self) -> None:
         for widget in self._active.query("*"):
             if widget.focusable:
@@ -168,7 +155,6 @@ class MainScreen(Screen):
         current = steps.highlighted or 0
         target = max(0, min(len(self._sections) - 1, current + delta))
         steps.highlighted = target
-        # Show the section now rather than waiting for the highlight
-        # event, so its widgets are on screen when focus moves into it.
+        # Switch now, not on the highlight event, so focus can move into it.
         self.query_one("#sections", ContentSwitcher).current = self._sections[target].id
         self.call_after_refresh(self._focus_section)

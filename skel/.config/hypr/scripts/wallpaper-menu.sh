@@ -1,18 +1,6 @@
 #!/usr/bin/env bash
-# Lists every file in ~/.local/share/backgrounds/ (the standard user
-# wallpaper directory: it's the per-user counterpart of the
-# system-wide /usr/share/backgrounds most distros ship their own
-# default wallpapers under, both under the freedesktop.org "backgrounds"
-# convention GNOME's own wallpaper picker already uses -- there is no
-# XDG Base Directory Specification entry for wallpapers specifically,
-# this is the closest thing to a standard). Both tinty-compatible SVGs
-# (see apply-wallpaper.sh's own comment for the id="sobarch-bg"/
-# id="sobarch-accent" contract) and plain images are listed the same
-# way; apply-wallpaper.sh is the one that tells them apart.
-#
-# Stays open after applying one, cursor kept on it and marked current,
-# so browsing through several to compare is Enter, Down, Enter... rather
-# than reopening the picker each time.
+# Wallpaper picker over ~/.local/share/backgrounds/. apply-wallpaper.sh
+# handles recolorable SVGs and plain images. Stays open after applying.
 
 source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
@@ -21,10 +9,7 @@ MENU_ICON="photo.svg"
 BACKGROUNDS_DIR="$HOME/.local/share/backgrounds"
 CURRENT_FILE="$HOME/.config/sobarch/current-wallpaper"
 
-# Each row's icon is the wallpaper file itself (a real image, not an
-# icon-theme name), so fuzzel renders an actual thumbnail; row height is
-# raised well past the default since a thumbnail is unrecognizable at
-# normal height.
+# Icons are the wallpaper files themselves, so rows are tall enough for thumbnails.
 MENU_LINE_HEIGHT=40
 MENU_PLACEHOLDER="Search wallpapers"
 

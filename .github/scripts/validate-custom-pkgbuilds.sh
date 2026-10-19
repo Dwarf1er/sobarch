@@ -1,46 +1,12 @@
 #!/usr/bin/env bash
-# Validates every packages/custom/*/ directory (this project's own
-# PKGBUILDs -- packages/aur/ is out of scope here, see
-# validate-vendored-pkgbuilds.sh):
+# Validates packages/custom/*/:
+#   - fails if the committed .SRCINFO is stale (aur-sync.sh trusts it for
+#     the pinned version)
+#   - with BASE_REF set, fails if a package's payload changed without a
+#     pkgver/pkgrel bump; without HEAD_REF it diffs against the working tree
 #
-#   - Regenerates .SRCINFO via makepkg and fails if it doesn't match
-#     what's committed. Same failure mode as the AUR check: aur-sync.sh
-#     trusts .SRCINFO as its sole source of truth for a package's
-#     pinned version.
-#   - Payload-without-a-version-bump check: several of these packages
-#     package content from outside their own directory (e.g.
-#     sobarch-skel's package() copies skel/), so editing that
-#     content is easy to do without remembering to also bump the
-#     package's pkgver/pkgrel. Each package's real payload paths are
-#     derived directly from its own PKGBUILD (grepping for
-#     $startdir/../../../<path> references), not a separately
-#     maintained mapping that could itself drift. If any payload path
-#     changed between BASE_REF and HEAD_REF but the PKGBUILD's
-#     pkgver/pkgrel didn't, that's a real bug: this is exactly what
-#     happened for real with sobarch-skel and the ble.sh commit.
-#     Skipped entirely when BASE_REF isn't set. With BASE_REF set but no
-#     HEAD_REF (the .githooks/pre-commit usage, see docs/DECISIONS.md
-#     decision #16), diffs BASE_REF against the working tree instead of
-#     a second ref, matching pkgver_at's own "WORKTREE" read below
-#     (which already compares against files on disk, not the index).
-#
-# Must run as a non-root user: makepkg refuses outright to run as
-# root. No namcap pass here: unlike validate-vendored-pkgbuilds.sh,
-# this runs as a local pre-commit hook (docs/DECISIONS.md decision
-# #16), where namcap's presence on a given machine can't be assumed
-# the way a CI container guarantees it.
-#
-# --fix (only meaningful with BASE_REF set, i.e. the pre-commit usage):
-# instead of failing on a payload-changed-without-a-version-bump or a
-# stale/missing .SRCINFO, fixes it in place and stages the result with
-# `git add`, so the fix rides along in the commit being made. Safe to
-# do mechanically here because every packages/custom/ PKGBUILD uses
-# the same pkgver=<today's date> convention (no upstream version to
-# reconcile against) -- confirmed across all four before adding this.
-# Bumps pkgrel instead of pkgver when pkgver is already today's date
-# (a same-day second payload change). A makepkg --printsrcinfo failure
-# is never auto-fixable (a real PKGBUILD syntax error), so that case
-# still fails even under --fix.
+# --fix bumps the version (pkgver=today, or pkgrel+1 if already today) and
+# regenerates .SRCINFO, staging both. makepkg refuses to run as root.
 
 set -uo pipefail
 
@@ -59,8 +25,7 @@ if [[ -n "${BASE_REF:-}" ]]; then
 fi
 
 pkgver_at() {
-    # pkgver_at <ref> <pkgbuild-path> -- prints "pkgver pkgrel", or
-    # nothing if the file doesn't exist at that ref.
+    # Prints "pkgver pkgrel" at <ref>, or nothing if the file is absent.
     local ref="$1" path="$2"
     if [[ "$ref" == "WORKTREE" ]]; then
         [[ -f "$path" ]] || return 0
@@ -73,8 +38,6 @@ pkgver_at() {
 }
 
 path_changed_under() {
-    # path_changed_under <path> -- true if any changed file is exactly
-    # <path>, or lives under it when <path> is a directory.
     local prefix="$1" f
     for f in "${changed_files[@]:-}"; do
         [[ "$f" == "$prefix" || "$f" == "$prefix"/* ]] && return 0
@@ -90,17 +53,9 @@ for dir in packages/custom/*/; do
     committed="${dir%/}/.SRCINFO"
 
     if ((${#changed_files[@]})); then
-        # Derive this package's external payload paths straight from
-        # its own PKGBUILD: any $startdir/../../../<path> reference.
-        # Matched at file granularity by default (e.g.
-        # .../aur-sync/aur-sync.sh watches only that file, not every
-        # other file that happens to live in scripts/aur-sync/) --
-        # only treated as a directory when the reference is genuinely
-        # directory-shaped: a trailing shell variable (a for-loop's
-        # .../firstboot/$script, whatever it expands to) or the
-        # trailing-/. copy-contents idiom (cp -a .../skel/.).
-        # One extra trailing character is captured past the matched
-        # path so a '$' right after it can be detected.
+# Payload paths are the PKGBUILD's $startdir/../../../<path> references,
+# matched as files unless followed by a '$' or ending in /. (directories).
+# The extra captured character is there to detect that trailing '$'.
         extra_paths=()
         while IFS= read -r raw; do
             [[ -n "$raw" ]] || continue
@@ -116,8 +71,6 @@ for dir in packages/custom/*/; do
 
         payload_changed=false
         for f in "${changed_files[@]}"; do
-            # The package's own dir counts as payload except for the
-            # version-metadata files themselves.
             if [[ "$f" == "$dir"* && "$f" != "$pkgbuild" && "$f" != "$committed" ]]; then
                 payload_changed=true
                 break
@@ -158,8 +111,7 @@ for dir in packages/custom/*/; do
         fi
     fi
 
-    # .SRCINFO check runs last so it picks up any pkgver/pkgrel bump
-    # from the payload check above.
+# Runs last so it picks up any version bump made above.
     generated="$(mktemp)"
     if ! (cd "$dir" && makepkg --printsrcinfo) > "$generated" 2>/dev/null; then
         echo "== $name: makepkg --printsrcinfo failed =="

@@ -1,22 +1,12 @@
 #!/usr/bin/env bash
-# Keeps packages/custom/tinty-bin current with upstream's GitHub
-# releases. The AUR-based update check (scripts/aur-sync/
-# check-aur-updates.sh) can't cover it: tinty-bin lives in
-# packages/custom/ because the AUR has no such package, only tinty-git.
+# Keeps packages/custom/tinty-bin current with upstream releases. The AUR
+# update check can't cover it since the AUR only has tinty-git.
 #
-#   update-tinty-bin.sh --check   prints "tinty-bin <pinned> <latest>"
-#                                 if upstream has a newer release,
-#                                 nothing otherwise
-#   update-tinty-bin.sh           rewrites pkgver, pkgrel and both
-#                                 checksums for the latest release, and
-#                                 regenerates .SRCINFO
+#   update-tinty-bin.sh --check   prints "tinty-bin <pinned> <latest>" if newer
+#   update-tinty-bin.sh           bumps pkgver, pkgrel, checksums and .SRCINFO
 #
-# Must run as a non-root user (makepkg). Latest release is found via
-# the /releases/latest redirect (no API rate limit, no jq), which
-# skips prereleases. The binary tarball's checksum is cross-checked
-# against the .sha256 asset published beside it, which catches a
-# corrupted download only: a compromised release would publish a
-# matching checksum, so the PR this feeds still needs human review.
+# The .sha256 cross-check only catches corrupt downloads, not a compromised
+# release, so the resulting PR still needs human review.
 
 set -euo pipefail
 
@@ -56,8 +46,6 @@ if [[ "$published" != "$bin_sha" ]]; then
     exit 1
 fi
 
-# The PKGBUILD's two sha256sums entries, in source order: binary, then
-# source archive.
 mapfile -t old_shas < <(grep -oE '[0-9a-f]{64}' "$pkg/PKGBUILD")
 if ((${#old_shas[@]} != 2)); then
     echo "update-tinty-bin: expected exactly 2 checksums in $pkg/PKGBUILD, found ${#old_shas[@]}" >&2

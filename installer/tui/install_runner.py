@@ -1,14 +1,4 @@
-"""Runs the real install: archinstall itself, then the post-archinstall,
-pre-reboot arch-chroot step (deploying aur-sync.sh, building/installing
-sobarch-skel, sobarch-scripts, sobarch-limine-snapshots, and the
-base-required AUR packages, deploying the first-boot units,
-nvidia-setup.sh, snapper-setup.sh, limine-theme-setup.sh,
-plymouth-setup.sh, rescue-iso-setup.sh, ly-theme-setup.sh, in that
-order) against the still-mounted target.
-Only meaningfully testable on a real Arch ISO with a real disk; kept in
-its own module, independent of the Screen that drives it, so at least
-its config-generation half stays covered by the same tests as the rest
-of config_gen.py."""
+"""Runs archinstall, then the post-install arch-chroot steps against the mounted target."""
 
 import re
 import shutil
@@ -43,42 +33,18 @@ CHROOT_SETUP_SCRIPTS = [
 CHROOT_SETUP_DIR_IN_TARGET = Path("/root/sobarch-setup")
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-# Not /tmp: arch-chroot mounts a fresh, empty tmpfs over
-# <target>/tmp on every single invocation (see chroot_setup() in
-# /usr/bin/arch-chroot), so anything written there - by this host
-# process directly, or by one arch-chroot call - is invisible to the
-# next arch-chroot call. /var/tmp isn't in arch-chroot's mount list and
-# is still mode 1777, so it survives across calls with the same
-# build-as-non-root permissions.
+# Not /tmp: arch-chroot mounts a fresh tmpfs there on every call.
 SOBARCH_SKEL_BUILD_DIR_IN_TARGET = Path("/var/tmp/sobarch-skel-build")
 
 AUR_SYNC_DIR = Path(__file__).resolve().parent.parent.parent / "scripts" / "aur-sync"
 AUR_SYNC_SCRIPT_PATH_IN_TARGET = Path("/usr/local/lib/sobarch/aur-sync.sh")
 
-# Decision #20's ISO package cache, live-environment side: present only
-# on a real prebuilt-ISO install (build-iso.sh bakes it in), never on
-# the bootstrap.sh curl path. That decision's own "Alternatives
-# considered" flagged extending the cache into this arch-chroot build
-# step as a deliberate follow-up rather than a silent gap; staged into
-# the target below (arch-chroot has no access to the live environment's
-# own /opt/sobarch-cache, a different root entirely) and passed to
-# aur-sync.sh via --cache so the base-required packages it already
-# built once, at ISO-build time, aren't rebuilt here too.
+# Prebuilt package cache, only on the prebuilt ISO. Copied into the target since
+# the chroot can't see the live root.
 SOBARCH_CACHE_LIVE_PATH = Path("/opt/sobarch-cache")
 SOBARCH_CACHE_DIR_IN_TARGET = Path("/var/tmp/sobarch-cache")
 
-# Base-required per decision 3 (no official package exists for
-# either): must be present before first boot, same urgency tier as
-# sobarch-skel itself, not deferred to the post-login dispatcher the
-# way optional profile AUR packages are (Phase 8's install-profile-
-# packages.sh). Built the same way as sobarch-skel below, via
-# aur-sync.sh's --local mode against this already-fetched checkout.
-#
-# Read from base-required-packages.txt rather than hardcoded here: an
-# already-installed system's update-system.sh fetches that same
-# file from GitHub to install any base-required package it's still
-# missing (added to the list after that system's own install ran), so
-# one file, not two hand-maintained lists that can drift.
+# AUR packages needed before first boot. update-system.sh reads the same file.
 def _read_base_aur_packages() -> list[str]:
     lines = (AUR_SYNC_DIR / "base-required-packages.txt").read_text().splitlines()
     return [stripped for line in lines if (stripped := line.split("#", 1)[0].strip())]
@@ -86,44 +52,8 @@ def _read_base_aur_packages() -> list[str]:
 
 BASE_AUR_PACKAGES = _read_base_aur_packages()
 
-# The first-boot units below all follow the same shape: a script under
-# installer/firstboot/, deployed to /usr/local/lib/sobarch/ as part of
-# the sobarch-scripts package (built alongside sobarch-skel in
-# _build_and_install_base_packages below, real pacman-tracked version
-# instead of a bespoke copy step), run once by its own
-# ConditionPathExists-guarded oneshot .service (a failure leaves its
-# marker/state unwritten, so it retries later rather than being
-# silently skipped forever). Only the .service units themselves are
-# still deployed directly, here, since sobarch-firstboot-skel.service
-# needs __USERNAME__ substituted in per install, something a package's
-# payload (identical across installs) can't do. None of this runs
-# during the install session itself; it only gets deployed and enabled
-# here (see README.md's Installer section for why: keeps the base
-# install fast/minimal, and every profile/step behaves the same
-# regardless of what it needs, e.g. network or a fresh user account).
-#
-# - unblock-rfkill.sh: unblocks any soft-blocked wireless radios (some
-#   laptops persist a firmware/EC-level airplane-mode toggle into a
-#   fresh install), ordered before NetworkManager.service so the two
-#   units below actually have network to work with. Boot-enabled.
-# - install-profile-packages.sh: the optional packages selected in the
-#   TUI. Needs network, which (see the NetworkManager dispatcher script
-#   below) is never actually up this early, so it has no [Install]
-#   section and is never started at boot; only the dispatcher hook
-#   starts it.
-# - apply-skel.sh: deploys sobarch-skel's defaults into the new user's
-#   $HOME. Boot-enabled.
-# - apply-security-baseline.sh: nftables firewall, root lock, and the
-#   optional SSH component, reading the ssh-enabled
-#   flag write_security_flags() writes below. Same as
-#   install-profile-packages.sh above: no [Install] section, dispatcher-only.
-# - setup-rescue-iso.sh: fetches the rescue ISO onto the media
-#   rescue-iso-setup.sh formatted at install time, then adds its Limine
-#   entry. Needs network and is slow (~1.3GB), so like the two units
-#   above: no [Install] section, dispatcher-only.
-# - apply-git-setup.sh: generates an SSH key and applies the git
-#   identity collected by the TUI's Git screen. Needs no network
-#   (unlike apply-skel.sh's peers below), so it's boot-enabled too.
+# The scripts ship in sobarch-scripts; only the .service units are deployed here,
+# since some need __USERNAME__ substituted per install.
 FIRSTBOOT_DIR = Path(__file__).resolve().parent.parent / "firstboot"
 FIRSTBOOT_UNITS = [
     ("unblock-rfkill.sh", "sobarch-firstboot-rfkill.service"),
@@ -133,13 +63,8 @@ FIRSTBOOT_UNITS = [
     ("apply-git-setup.sh", "sobarch-firstboot-git.service"),
     ("setup-rescue-iso.sh", "sobarch-firstboot-rescue.service"),
 ]
-# Subset of FIRSTBOOT_UNITS above that actually has an [Install] section
-# and should be started at boot. install-profile-packages.sh and
-# apply-security-baseline.sh are deliberately left out: `systemctl
-# enable` on a unit with no [Install] section fails, and running them
-# at boot would just mean failing every time anyway, since the network
-# they need is never up that early (see the NetworkManager dispatcher
-# script below).
+# The rest need network and have no [Install] section; the NetworkManager
+# dispatcher hook in sobarch-scripts starts them once a connection is up.
 FIRSTBOOT_BOOT_ENABLED_SERVICES = {
     "sobarch-firstboot-rfkill.service",
     "sobarch-firstboot-skel.service",
@@ -148,26 +73,11 @@ FIRSTBOOT_BOOT_ENABLED_SERVICES = {
 FIRSTBOOT_SERVICE_DIR_IN_TARGET = Path("/etc/systemd/system")
 SOBARCH_DIR_IN_TARGET = Path("/etc/sobarch")
 
-# sobarch-scripts (see _build_and_install_base_packages below) also
-# ships a NetworkManager dispatcher hook, 90-sobarch-firstboot, at
-# /etc/NetworkManager/dispatcher.d/: the *only* thing that starts
-# sobarch-firstboot-packages.service and
-# sobarch-firstboot-security.service, firing once a connection actually
-# comes up. A fresh WiFi-only install has no saved connection to
-# auto-connect at boot, and even a once-connected WiFi network needs
-# the user's session (and its oo7 secret store) running to reconnect,
-# so in practice that never happens before login (see
-# 90-sobarch-firstboot's own header comment). No per-install
-# substitution needed, unlike the .service units above, so there's
-# nothing left for install_runner.py itself to do for it.
-
 OutputCallback = Callable[[str], None]
 
 
 class _PhaseTimer:
-    """Records wall-clock time per install phase to the install log and
-    prints a summary at the end, so "why was this install slow" has a
-    measured answer instead of a guess."""
+    """Logs wall-clock time per install phase and prints a summary."""
 
     def __init__(self, log_file, on_output: OutputCallback):
         self._log_file = log_file
@@ -231,32 +141,11 @@ def _run_logged(cmd: list[str], log_file, on_output: OutputCallback, **kwargs) -
 
 
 def _strip_live_only_sobarch_cache_repo() -> None:
-    """config_gen.py's "sobarch-cache" custom_repositories entry (added
-    only on a real prebuilt-ISO install, decision #20) is meant to stay
-    confined to the live environment -- config_gen.py's own comment: "the
-    repo never leaves the image it's baked into" -- pointing at
-    /opt/sobarch-cache, a path baked into the ISO's airootfs that never
-    exists on the installed target, not even reachable from an
-    arch-chroot into it (unlike SOBARCH_CACHE_DIR_IN_TARGET above, a
-    separate copy this module stages itself for its own use).
+    """Remove the live-only [sobarch-cache] repo from the target's pacman.conf.
 
-    archinstall's own guided.py flow calls Installer.set_mirrors() twice
-    with that same mirror_config, though: once for the live environment
-    (on_target=False) and once for the target (on_target=True,
-    unconditionally, confirmed against archinstall 4.4's
-    lib/installer.py) -- so the identical [sobarch-cache] section this
-    project only ever wanted on the live side also lands in the target's
-    own /etc/pacman.conf. Left in place, every `pacman -Sy`/`-Syu` on
-    the real installed system -- this module's own in-chroot pacman
-    calls below included -- fails trying to sync a database file at a
-    path nothing ever staged onto disk (confirmed: a real run hit
-    "sobarch-cache.db failed to download... Could not open file
-    /opt/sobarch-cache/sobarch-cache.db"). Stripped here, right after
-    archinstall finishes and before this module's own pacman use;
-    matches the exact block MirrorConfiguration.repositories_config()
-    writes (archinstall 4.4's lib/models/mirrors.py) so it can't
-    misfire against unrelated pacman.conf content, and is a no-op
-    wherever the bootstrap.sh curl path never added the entry at all."""
+    archinstall writes the custom repo into the target too, where its path does
+    not exist and breaks every pacman sync. Must run before any chroot pacman use.
+    """
     pacman_conf = MOUNTPOINT / "etc/pacman.conf"
     text = pacman_conf.read_text()
     stripped = re.sub(
@@ -269,14 +158,7 @@ def _strip_live_only_sobarch_cache_repo() -> None:
 
 
 def _deploy_aur_sync(log_file, on_output: OutputCallback) -> int:
-    """Deploys aur-sync.sh onto the target as a raw file, permanently:
-    the one unavoidable bootstrap step, needed right away by
-    _build_and_install_base_packages below to build sobarch-scripts,
-    the package that will go on to own this same path afterward
-    (pacman -U replaces this bootstrap copy with a byte-identical
-    packaged one; nothing behaviorally changes at that moment). Its
-    pacman hook and everything else this script needs ship as part of
-    that package instead of being deployed here too."""
+    """Copy aur-sync.sh in raw so it can build sobarch-scripts, which then owns it."""
     script_path = MOUNTPOINT / AUR_SYNC_SCRIPT_PATH_IN_TARGET.relative_to("/")
     script_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(AUR_SYNC_DIR / "aur-sync.sh", script_path)
@@ -285,10 +167,7 @@ def _deploy_aur_sync(log_file, on_output: OutputCallback) -> int:
 
 
 def _stage_vendored_package(pkg: str, build_dir: Path) -> None:
-    """Copies one package into build_dir at the same position it has in
-    the repo. base-required-packages.txt names both vendored AUR
-    packages (packages/aur/) and this project's own custom ones
-    (packages/custom/, e.g. tinty-bin), so look in both."""
+    """Copy one package from packages/aur/ or packages/custom/ into build_dir."""
     for kind in ("aur", "custom"):
         source = REPO_ROOT / "packages" / kind / pkg
         if source.is_dir():
@@ -298,40 +177,11 @@ def _stage_vendored_package(pkg: str, build_dir: Path) -> None:
 
 
 def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int:
-    """Local-builds sobarch-skel, sobarch-scripts, sobarch-limine-snapshots,
-    and the base-required AUR packages (localsend-bin, blesh-git, tinty-bin; decision 3)
-    from this checkout and installs them into the target, so
-    /usr/share/sobarch/skel/, /usr/local/lib/sobarch/, and every
-    package exist by the time first boot (and, for
-    sobarch-limine-snapshots, snapper-setup.sh right after this) runs.
-    Goes through the real aur-sync.sh (--local mode, against this
-    already-fetched checkout, no curl refetch needed) rather than a
-    bespoke build routine, so there's exactly one place that knows how
-    to build a vendored package; aur-sync.sh itself creates and builds
-    as its own unprivileged build user, so nothing here needs to run as
-    (or chown to) the newly created human account. On a real prebuilt-
-    ISO install, /opt/sobarch-cache already carries binaries for this
-    exact package set (decision #20) built once at ISO-build time; also
-    staged into the target and passed via --cache, so aur-sync.sh skips
-    makepkg for whichever of these it finds a matching version for
-    there, falling back to a real build for the rest (a stale cache, or
-    the plain bootstrap.sh path where no cache exists at all).
+    """Build and install the custom and base-required AUR packages via aur-sync.sh --local.
 
-    sobarch-scripts is built here too, not just deployed as a raw file
-    the way it was before real pacman version tracking existed for it:
-    its own package() is what puts apply-skel.sh, durable-replace.sh,
-    and the rest of installer/firstboot/*.sh (plus aur-sync.sh itself)
-    at /usr/local/lib/sobarch/, so the loop below no longer needs to
-    copy those scripts in by hand.
-
-    sobarch-skel's PKGBUILD reaches out to ../../../skel and
-    ../../../branding; sobarch-scripts' to ../../../installer/firstboot,
-    ../../../installer/archinstall (limine-theme-setup.sh,
-    ly-theme-setup.sh, plymouth-setup.sh), and ../../../scripts (aur-sync,
-    update-check, sobarch-cli, snapshot-rollback.sh), all via a relative
-    path, so those directories must be staged
-    alongside their package directories here, not just the package
-    directories in isolation."""
+    The PKGBUILDs reach skel/, branding/, installer/ and scripts/ by relative
+    path, so those are staged alongside the package directories.
+    """
     build_dir = MOUNTPOINT / SOBARCH_SKEL_BUILD_DIR_IN_TARGET.relative_to("/")
     shutil.rmtree(build_dir, ignore_errors=True)
     shutil.copytree(REPO_ROOT / "packages" / "custom" / "sobarch-skel", build_dir / "packages" / "custom" / "sobarch-skel")
@@ -376,19 +226,13 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
     return returncode
 
 
-# Built in this order, one aur-sync call each: aur-sync sorts the
-# targets of a single call by name, and lib32-nvidia-580xx-utils would
-# sort ahead of the nvidia-580xx-utils it needs. nvidia-580xx-utils
-# also builds opencl-nvidia-580xx and nvidia-580xx-dkms (one package
-# base), all installed together.
+# One aur-sync call each, in this order: aur-sync sorts targets by name, which
+# would put lib32-nvidia-580xx-utils before the package it depends on.
 NVIDIA_LEGACY_PACKAGES = ("nvidia-580xx-utils", "lib32-nvidia-580xx-utils")
 
 
 def _install_nvidia_legacy_driver(log_file, on_output: OutputCallback) -> int:
-    """Maxwell/Pascal/Volta GPUs need the 580xx driver branch, which
-    only exists in the AUR; the vendored copies in packages/aur/ are
-    built and installed here via aur-sync.sh, same mechanism as the
-    base-required AUR packages above."""
+    """Build the AUR-only 580xx driver for Maxwell/Pascal/Volta GPUs."""
     build_dir = MOUNTPOINT / SOBARCH_SKEL_BUILD_DIR_IN_TARGET.relative_to("/")
     shutil.rmtree(build_dir, ignore_errors=True)
     for pkg in NVIDIA_LEGACY_PACKAGES:
@@ -441,9 +285,7 @@ def run_install(
             log_file,
             on_output,
         )
-        # Holds the account hash and any LUKS passphrase in plaintext;
-        # archinstall is done with it either way, and a retry
-        # regenerates it, so don't leave it behind on disk.
+        # Holds the LUKS passphrase in plaintext; a retry regenerates it.
         credentials_path.unlink(missing_ok=True)
         if returncode != 0:
             raise InstallError(f"archinstall exited with status {returncode}", log_path)
@@ -476,20 +318,11 @@ def run_install(
         write_security_flags(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
         write_git_config(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
 
-        # /usr/local/lib/sobarch/ itself already exists by this point:
-        # the sobarch-scripts package built and installed above put it
-        # there, along with apply-skel.sh, durable-replace.sh, and the
-        # rest of installer/firstboot/*.sh; only the per-install
-        # .service units are templated and deployed here.
         firstboot_service_dir = MOUNTPOINT / FIRSTBOOT_SERVICE_DIR_IN_TARGET.relative_to("/")
         firstboot_service_dir.mkdir(parents=True, exist_ok=True)
 
         service_names = []
         for _script_name, service_name in FIRSTBOOT_UNITS:
-            # __USERNAME__ only appears in sobarch-firstboot-skel.service
-            # and sobarch-firstboot-git.service (both must run as the new
-            # account, not root, to write into its $HOME); plain text
-            # substitution on the rest is a no-op.
             service_text = (FIRSTBOOT_DIR / service_name).read_text().replace("__USERNAME__", state.username)
             (firstboot_service_dir / service_name).write_text(service_text)
             service_names.append(service_name)

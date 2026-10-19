@@ -1,6 +1,4 @@
-"""Optional software profiles and their packages. Not fixed: split,
-merge, or rename an entry the moment it stops being a single coherent
-idea for someone choosing it."""
+"""Optional software profiles and their packages."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,17 +9,11 @@ _CUSTOM_PACKAGES_DIR = Path(__file__).resolve().parent.parent.parent / "packages
 @dataclass(frozen=True)
 class Package:
     name: str
-    # True for anything aur-sync.sh must build locally -- packages/aur/
-    # (actually AUR-sourced) or packages/custom/ (this project's own,
-    # e.g. sobarch-via-udev) alike, both handled identically by that
-    # script. False only for a plain official-repo `pacman -S` package.
+    # True for anything aur-sync.sh builds: packages/aur/ or packages/custom/.
     aur: bool = False
 
     @property
     def source_label(self) -> str:
-        """Where the TUI says this package comes from: empty for an
-        official-repo package, "sobarch" for one of this project's own
-        packages/custom/ PKGBUILDs, "AUR" for the rest."""
         if not self.aur:
             return ""
         return "sobarch" if (_CUSTOM_PACKAGES_DIR / self.name).is_dir() else "AUR"
@@ -39,10 +31,7 @@ def _pkgs(*names: str, aur: bool = False) -> tuple[Package, ...]:
 
 
 PROFILES: tuple[Profile, ...] = (
-    # neovim itself is base-required (base.json), not listed here: its
-    # config already ships unconditionally in skel/.config/nvim (Phase
-    # 1), so only its dev-tooling-specific packages belong to this
-    # profile.
+    # neovim is in base.json.
     Profile("Developer", "developer", _pkgs("mise", "presenterm")),
     Profile(
         "Gaming",
@@ -100,20 +89,14 @@ def all_packages() -> list[str]:
 
 
 def resolve_selection(install_everything: bool, profile_packages: dict[str, list[str]]) -> dict:
-    """The final answer, in the shape written for later consumption
-    (the review screen's save/install path): "install everything" is
-    resolved to every profile at its full package list here, so a
-    reader of the persisted selection never needs to special-case it."""
+    """Map profile name to selected packages, expanding "install everything"."""
     if install_everything:
         return {profile.name: [pkg.name for pkg in profile.packages] for profile in PROFILES}
     return {name: packages for name, packages in profile_packages.items() if packages}
 
 
 def split_by_source(package_names: set[str]) -> tuple[list[str], list[str]]:
-    """Splits a flat set of selected package names into (official,
-    aur), sorted: official packages are a plain `pacman -S` at first
-    boot, the second bucket needs aur-sync.sh's local build mechanism
-    (packages/aur/ or packages/custom/, see Package.aur above)."""
+    """Split package names into sorted (official, aur) lists."""
     official = sorted(name for name in package_names if name not in _AUR_PACKAGE_NAMES)
     aur = sorted(name for name in package_names if name in _AUR_PACKAGE_NAMES)
     return official, aur

@@ -1,7 +1,4 @@
-"""Shared field-validation regexes, used by both the interactive
-wizard sections (sections/account.py, sections/options.py) and the unattended
-entry point (unattended.py), so there is exactly one copy of each rule
-rather than two that can drift out of sync."""
+"""Field-validation regexes shared by the wizard sections and unattended.py."""
 
 import re
 

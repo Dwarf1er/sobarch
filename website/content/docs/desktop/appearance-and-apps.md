@@ -24,10 +24,20 @@ Both are applied at login, so they need no setup from you.
 
 `Super+T` opens kitty, `Super+E` the file manager, and `Super+B` the
 browser (LibreWolf). To change which app opens a given file type, use
-**Super, Sobarch, Default Apps**: pick a file type (common ones such as
-PDF documents, images, video, and web links are listed first by name,
-each showing the app it opens in now), then pick from the installed apps
-that handle it.
+**Super, Sobarch, Default Apps**. The top rows are groups (Web browser,
+Images, Video, Audio, Text files, Archives): pick one, then an app, and
+that app becomes the default for every type in the group it can open,
+with each app listed by how many of the group's types it covers. A group
+shows the app all its types agree on, or `mixed`. Below the groups are
+common file types by name (PDF documents, JPEG images, web links, ...),
+then every other type, each showing the app it opens in now; pick one to
+change just that type.
+
+Out of the box, images open in imv, audio and video in mpv, web links,
+HTML and PDFs in LibreWolf, folders in PCManFM, and archives in
+xarchiver. These come from `/etc/xdg/mimeapps.list`, which anything you
+choose in Default Apps overrides. Text files have no shipped default,
+since Neovim needs a terminal that `xdg-open` doesn't open for it.
 
 ## File manager
 

@@ -1,9 +1,6 @@
 #!/bin/bash
-# Overview of every system control panel, each row showing that panel's
-# headline state, so a glance here answers "what's my volume / am I
-# online / is Bluetooth on" without opening anything. Every query below
-# is local and cheap (no scan, no network), re-run each time this menu
-# comes back into view so returning from a submenu shows what it changed.
+# System overview; each row shows its panel's state. Queries are local
+# and re-run whenever the menu comes back into view.
 
 source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
@@ -34,8 +31,7 @@ bluetooth_state() {
     ((n > 0)) && echo "$n connected" || echo "on"
 }
 
-# get-updates reads fwupd's local metadata cache, no network: 0 means
-# updates are available, 2 means there's nothing to do.
+# get-updates reads the local cache: 0 = updates available, 2 = none.
 firmware_state() {
     command -v fwupdmgr >/dev/null || return
     timeout 5 fwupdmgr get-updates --no-unreported-check >/dev/null 2>&1
@@ -45,8 +41,7 @@ firmware_state() {
     esac
 }
 
-# Power Profile only exists on laptops: tlp-pd (and so tlpctl) is
-# installed only when the installer detects a laptop chassis.
+# tlpctl is only installed on laptops.
 selected=""
 while :; do
     menu_reset

@@ -25,17 +25,13 @@ from sections.base import Section
 
 _SPINNER = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
 
-# Anything left after Text.from_ansi has taken the colour codes it
-# understands: other escape sequences (cursor movement, erase) and bare
-# control characters, which a terminal would act on instead of print.
+# Non-colour escapes and control characters that Text.from_ansi would leave in.
 _ESCAPE_RE = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|[@-Z\\-_]|\][^\x07]*\x07)")
 _CONTROL_RE = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
 
 
 def _clean_line(line: str) -> Text:
-    """Installer output is written for a real terminal: ANSI colours,
-    carriage-return progress redraws, tabs. Rendered raw, those corrupt
-    the pane, so keep only what a redraw would finally leave visible."""
+    """Reduce terminal output (colours, carriage-return redraws, tabs) to what a terminal would finally show."""
     parts = [part for part in line.split("\r") if part.strip()]
     line = parts[-1] if parts else ""
     line = _ESCAPE_RE.sub(lambda m: m.group(0) if m.group(0).endswith("m") else "", line)

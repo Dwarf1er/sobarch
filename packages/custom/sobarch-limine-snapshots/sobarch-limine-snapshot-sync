@@ -1,41 +1,15 @@
 #!/usr/bin/env bash
-# Regenerates the "Snapshots" block in Limine's config so each Snapper
-# snapshot of / is directly bootable from the Limine menu -- the Limine
-# equivalent of grub-btrfs's own dynamically-generated submenu.
-# Deliberately scoped down from grub-btrfs's
-# general-purpose design (upstream: github.com/Antynea/grub-btrfs,
-# 41_snapshots-btrfs) to sobarch's fixed layout:
-#   - one kernel package (linux), a single distro on this disk
-#   - /boot is always its own partition (the ESP), never inside the
-#     snapshotted root subvolume, and Limine can't read btrfs. A
-#     snapshot taken before a kernel upgrade has a different
-#     /usr/lib/modules/<version> than the kernel now sitting in /boot,
-#     and booting that kernel against it leaves no loadable modules. So
-#     a snapshot whose kernel version matches the installed one boots
-#     the real /boot/vmlinuz-linux + initramfs-linux.img; any other
-#     snapshot gets its own vmlinuz (copied out of the snapshot's
-#     /usr/lib/modules/<version>/) and an initramfs built from the
-#     snapshot's modules, kept per version under /boot/sobarch-snapshots/
-#     and pruned once no snapshot references that version.
-#   - snap-pac snapshots are read-only, so entries boot with `ro`; an
-#     `rw` flag on a read-only subvolume only produces confusing
-#     failures. Treat a snapshot boot as a recovery environment.
-#   - the root mount options are this project's own fixed set
-#     (installer/archinstall/base.json's disk_config), not re-derived
-#     from /etc/fstab on every run the way grub-btrfs does generically.
+# Regenerates the "Snapshots" block in limine.conf so each Snapper snapshot
+# of / is bootable (Limine's answer to grub-btrfs).
 #
-# Limine's exact entry syntax (path()/cmdline: keys, indentation) is
-# reproduced here from Limine's own CONFIG.md; it has not yet been
-# validated against a real booted Limine instance, same real-disk
-# limitation as the rest of this project's install-time and first-boot
-# code.
+# /boot is the ESP, outside the snapshot. A snapshot with a different kernel
+# version than /boot's needs its own vmlinuz and initramfs, or it boots with
+# no loadable modules; those are kept per version in /boot/sobarch-snapshots/.
+# Snapshots are read-only, so entries boot with `ro`.
 
 set -euo pipefail
 
-# Same has_uefi() check archinstall's own _add_limine_bootloader() makes
-# to decide where it writes limine.conf: EFI/BOOT on the ESP when UEFI,
-# /boot/limine otherwise (see installer/archinstall/limine-theme-setup.sh's
-# own copy of this check for the full rationale).
+# Same location archinstall picks for limine.conf.
 if [ -d /sys/firmware/efi ]; then
     LIMINE_CONF="/boot/EFI/BOOT/limine.conf"
 else
@@ -71,8 +45,6 @@ for arg in $(cat /proc/cmdline); do
 done
 base_cmdline="${base_cmdline# }"
 
-# The version directory of the linux package under a modules root, or
-# empty if there isn't one.
 kernel_version_in() {
     local dir
     for dir in "$1"/usr/lib/modules/*/; do
@@ -87,9 +59,7 @@ kernel_version_in() {
 current_version="$(kernel_version_in "")"
 used_versions=" "
 
-# Makes sure /boot/sobarch-snapshots/<version>/ holds a bootable kernel
-# and initramfs for a snapshot whose kernel differs from the installed
-# one. Returns non-zero (and leaves nothing half-written) on any failure.
+# Builds via a temp dir so a failure leaves nothing half-written.
 ensure_kernel_store() {
     local version="$1" subvol_dir="$2"
     local dest="$KERNEL_STORE/$version"
@@ -122,11 +92,7 @@ ensure_kernel_store() {
 entries=""
 count=0
 
-# Sorted numerically by ID, not via the bare glob's own strcoll order:
-# a plain "$SNAPSHOTS_DIR"/*/ expansion sorts lexicographically, giving
-# 1, 10, 100, 101, ..., 109, 11, 110, ... once snapshot IDs run past
-# single digits. Snapper always names these directories as plain
-# positive integers, so a numeric sort is exact, not a heuristic.
+# A glob would sort IDs lexicographically (1, 10, 100, 11, ...).
 mapfile -t snap_ids < <(find "$SNAPSHOTS_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -n)
 
 for id in "${snap_ids[@]}"; do
@@ -140,10 +106,7 @@ for id in "${snap_ids[@]}"; do
     [ -n "$subvolid" ] || continue
     subvol_path="$(btrfs inspect-internal subvolid-resolve "$subvolid" / 2>/dev/null)"
     [ -n "$subvol_path" ] || continue
-    # subvolid-resolve reports the path with no leading slash and a
-    # trailing one; rootflags=subvol= wants a leading slash, no
-    # trailing one, matching how "btrfs subvolume list" itself reports
-    # the currently-mounted "@".
+    # subvolid-resolve prints "@/..." with a trailing slash; subvol= wants "/@/...".
     subvol_path="/${subvol_path%/}"
 
     snap_version="$(kernel_version_in "$subvol_dir")"
@@ -175,13 +138,8 @@ done
 
 block="$START_MARKER"
 if [ "$count" -gt 0 ]; then
-    # Limine's nesting depth comes from the *count* of leading slashes
-    # on an entry's title line, not from whitespace indentation -- a
-    # single "/" sibling would sit next to "/Snapshots" at the top
-    # level instead of inside it. "//Snapshot ..." (two slashes) is
-    # what actually nests each one a level deeper, turning "/Snapshots"
-    # into a directory entry and keeping every snapshot off the
-    # first-level menu.
+    # Limine nests by the number of leading slashes, not indentation, so
+    # entries use "//" to sit inside "/Snapshots".
     block+="
 /Snapshots$entries"
 else
@@ -192,8 +150,6 @@ block+="
 $END_MARKER"
 
 if grep -qF "$START_MARKER" "$LIMINE_CONF"; then
-    # Replace the existing block in place, leaving every other entry
-    # (archinstall's own base OS entry, the rescue-ISO entry) untouched.
     awk -v start="$START_MARKER" -v end="$END_MARKER" -v block="$block" '
         $0 == start { print block; skipping = 1; next }
         $0 == end && skipping { skipping = 0; next }
