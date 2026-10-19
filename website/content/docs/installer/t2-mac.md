@@ -53,6 +53,31 @@ partitions) is listed as an extra choice, for example `replace
 
 Choose the first entry for the whole disk only if you want macOS gone.
 
+## 4. Make Linux the default boot
+
+After the install the Mac still boots macOS by default, and you have to
+hold **Option** every time. Change the default once, either way:
+
+- **From the startup picker:** restart, hold **Option** until the picker
+  appears, then hold **Control** and select the Linux entry (the orange
+  **EFI Boot**, not the macOS volume).
+- **From macOS:** **System Settings → General → Startup Disk**, pick
+  **EFI Boot**, and restart.
+
+A macOS update resets the default to macOS; repeat the step afterward.
+The entry is only labeled "EFI Boot". To give it a name, run this in
+macOS (the install's boot partition is the 1GiB one next to your
+macOS volume; find its name in Disk Utility):
+
+```sh
+IDENTIFIER=$(diskutil info <PARTITION NAME> | grep "Device Identifier" | cut -d: -f2 | xargs)
+sudo diskutil mount $IDENTIFIER
+bless --folder /Volumes/<PARTITION NAME>/EFI/BOOT --label "Sobarch"
+```
+
+See the [t2linux startup manager
+guide](https://wiki.t2linux.org/guides/startup-manager/) for details.
+
 ## What gets configured
 
 - The `linux-t2` kernel replaces `linux`, and the unsigned `arch-mact2`
@@ -61,6 +86,8 @@ Choose the first entry for the whole disk only if you want macOS gone.
 - Fan control (`t2fanrd`), the Touch Bar (`tiny-dfr`), audio
   (`apple-t2-audio-config`) and the Wi-Fi/Bluetooth firmware fetcher
   (`apple-bcm-firmware-fetcher`).
+- `t2-touchid`, bound to the account you create, and fingerprint auth
+  enabled on the lock screen.
 - Kernel parameters `intel_iommu=on iommu=pt pcie_ports=compat`, the T2
   keyboard modules in the initramfs (so a LUKS passphrase can be typed),
   and a `brcmfmac` option that keeps Wi-Fi working with `wpa_supplicant`.
@@ -68,6 +95,20 @@ Choose the first entry for the whole disk only if you want macOS gone.
 If the firmware wasn't copied during install, use a wired connection and run `sudo apple-bcm-firmware-fetcher` while
 macOS is still on the disk, or see the [t2linux
 guide](https://wiki.t2linux.org/guides/wifi-bluetooth/).
+
+## Touch ID
+
+Touch ID works for the console login and the lock screen through the
+`t2-touchid` bridge, with these limits:
+
+- Only fingers enrolled in macOS work. Linux can't enroll or delete
+  fingers.
+- Your password is still needed after a reboot, for disk encryption and
+  to unlock the keyring; a fingerprint login doesn't unlock the keyring.
+- If no finger is recognized, the T2 wants the macOS account password
+  once since it last lost power: boot macOS, log in with the password,
+  then boot Linux again. Rebooting Linux doesn't reset this.
+- Check it with `fprintd-list $USER` and `fprintd-verify`.
 
 ## Not handled yet
 

@@ -6,6 +6,20 @@ set -euo pipefail
 usermod -aG video "$SOBARCH_USERNAME"
 systemctl enable t2fanrd.service tiny-dfr.service
 
+# Touch ID: bind the macOS-enrolled fingers to this account and start the bridge.
+mkdir -p /etc/kait2en
+sed "s/^T2_TOUCHID_BIND_USER=.*/T2_TOUCHID_BIND_USER=$SOBARCH_USERNAME/" /usr/share/kait2en/t2-touchid.conf > /etc/kait2en/t2-touchid.conf
+systemctl enable kait2en-t2-touchid.service
+
+# The package adds this on install, but only if pambase was already in place.
+PAM_FILE=/etc/pam.d/system-local-login
+if ! grep -q "^# t2-touchid: begin$" "$PAM_FILE"; then
+    sed -i -E '/^[[:space:]]*auth[[:space:]]+include[[:space:]]+system-login[[:space:]]*$/i\
+# t2-touchid: begin\
+auth      sufficient pam_fprintd.so timeout=5 max-tries=1\
+# t2-touchid: end' "$PAM_FILE"
+fi
+
 # The T2 keyboard and trackpad sit behind t2bce; the initramfs needs them for a LUKS passphrase.
 cat > /etc/mkinitcpio.conf.d/apple-t2.conf <<'CONF'
 MODULES+=(t2bce_core t2bce_dma t2bce_vhci usbhid hid_apple hid_generic xhci_pci xhci_hcd)
@@ -23,6 +37,14 @@ high_temp=75
 speed_curve=linear
 always_full_speed=false
 CONF
+
+# archinstall appends the repo to the target's pacman.conf on top of the copy pacstrap carried over.
+awk '
+    /^\[arch-mact2\]$/ { if (seen++) { skipping = 1; next } }
+    /^\[/ { skipping = 0 }
+    !skipping { print }
+' /etc/pacman.conf > /etc/pacman.conf.new
+mv /etc/pacman.conf.new /etc/pacman.conf
 
 LIMINE_CONF="/boot/EFI/BOOT/limine.conf"
 T2_PARAMS="intel_iommu=on iommu=pt pcie_ports=compat"

@@ -86,7 +86,7 @@ if [ "$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null || true)" = "Apple Inc." ];
         MacBookPro15,[1-4]|MacBookPro16,[1-4]|MacBookAir8,[12]|MacBookAir9,1| \
         iMac20,[12]|iMacPro1,1|Macmini8,1|MacPro7,1)
             is_t2_mac=true
-            t2_packages="linux-t2-headers apple-t2-audio-config apple-bcm-firmware-fetcher t2fanrd tiny-dfr"
+            t2_packages="linux-t2-headers apple-t2-audio-config apple-bcm-firmware-fetcher t2fanrd tiny-dfr t2-touchid"
             ;;
     esac
 fi

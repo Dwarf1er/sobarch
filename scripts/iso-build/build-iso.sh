@@ -169,7 +169,13 @@ if [[ $(tty) == "/dev/tty1" ]]; then
             if [[ "$(uname -r)" != *-t2 ]]; then
                 echo "This is not the T2 kernel. Reboot and choose 'Sobarch installer for T2 Macs' in the boot menu."
             fi
-            apple-bcm-firmware-fetcher || echo "Wi-Fi/Bluetooth firmware was not extracted; use a wired connection."
+            if apple-bcm-firmware-fetcher; then
+                # iwd needs a restart to see the interface the fetcher's module reload creates.
+                rfkill unblock all
+                systemctl restart iwd
+            else
+                echo "Wi-Fi/Bluetooth firmware was not extracted; use a wired connection."
+            fi
         fi
         python3 /root/sobarch/installer/tui/__main__.py < /dev/tty
     fi

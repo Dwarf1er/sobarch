@@ -1,5 +1,6 @@
 """Runs archinstall, then the post-install arch-chroot steps against the mounted target."""
 
+import os
 import shutil
 import subprocess
 import time
@@ -15,6 +16,7 @@ from config_gen import (
     write_git_config,
     write_security_flags,
 )
+import network
 from hardware import HardwareInfo
 from state import WizardState
 
@@ -254,8 +256,12 @@ def run_install(
     output_dir: Path,
     on_output: OutputCallback,
 ) -> None:
-    base_path, credentials_path = write_configs(generated, output_dir)
     log_path = output_dir / "install.log"
+    # archinstall exits 0 without installing anything when it has no network.
+    if not network.is_connected():
+        raise InstallError("No internet connection. Connect to a network and try again.", log_path)
+
+    base_path, credentials_path = write_configs(generated, output_dir)
 
     with log_path.open("a") as log_file:
         log_file.write(f"\n----- archinstall run: {state.hostname} -----\n")
@@ -279,6 +285,8 @@ def run_install(
         credentials_path.unlink(missing_ok=True)
         if returncode != 0:
             raise InstallError(f"archinstall exited with status {returncode}", log_path)
+        if not os.path.ismount(MOUNTPOINT):
+            raise InstallError("archinstall exited without installing anything; check /var/log/archinstall/install.log", log_path)
 
         on_output("archinstall finished. Running post-install configuration...")
 
