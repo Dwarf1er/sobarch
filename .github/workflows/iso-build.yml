@@ -1,7 +1,7 @@
 name: ISO build
 
-# Monthly prebuilt ISO (Arch releng profile plus the installer and a
-# package cache), published as a GitHub Release.
+# Monthly prebuilt ISO (Arch releng profile plus the installer),
+# published as a GitHub Release.
 #
 # Requires the SOBARCH_ISO_GPG_PRIVATE_KEY secret: an ASCII-armored,
 # passphrase-less GPG private key.
@@ -27,11 +27,8 @@ jobs:
       - name: Install build dependencies
         run: pacman -Sy --needed --noconfirm archiso git rsync python gnupg github-cli
 
-      - name: Build package cache
-        run: scripts/iso-build/build-package-cache.sh "$GITHUB_WORKSPACE" "$RUNNER_TEMP/cache"
-
       - name: Build ISO
-        run: scripts/iso-build/build-iso.sh "$GITHUB_WORKSPACE" "$RUNNER_TEMP/cache" "$RUNNER_TEMP/iso"
+        run: scripts/iso-build/build-iso.sh "$GITHUB_WORKSPACE" "$RUNNER_TEMP/iso"
 
       - name: Sign ISO
         # Detached binary signature, verified against the committed

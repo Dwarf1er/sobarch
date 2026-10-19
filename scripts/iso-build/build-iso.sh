@@ -1,22 +1,21 @@
 #!/usr/bin/env bash
 # Builds the sobarch ISO from a fresh copy of Arch's releng profile plus
-# the installer and the package cache from build-package-cache.sh.
+# the installer.
 #
-# Usage: build-iso.sh REPO_DIR CACHE_DIR OUTPUT_DIR
+# Usage: build-iso.sh REPO_DIR OUTPUT_DIR
 #
 # Needs root in a privileged container (loop devices for mkarchiso).
 
 set -euo pipefail
 shopt -s inherit_errexit
 
-if (($# != 3)); then
-    echo "usage: $0 REPO_DIR CACHE_DIR OUTPUT_DIR" >&2
+if (($# != 2)); then
+    echo "usage: $0 REPO_DIR OUTPUT_DIR" >&2
     exit 1
 fi
 
 REPO_DIR="$(cd "$1" && pwd)"
-CACHE_DIR="$(cd "$2" && pwd)"
-OUTPUT_DIR="$3"
+OUTPUT_DIR="$2"
 mkdir -p "$OUTPUT_DIR"
 OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 
@@ -74,10 +73,6 @@ rsync -a \
     --exclude='__pycache__' \
     --exclude='*.pyc' \
     "$REPO_DIR/" "$PROFILE/airootfs/root/sobarch/"
-
-echo "build-iso: layering package cache into airootfs"
-mkdir -p "$PROFILE/airootfs/opt/sobarch-cache"
-cp -a "$CACHE_DIR"/. "$PROFILE/airootfs/opt/sobarch-cache/"
 
 echo "build-iso: adding python/python-textual to the profile package list"
 {

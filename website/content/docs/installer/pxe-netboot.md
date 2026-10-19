@@ -57,9 +57,8 @@ Arch's own signature chain over it.
 Sobarch's own ISO's `.automated_script.sh` checks for the same
 `script=` kernel parameter the official ISO's does (see below), only
 falling back to auto-launching the interactive TUI when it's absent,
-so it works for unattended PXE installs too, with the added benefit of
-its pre-cached package set. Prefer it unless you have a specific reason
-to want an unmodified official image.
+so it works for unattended PXE installs too. Prefer it unless you have
+a specific reason to want an unmodified official image.
 
 ## Chaining into an unattended install
 

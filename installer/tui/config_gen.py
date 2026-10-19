@@ -159,19 +159,6 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
         # archinstall re-fetches each region's URLs itself, so empty lists suffice.
         base["mirror_config"]["mirror_regions"] = {region: [] for region in state.mirror_regions}
 
-    # Local repo baked into the prebuilt ISO only. Unsigned is fine since it never
-    # leaves the image. archinstall also uses it for pacstrap.
-    sobarch_cache_db = Path("/opt/sobarch-cache/sobarch-cache.db.tar.gz")
-    if sobarch_cache_db.exists():
-        base["mirror_config"]["custom_repositories"] = [
-            {
-                "name": "sobarch-cache",
-                "url": "file:///opt/sobarch-cache",
-                "sign_check": "Never",
-                "sign_option": "TrustAll",
-            }
-        ]
-
     base["app_config"]["bluetooth_config"]["enabled"] = hardware.bluetooth_detected
 
     extra_packages = {pkg for pkg in (hardware.cpu_microcode_pkg, *hardware.gpu_packages, *hardware.laptop_packages) if pkg}

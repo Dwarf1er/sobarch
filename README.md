@@ -87,9 +87,8 @@ page](https://github.com/Dwarf1er/sobarch/releases/latest), write it to a
 USB drive, and boot it. The installer launches on its own on the first
 console, so there is nothing to type. Walk through disk selection,
 account/locale setup, and optional software profiles, and it hands off
-to `archinstall`. The ISO has the base system's packages pre-cached, so
-a real install resolves them from local disk instead of downloading
-them.
+to `archinstall`. The install downloads its packages, so it needs a
+network connection.
 
 ### From a stock Arch ISO
 
@@ -100,8 +99,7 @@ then run:
     curl -fsSL http://installsobarch.antoinepoulin.com | bash
 
 This fetches this repository and launches the same TUI installer, always
-at its newest version. There is no package cache on this route, so the
-base packages download during the install.
+at its newest version.
 
 **Note:** by default, the installer partitions and wipes the entire
 target disk. It can also install into existing free space instead, for

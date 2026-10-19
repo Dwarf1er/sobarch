@@ -2,11 +2,10 @@
 # Builds and installs packages vendored in packages/aur/ and
 # packages/custom/. Never builds anything not vendored there.
 #
-#   aur-sync.sh [--local DIR] [--cache DIR] PKG...      install the named packages
-#   aur-sync.sh [--local DIR] [--cache DIR] [--notify]  update installed ones only
+#   aur-sync.sh [--local DIR] PKG...      install the named packages
+#   aur-sync.sh [--local DIR] [--notify]  update installed ones only
 #
 # --local DIR   use an existing checkout instead of fetching the repo
-# --cache DIR   install prebuilt *.pkg.tar.* files when they satisfy the pin
 # --notify      send a desktop notification on failure
 
 set -euo pipefail
@@ -38,12 +37,10 @@ flock 9
 echo "aur-sync: run started $(date -Iseconds)"
 
 repo_dir=""
-cache_dir=""
 notify_on_failure=false
-while [[ "${1:-}" == "--local" || "${1:-}" == "--cache" || "${1:-}" == "--notify" ]]; do
+while [[ "${1:-}" == "--local" || "${1:-}" == "--notify" ]]; do
     case "$1" in
         --local) repo_dir="$2"; shift 2 ;;
-        --cache) cache_dir="$2"; shift 2 ;;
         --notify) notify_on_failure=true; shift ;;
     esac
 done
@@ -85,11 +82,6 @@ if [[ -z "$repo_dir" ]]; then
     cleanup_paths+=("$repo_dir")
 elif [[ ! -d "$repo_dir" ]]; then
     echo "aur-sync: --local $repo_dir does not exist" >&2
-    exit 1
-fi
-
-if [[ -n "$cache_dir" && ! -d "$cache_dir" ]]; then
-    echo "aur-sync: --cache $cache_dir does not exist" >&2
     exit 1
 fi
 
@@ -160,21 +152,6 @@ installed_version() {
     pacman -Q "$1" 2>/dev/null | awk '{print $2}' || true
 }
 
-# Prints a cached package file for $1 whose version is at least $2.
-cached_pkgfile() {
-    local name="$1" pinned="$2" f qname qver
-    [[ -n "$cache_dir" ]] || return 1
-    for f in "$cache_dir/$name"-*.pkg.tar.*; do
-        [[ -f "$f" ]] || continue
-        read -r qname qver < <(pacman -Qp "$f" 2>/dev/null)
-        [[ "$qname" == "$name" ]] || continue
-        (( $(vercmp "$qver" "$pinned") >= 0 )) || continue
-        printf '%s' "$f"
-        return 0
-    done
-    return 1
-}
-
 # depends/makedepends from .SRCINFO without version constraints. Names
 # provided by the same pkgbase's split packages are dropped, since they
 # are installed together by one pacman -U.
@@ -216,7 +193,7 @@ ensure_makepkg_prereqs() {
 failures=()
 first_install=true
 
-# Created on the first real build only, so all-cached runs skip the
+# Created on the first build only, so runs with nothing to build skip the
 # build user, base-devel and repo copy. The whole repo is copied because
 # sobarch-skel reaches skel/ through a relative path, and it's per-run so
 # concurrent runs never share a build tree.
@@ -235,56 +212,48 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
         continue
     fi
 
-    build_dir=""
-    if cached="$(cached_pkgfile "$name" "$pinned")"; then
-        # A cache hit needs no build deps or PGP keys; pacman -U resolves
-        # runtime deps itself.
-        echo "aur-sync: $name found in cache, skipping build (${installed:-not installed} -> $pinned)..."
-        pkgfiles=("$cached")
-    else
-        echo "aur-sync: building $name (${installed:-not installed} -> $pinned)..."
+    echo "aur-sync: building $name (${installed:-not installed} -> $pinned)..."
 
-        # Deps are installed as root rather than via `makepkg --syncdeps`,
-        # which would need the build user to have pacman rights.
-        # `pacman -T` filters out deps already satisfied by an installed
-        # package's provides, which `pacman -S` can't resolve.
-        mapfile -t deps < <(build_deps "$src")
-        missing_deps=()
-        if ((${#deps[@]})); then
-            mapfile -t missing_deps < <(pacman -T "${deps[@]}")
-        fi
-        if ((${#missing_deps[@]})) && ! timed "$name build deps" pacman_locked -S --needed --noconfirm "${missing_deps[@]}"; then
-            echo "aur-sync: $name failed to install dependencies (${missing_deps[*]})" >&2
-            failures+=("$name (dependency install failed)")
-            continue
-        fi
-
-        if ! import_pgp_keys "$src"; then
-            echo "aur-sync: $name failed to import required PGP key(s)" >&2
-            failures+=("$name (PGP key import failed)")
-            continue
-        fi
-
-        if [[ -z "$build_root_repo" ]]; then
-            timed "create build user" ensure_build_user
-            timed "install base-devel" ensure_makepkg_prereqs
-            BUILD_ROOT="$(mktemp -d /var/tmp/sobarch-aur-sync-build.XXXXXX)"
-            cleanup_paths+=("$BUILD_ROOT")
-            build_root_repo="$BUILD_ROOT/repo"
-            timed "copy repo tree" cp -a "$repo_dir" "$build_root_repo"
-            timed "chown repo tree" chown -R "$BUILD_USER:$BUILD_USER" "$BUILD_ROOT"
-        fi
-
-        build_dir="$build_root_repo/${src#"$repo_dir"/}"
-
-        if ! timed "$name makepkg" runuser -u "$BUILD_USER" -- bash -c "cd '$build_dir' && makepkg --noconfirm --needed --clean"; then
-            echo "aur-sync: $name failed to build" >&2
-            failures+=("$name (makepkg failed)")
-            continue
-        fi
-
-        pkgfiles=("$build_dir"/*.pkg.tar.*)
+    # Deps are installed as root rather than via `makepkg --syncdeps`,
+    # which would need the build user to have pacman rights.
+    # `pacman -T` filters out deps already satisfied by an installed
+    # package's provides, which `pacman -S` can't resolve.
+    mapfile -t deps < <(build_deps "$src")
+    missing_deps=()
+    if ((${#deps[@]})); then
+        mapfile -t missing_deps < <(pacman -T "${deps[@]}")
     fi
+    if ((${#missing_deps[@]})) && ! timed "$name build deps" pacman_locked -S --needed --noconfirm "${missing_deps[@]}"; then
+        echo "aur-sync: $name failed to install dependencies (${missing_deps[*]})" >&2
+        failures+=("$name (dependency install failed)")
+        continue
+    fi
+
+    if ! import_pgp_keys "$src"; then
+        echo "aur-sync: $name failed to import required PGP key(s)" >&2
+        failures+=("$name (PGP key import failed)")
+        continue
+    fi
+
+    if [[ -z "$build_root_repo" ]]; then
+        timed "create build user" ensure_build_user
+        timed "install base-devel" ensure_makepkg_prereqs
+        BUILD_ROOT="$(mktemp -d /var/tmp/sobarch-aur-sync-build.XXXXXX)"
+        cleanup_paths+=("$BUILD_ROOT")
+        build_root_repo="$BUILD_ROOT/repo"
+        timed "copy repo tree" cp -a "$repo_dir" "$build_root_repo"
+        timed "chown repo tree" chown -R "$BUILD_USER:$BUILD_USER" "$BUILD_ROOT"
+    fi
+
+    build_dir="$build_root_repo/${src#"$repo_dir"/}"
+
+    if ! timed "$name makepkg" runuser -u "$BUILD_USER" -- bash -c "cd '$build_dir' && makepkg --noconfirm --needed --clean"; then
+        echo "aur-sync: $name failed to build" >&2
+        failures+=("$name (makepkg failed)")
+        continue
+    fi
+
+    pkgfiles=("$build_dir"/*.pkg.tar.*)
 
     # The installer deploys this script unowned before sobarch-scripts
     # exists, so pacman must be allowed to overwrite that one file.
@@ -303,7 +272,7 @@ for name in $(printf '%s\n' "${targets[@]}" | sort); do
         SNAP_PAC_SKIP=1 timed "$name pacman -U" pacman_locked -U --noconfirm --ask=4 "${overwrite_args[@]}" "${pkgfiles[@]}" || install_result=$?
     fi
 
-    [[ -n "$build_dir" ]] && rm -rf "$build_dir"
+    rm -rf "$build_dir"
 
     if ((install_result != 0)); then
         echo "aur-sync: $name failed to install" >&2

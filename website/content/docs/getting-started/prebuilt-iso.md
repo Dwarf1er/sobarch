@@ -1,11 +1,11 @@
 +++
 title = "Prebuilt ISO"
-description = "The monthly sobarch ISO, the primary way to install: boots straight into the installer, with the base packages cached."
+description = "The monthly sobarch ISO, the primary way to install: boots straight into the installer."
 weight = 15
 template = "docs/page.html"
 
 [extra]
-lead = "The primary way to install: an ISO that boots directly into the installer and resolves the base system from local disk instead of the network."
+lead = "The primary way to install: an ISO that boots directly into the installer."
 toc = true
 +++
 
@@ -25,16 +25,9 @@ image was built.
 
 - **It boots straight into the installer.** The first console
   (tty1) auto-launches the TUI, so there is no command to type.
-- **The base system's packages are cached on it.** The official packages
-  and the vendored AUR packages the base install needs are in a local
-  repository on the image, so the install resolves them from disk
-  instead of downloading them. Packages the installer would otherwise
-  build from source are prebuilt too; the installer reuses a cached
-  build only when its version matches the pinned one, and builds
-  normally otherwise.
-- **Optional software profiles are not cached.** They install over the
-  network at first boot exactly as they do from the stock Arch ISO, so a
-  network connection is still needed.
+- **It needs a network connection.** Packages, including the vendored
+  AUR ones, are downloaded (and built, where needed) during the install,
+  exactly as they are from the stock Arch ISO.
 - **It works for unattended and PXE installs.** If a `script=` kernel
   parameter is present, the ISO runs that script instead of launching the
   TUI, the same hook the stock Arch ISO provides. See [PXE

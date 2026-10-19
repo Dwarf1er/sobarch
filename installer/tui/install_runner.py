@@ -1,6 +1,5 @@
 """Runs archinstall, then the post-install arch-chroot steps against the mounted target."""
 
-import re
 import shutil
 import subprocess
 import time
@@ -38,11 +37,6 @@ SOBARCH_SKEL_BUILD_DIR_IN_TARGET = Path("/var/tmp/sobarch-skel-build")
 
 AUR_SYNC_DIR = Path(__file__).resolve().parent.parent.parent / "scripts" / "aur-sync"
 AUR_SYNC_SCRIPT_PATH_IN_TARGET = Path("/usr/local/lib/sobarch/aur-sync.sh")
-
-# Prebuilt package cache, only on the prebuilt ISO. Copied into the target since
-# the chroot can't see the live root.
-SOBARCH_CACHE_LIVE_PATH = Path("/opt/sobarch-cache")
-SOBARCH_CACHE_DIR_IN_TARGET = Path("/var/tmp/sobarch-cache")
 
 # AUR packages needed before first boot. update-system.sh reads the same file.
 def _read_base_aur_packages() -> list[str]:
@@ -140,23 +134,6 @@ def _run_logged(cmd: list[str], log_file, on_output: OutputCallback, **kwargs) -
     return process.wait()
 
 
-def _strip_live_only_sobarch_cache_repo() -> None:
-    """Remove the live-only [sobarch-cache] repo from the target's pacman.conf.
-
-    archinstall writes the custom repo into the target too, where its path does
-    not exist and breaks every pacman sync. Must run before any chroot pacman use.
-    """
-    pacman_conf = MOUNTPOINT / "etc/pacman.conf"
-    text = pacman_conf.read_text()
-    stripped = re.sub(
-        r"\n*\[sobarch-cache\]\nSigLevel = Never TrustAll\nServer = file:///opt/sobarch-cache\n",
-        "\n",
-        text,
-    )
-    if stripped != text:
-        pacman_conf.write_text(stripped)
-
-
 def _deploy_aur_sync(log_file, on_output: OutputCallback) -> int:
     """Copy aur-sync.sh in raw so it can build sobarch-scripts, which then owns it."""
     script_path = MOUNTPOINT / AUR_SYNC_SCRIPT_PATH_IN_TARGET.relative_to("/")
@@ -201,19 +178,11 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
     for pkg in BASE_AUR_PACKAGES:
         _stage_vendored_package(pkg, build_dir)
 
-    cache_dir = MOUNTPOINT / SOBARCH_CACHE_DIR_IN_TARGET.relative_to("/")
-    cache_args: list[str] = []
-    if SOBARCH_CACHE_LIVE_PATH.is_dir():
-        shutil.rmtree(cache_dir, ignore_errors=True)
-        shutil.copytree(SOBARCH_CACHE_LIVE_PATH, cache_dir)
-        cache_args = ["--cache", str(SOBARCH_CACHE_DIR_IN_TARGET)]
-
     returncode = _run_logged(
         [
             "arch-chroot", str(MOUNTPOINT),
             str(AUR_SYNC_SCRIPT_PATH_IN_TARGET),
             "--local", str(SOBARCH_SKEL_BUILD_DIR_IN_TARGET),
-            *cache_args,
             "sobarch-skel", "sobarch-scripts", "sobarch-limine-snapshots", *BASE_AUR_PACKAGES,
         ],
         log_file,
@@ -221,8 +190,6 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
     )
 
     shutil.rmtree(build_dir, ignore_errors=True)
-    if cache_args:
-        shutil.rmtree(cache_dir, ignore_errors=True)
     return returncode
 
 
@@ -291,8 +258,6 @@ def run_install(
             raise InstallError(f"archinstall exited with status {returncode}", log_path)
 
         on_output("archinstall finished. Running post-install configuration...")
-
-        _strip_live_only_sobarch_cache_repo()
 
         timer.start("deploy aur-sync")
         on_output("Deploying the AUR sync mechanism...")
