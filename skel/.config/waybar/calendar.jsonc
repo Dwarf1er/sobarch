@@ -1,0 +1,15 @@
+// Base16 OneDark
+// Author: Lalit Magant (http://github.com/tilal6991)
+{
+  "clock": {
+    "calendar": {
+      "format": {
+        "months": "<span color='#61afef'><b>{}</b></span>",
+        "days": "<span color='#abb2bf'><b>{}</b></span>",
+        "weeks": "<span color='#56b6c2'><b>W{}</b></span>",
+        "weekdays": "<span color='#56b6c2'><b>{}</b></span>",
+        "today": "<span background='#61afef' color='#282c34'><b> {} </b></span>"
+      }
+    }
+  }
+}

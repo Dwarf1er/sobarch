@@ -6,6 +6,11 @@ source "$HOME/.config/hypr/scripts/menu-lib.sh"
 MENU_TITLE="sobarch: power profile"
 MENU_ICON="battery-2.svg"
 
+if ! command -v tlpctl >/dev/null; then
+    menu_notify "Power profiles need TLP. Install tlp, tlp-rdw and tlp-pd, then enable tlp.service and tlp-pd.service."
+    exit 1
+fi
+
 selected=""
 while :; do
     current=$(tlpctl get 2>/dev/null)

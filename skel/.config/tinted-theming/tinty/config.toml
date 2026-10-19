@@ -28,8 +28,8 @@ supported-systems = ["base16", "base24", "tinted8"]
 path = "~/.config/sobarch/tinty-templates/waybar-jsonc"
 name = "sobarch-waybar-jsonc"
 themes-dir = "colors"
-write-to-file = ["~/.config/waybar/config.jsonc"]
-# SIGUSR2 doesn't reload config.jsonc, so waybar must be restarted. Kept on
+write-to-file = ["~/.config/waybar/calendar.jsonc"]
+# SIGUSR2 doesn't reload config.jsonc or its includes, so waybar must be restarted. Kept on
 # the item after waybar-css so both files are written first.
 hook = "pkill -x waybar; i=0; while pgrep -x waybar >/dev/null 2>&1 && [ $i -lt 20 ]; do sleep 0.05; i=$((i+1)); done; waybar &"
 supported-systems = ["base16", "base24", "tinted8"]

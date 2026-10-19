@@ -1,12 +1,13 @@
 #!/bin/bash
-# The icon comes from style.css, keyed off "class".
+# The icon comes from style.css, keyed off "class". Rounds like system-menu.sh.
 
-vol_raw=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null)
-volpct=$(echo "$vol_raw" | awk '{printf "%d", $2*100}')
-if echo "$vol_raw" | grep -q MUTED; then
-    class="muted"
+vol_raw=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null) || {
+    printf '{"text": ""}\n'
+    exit 0
+}
+volpct=$(awk '{printf "%d", $2 * 100 + 0.5}' <<<"$vol_raw")
+if [[ "$vol_raw" == *MUTED* ]]; then
+    printf '{"text": "%s%%", "tooltip": "Volume: muted", "class": "muted"}\n' "$volpct"
 else
-    class="unmuted"
+    printf '{"text": "%s%%", "tooltip": "Volume: %s%%", "class": "unmuted"}\n' "$volpct" "$volpct"
 fi
-
-printf '{"text": "%s%%", "tooltip": "Volume: %s%%", "class": "%s"}\n' "$volpct" "$volpct" "$class"

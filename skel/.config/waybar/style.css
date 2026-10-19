@@ -171,6 +171,8 @@ tooltip {
 }
 
 #custom-system.muted {
+    color: alpha(@base05, 0.5);
+    background-color: alpha(@base05, 0.06);
     background-image: url("../sobarch/icons/volume-off.svg");
 }
 
@@ -222,10 +224,21 @@ tooltip {
     background-image: url("../sobarch/icons/bluetooth-connected.svg");
 }
 
+#bluetooth.off,
 #bluetooth.disabled {
     color: alpha(@base05, 0.5);
     background-color: alpha(@base05, 0.06);
     background-image: url("../sobarch/icons/bluetooth-off.svg");
+}
+
+/* Clickable chips; last so it wins over the state colors above. */
+#battery:hover,
+#network:hover,
+#bluetooth:hover,
+#custom-system:hover,
+#custom-dnd.active:hover,
+#custom-fcitx5:hover {
+    background-color: alpha(currentColor, 0.22);
 }
 
 /* Animations */
