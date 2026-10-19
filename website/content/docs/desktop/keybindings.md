@@ -83,7 +83,10 @@ Input method switching (`Super+Space`) is covered in
 `Super+/` opens a read-only fuzzel list built by grepping the
 Hyprland config for `-- kb: <combo> | <description>` comments, one per
 real bind, so the list can't list a bind that doesn't exist or omit
-one that does. It has a short manual tail for fuzzel's own vim-style
-navigation keys (`Ctrl+J`/`Ctrl+K` to move between entries,
-`Ctrl+H`/`Ctrl+L` to move the cursor, `Ctrl+D`/`Ctrl+U` to page), since
-those come from fuzzel's own config and have no Hyprland bind to tag.
+one that does. Each row shows the action with its keys on the right,
+and both are searchable: typing `shift` or `screenshot` narrows the
+list either way. It has a short manual tail for the menus' own keys:
+fuzzel's vim-style navigation (`Ctrl+J`/`Ctrl+K` to move between
+entries, `Ctrl+H`/`Ctrl+L` to move the cursor, `Ctrl+D`/`Ctrl+U` to
+page) and `Escape` to go back one level, since those come from fuzzel
+and the menus themselves and have no Hyprland bind to tag.

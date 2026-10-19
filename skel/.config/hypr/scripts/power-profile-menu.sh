@@ -1,39 +1,23 @@
 #!/bin/bash
-
-ICONS="$HOME/.config/sobarch/icons"
-
-# battery-2: same icon system-menu.sh's own "Power Profile" entry uses.
-TITLE="sobarch: power profile"
-
 # tlpctl talks to tlp-pd, which exposes the same profile names
-# power-profiles-daemon does (performance, balanced, power-saver).
-current=$(tlpctl get 2>/dev/null)
+# power-profiles-daemon does (performance, balanced, power-saver). Stays
+# open after a switch so the "active" marker visibly moves, instead of a
+# toast confirming what the list already shows.
 
-# The active profile gets a trailing marker; it is stripped again below
-# before the choice reaches tlpctl.
-label() {
-    if [ "$current" = "$2" ]; then
-        printf '%s  (active)' "$1"
-    else
-        printf '%s' "$1"
-    fi
-}
+source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
-choice=$(printf '%s\0icon\x1f%s\n' \
-    "$(label Performance performance)" "$ICONS/cpu.svg" \
-    "$(label Balanced balanced)" "$ICONS/battery-2.svg" \
-    "$(label 'Power Saver' power-saver)" "$ICONS/battery-1.svg" \
-    | fuzzel --dmenu --prompt "profile: " --lines=3 --line-height=40 --minimal-lines)
+MENU_TITLE="sobarch: power profile"
+MENU_ICON="battery-2.svg"
 
-case "${choice%  (active)}" in
-    "Performance") profile=performance ;;
-    "Balanced") profile=balanced ;;
-    "Power Saver") profile=power-saver ;;
-    *) exit 0 ;;
-esac
-
-if err=$(tlpctl set "$profile" 2>&1); then
-    notify-send -i "$ICONS/battery-2.svg" "$TITLE" "Switched to $profile."
-else
-    notify-send -u critical -i "$ICONS/battery-2.svg" "$TITLE" "$err"
-fi
+selected=""
+while :; do
+    current=$(tlpctl get 2>/dev/null)
+    [ -n "$selected" ] || selected="$current"
+    menu_reset
+    menu_add performance "Performance" cpu.svg "$([ "$current" = performance ] && echo active)"
+    menu_add balanced "Balanced" battery-2.svg "$([ "$current" = balanced ] && echo active)"
+    menu_add power-saver "Power Saver" battery-1.svg "$([ "$current" = power-saver ] && echo active)"
+    menu_show "power profile" "" "$selected" || break
+    selected="$MENU_ID"
+    menu_run tlpctl set "$MENU_ID"
+done

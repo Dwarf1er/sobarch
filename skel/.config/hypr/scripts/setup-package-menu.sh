@@ -15,80 +15,70 @@
 # profile-bundle menu used (see git history for its format and
 # regeneration note).
 #
-# Each row's leading glyph is a real icon, not a nerd-font character:
-# fuzzel's dmenu mode speaks rofi's extended dmenu protocol (\0icon\x1f
-# after the display text, comma-separated fallback list, tried in order
-# until one resolves), which is enough for a real app icon (falling back
-# to a plain generic one for anything the configured icon theme doesn't
-# ship a match for), but not for indicating install state: fuzzel's
-# dmenu mode has no per-row styling at all (only global colors, no
-# dimming/markup), and an icon theme like Papirus ships icons for most
-# popular apps as static theme files regardless of whether that
-# package is actually installed, so icon presence/absence never
-# tracked install state either (confirmed directly: every row rendered
-# identically regardless of install status). Already-installed
-# packages are filtered out of the list entirely instead, the one
-# distinction fuzzel's flat dmenu list can actually make.
-set -euo pipefail
+# Each row carries the profile it comes from as its state, so the list
+# reads as a small catalog ("steam ... Gaming"); installed packages are
+# listed last and marked installed instead of being hidden, now that
+# rows have a state column to say so (fuzzel itself has no per-row
+# styling to dim them with). Each row's icon is the app's own icon-theme
+# entry, falling back to a generic package icon.
 
-source "$HOME/.config/hypr/scripts/notify-progress.sh"
+source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
 DATA_FILE="/usr/share/sobarch/profiles.txt"
-ICONS="$HOME/.config/sobarch/icons"
-
-# download: same icon setup-menu.sh's own "Install" entry uses.
-TITLE="sobarch: install package"
+MENU_TITLE="sobarch: install package"
+MENU_ICON="download.svg"
+MENU_PLACEHOLDER="Search apps"
 
 if [[ ! -r "$DATA_FILE" ]]; then
-    notify-send -u critical -i "$ICONS/download.svg" "$TITLE" "$DATA_FILE not found; is sobarch-skel installed?"
+    menu_notify "$DATA_FILE not found; is sobarch-skel installed?" critical
     exit 1
 fi
 
-declare -A pkg_is_aur
-while IFS='|' read -r _ _ pkgs; do
+# First profile listing a package names it; ":aur" marks a vendored AUR
+# one, built through aur-sync rather than installed by pacman.
+declare -A pkg_is_aur pkg_profile
+while IFS='|' read -r _ profile pkgs; do
     [[ -n "$pkgs" ]] || continue
-    IFS=',' read -ra entries <<< "$pkgs"
+    IFS=',' read -ra entries <<<"$pkgs"
     for entry in "${entries[@]}"; do
-        if [[ "$entry" == *:aur ]]; then
-            pkg_is_aur["${entry%:aur}"]=1
-        else
-            pkg_is_aur["$entry"]="${pkg_is_aur[$entry]:-0}"
+        name="${entry%:aur}"
+        [[ "$entry" == *:aur ]] && pkg_is_aur["$name"]=1 || pkg_is_aur["$name"]="${pkg_is_aur[$name]:-0}"
+        pkg_profile["$name"]="${pkg_profile[$name]:-$profile}"
+    done
+done <"$DATA_FILE"
+
+mapfile -t names < <(printf '%s\n' "${!pkg_is_aur[@]}" | sort)
+# One pacman call for the whole set, not one per package.
+mapfile -t installed < <(pacman -Qq "${names[@]}" 2>/dev/null)
+declare -A is_installed
+for name in "${installed[@]}"; do is_installed["$name"]=1; done
+
+menu_reset
+for pass in available installed; do
+    for name in "${names[@]}"; do
+        if [[ "$pass" == available && -z "${is_installed[$name]:-}" ]]; then
+            menu_add "$name" "$name" "$name,package-x-generic" \
+                "${pkg_profile[$name]}$([[ "${pkg_is_aur[$name]}" == 1 ]] && echo " · AUR")"
+        elif [[ "$pass" == installed && -n "${is_installed[$name]:-}" ]]; then
+            menu_add "$name" "$name" "$name,package-x-generic" "installed"
         fi
     done
-done < "$DATA_FILE"
+done
 
-mapfile -t names < <(
-    for name in "${!pkg_is_aur[@]}"; do
-        pacman -Q "$name" >/dev/null 2>&1 && continue
-        printf '%s\n' "$name"
-    done | sort
-)
+menu_show install "${#installed[@]} of ${#names[@]} installed" || exit 0
+choice="$MENU_ID"
 
-if ((${#names[@]} == 0)); then
-    notify-send -i "$ICONS/download.svg" "$TITLE" "Every known package is already installed."
+if [[ -n "${is_installed[$choice]:-}" ]]; then
+    menu_notify "$choice is already installed."
     exit 0
 fi
 
-choice=$(
-    for name in "${names[@]}"; do
-        printf '%s\0icon\x1f%s,package-x-generic\n' "$name" "$name"
-    done | fuzzel --dmenu --prompt "install package: "
-)
-[[ -n "${choice:-}" && -n "${pkg_is_aur[$choice]:-}" ]] || exit 0
-
-id=$(notify_progress normal "$TITLE" "Installing $choice..." 0 persist "$ICONS/download.svg")
-
+# Hands off to the install and closes every open menu level: a from-source
+# AUR build can take minutes, tracked by its own progress notification.
 if [[ "${pkg_is_aur[$choice]}" == 1 ]]; then
-    result=0
-    sobarch aur-sync "$choice" || result=$?
+    menu_progress "Installing $choice..." "$choice installed." sobarch aur-sync "$choice" ||
+        menu_notify "Check /var/log/sobarch/aur-sync.log for the full build output." critical
 else
-    result=0
-    pkexec pacman -S --needed --noconfirm "$choice" || result=$?
+    menu_progress "Installing $choice..." "$choice installed." pkexec pacman -S --needed --noconfirm "$choice"
 fi
-
-if ((result != 0)); then
-    notify_progress critical "$TITLE" \
-        "$choice failed to install; check /var/log/sobarch/aur-sync.log and pacman's own log." "$id" "" "$ICONS/download.svg" >/dev/null
-else
-    notify_progress normal "$TITLE" "$choice installed." "$id" "" "$ICONS/download.svg" >/dev/null
-fi
+menu_done

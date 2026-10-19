@@ -5,7 +5,8 @@
 # else behind one of them (`hide-before-typing` in fuzzel.ini is a
 # global on/off, not per-entry), so that folding has to happen here
 # instead: this is a plain `--dmenu` picker, and "Apps" is just a
-# second, separate `fuzzel` invocation, one level in.
+# second, separate `fuzzel` invocation, one level in. Escape in the app
+# launcher comes back here; launching something closes everything.
 #
 # Power is inlined here rather than shelling out to wlogout: wlogout
 # has no CLI mode of its own (`--help` only lists layout/styling
@@ -13,48 +14,52 @@
 # commands. Reusing them directly needs no separate themed GUI tool
 # and no package to vendor for it at all.
 
-source "$HOME/.config/hypr/scripts/confirm.sh"
+source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
-ICONS="$HOME/.config/sobarch/icons"
-TITLE="sobarch: power"
+MENU_TITLE="sobarch: power"
+MENU_ICON="power.svg"
 
-# --lines/--line-height match this list's real entry count (5) instead
-# of fuzzel.ini's global lines=8/line-height=22, which reserved room for
-# three rows nothing was ever going to fill. Window keeps its usual
-# overall size; the real entries stretch to fill it instead of leaving
-# dead space below "Apps". Same fix applied to the Power submenu below
-# (also 5 entries). --minimal-lines added on top since every row now
-# carries an icon: an empty leftover row below a short list renders a
-# duplicated, mispositioned icon copy (see wallpaper-menu.sh's own
-# comment on this same fuzzel bug).
-choice=$(printf '%s\0icon\x1f%s\n' \
-    "Apps" "$ICONS/apps.svg" \
-    "System" "$ICONS/settings.svg" \
-    "Sobarch" "$ICONS/siot.svg" \
-    "Keybinds" "$ICONS/keyboard.svg" \
-    "Power" "$ICONS/power.svg" \
-    | fuzzel --dmenu --prompt "sobarch: " --lines=5 --line-height=27 --minimal-lines)
-
-case "$choice" in
-    "Apps") exec fuzzel ;;
-    "System") exec bash "$HOME/.config/hypr/scripts/system-menu.sh" ;;
-    "Sobarch") exec bash "$HOME/.config/hypr/scripts/setup-menu.sh" ;;
-    "Keybinds") exec bash "$HOME/.config/hypr/scripts/keybinds-menu.sh" ;;
-    "Power")
-        power_choice=$(printf '%s\0icon\x1f%s\n' \
-            "Lock" "$ICONS/lock.svg" \
-            "Logout" "$ICONS/logout.svg" \
-            "Suspend" "$ICONS/moon.svg" \
-            "Reboot" "$ICONS/refresh.svg" \
-            "Shutdown" "$ICONS/power.svg" \
-            | fuzzel --dmenu --prompt "power: " --lines=5 --line-height=27 --minimal-lines)
-
-        case "$power_choice" in
-            "Lock") hyprlock || notify-send -u critical -i "$ICONS/power.svg" "$TITLE" "Failed to lock screen." ;;
-            "Logout") confirm "Log out now?" && { hyprctl dispatch exit || notify-send -u critical -i "$ICONS/power.svg" "$TITLE" "Failed to log out."; } ;;
-            "Suspend") confirm "Suspend now?" && { systemctl suspend || notify-send -u critical -i "$ICONS/power.svg" "$TITLE" "Failed to suspend."; } ;;
-            "Reboot") confirm "Reboot now?" && { systemctl reboot || notify-send -u critical -i "$ICONS/power.svg" "$TITLE" "Failed to reboot."; } ;;
-            "Shutdown") confirm "Shut down now?" && { systemctl poweroff || notify-send -u critical -i "$ICONS/power.svg" "$TITLE" "Failed to shut down."; } ;;
+# Every action here ends the session or leaves the desktop, so each one
+# closes the whole menu stack once it returns (hyprlock, for instance,
+# returns only after unlocking).
+power_menu() {
+    local selected=""
+    while menu_show power "" "$selected"; do
+        selected="$MENU_ID"
+        case "$MENU_ID" in
+            lock) menu_run hyprlock && menu_done ;;
+            logout) confirm "Log out now? Unsaved work in open apps will be lost." "Log Out" &&
+                menu_run hyprctl dispatch exit && menu_done ;;
+            suspend) confirm "Suspend now?" "Suspend" && menu_run systemctl suspend && menu_done ;;
+            reboot) confirm "Restart now?" "Restart" && menu_run systemctl reboot && menu_done ;;
+            shutdown) confirm "Shut down now?" "Shut Down" && menu_run systemctl poweroff && menu_done ;;
         esac
-        ;;
-esac
+    done
+}
+
+selected=""
+while :; do
+    menu_reset
+    menu_add apps "Apps" apps.svg
+    menu_add system "System" settings.svg
+    menu_add sobarch "Sobarch" siot.svg
+    menu_add keybinds "Keybinds" keyboard.svg
+    menu_add power "Power" power.svg
+    menu_show sobarch "" "$selected" || break
+    selected="$MENU_ID"
+    case "$MENU_ID" in
+        apps) fuzzel && menu_done ;;
+        system) menu_sub system-menu.sh ;;
+        sobarch) menu_sub setup-menu.sh ;;
+        keybinds) menu_sub keybinds-menu.sh ;;
+        power)
+            menu_reset
+            menu_add lock "Lock" lock.svg
+            menu_add logout "Log Out" logout.svg
+            menu_add suspend "Suspend" moon.svg
+            menu_add reboot "Restart" refresh.svg
+            menu_add shutdown "Shut Down" power.svg
+            power_menu
+            ;;
+    esac
+done

@@ -31,12 +31,12 @@ action="$(notify-send --wait -u critical -A "default=Make permanent" -i "$ICONS/
     "You booted snapshot $num. Changes you make here are lost on the next normal boot. Click to make it your permanent system.")"
 [[ "$action" == default ]] || exit 0
 
-confirm "Make snapshot $num permanent? (this session's changes are discarded)" || exit 0
+confirm "Make snapshot $num permanent? This session's changes are discarded." "Make Permanent" || exit 0
 
 id=$(notify_progress normal "$TITLE" "Restoring snapshot $num as the new root..." 0 persist)
 if sobarch snapshot-restore --yes "$num"; then
     notify_progress normal "$TITLE" "Snapshot $num restored. Reboot to use it." "$id" >/dev/null
-    confirm "Reboot now?" && systemctl reboot
+    confirm "Restart now to finish?" "Restart" && systemctl reboot
 else
     notify_progress critical "$TITLE" "Restore failed or was cancelled; nothing was changed." "$id" >/dev/null
 fi

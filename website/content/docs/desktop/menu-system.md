@@ -9,7 +9,13 @@ lead = "Bare Super opens one picker rather than a full application list, with re
 toc = true
 +++
 
-Pressing `Super` on its own opens a `fuzzel` picker:
+Pressing `Super` on its own opens a `fuzzel` picker. Every menu works the
+same way: type to filter, `Enter` to pick, and `Escape` to go back one
+level (or close the menu from the top level). Rows show live state on
+the right, such as your volume, network, theme, or which device is
+connected, and menus with actions you'll repeat (volume, theme,
+wallpaper, Bluetooth devices) stay open afterward with the cursor where
+you left it.
 
 <figure class="figure">
   <img class="img-fluid rounded shadow-sm" src="/images/desktop/menu-system-root.webp" width="1366" height="768" alt="The root Super menu, listing System, Sobarch, Keybinds, Power, and Apps">
@@ -18,10 +24,10 @@ Pressing `Super` on its own opens a `fuzzel` picker:
 | Entry | What it opens |
 | --- | --- |
 | **Apps** | The regular application list, one level in. |
-| **System** | Audio, network, and Bluetooth (also reachable directly via `Super+A`, `Super+N`, `Super+Shift+B`, and from waybar's own status module), the power profile switcher (laptops only), plus firmware (`fwupdmgr`: check for updates, install updates, list devices; also reachable via `Super+Shift+F`). |
-| **Sobarch** | **Update System** / **Review Conflicts** (see [Updating Your System](../updating-system/)), **Install** (lists known packages that are not installed yet; see [Software Profiles](../../installer/software-profiles/)), **Themes** (see [Theming](../theming/)), **Wallpaper** (see [Wallpaper](../wallpaper/)), **Default Apps** (pick a file type, then which installed app opens it), **Refresh Rescue ISO** (see [Rescue Media](../../installer/rescue-media/); only listed when rescue media was set up at install), and **Docs**, which opens this site. |
-| **Keybinds** | A read-only cheat sheet of every bind; see [Keybindings](../keybindings/). |
-| **Power** | Lock, Logout, Suspend, Reboot, Shutdown; see the table below. |
+| **System** | Audio, network, Bluetooth, the power profile switcher (laptops only), and firmware, each row showing its current state (volume, connection, Bluetooth status, firmware status). See below. |
+| **Sobarch** | **Update System** / **Review Conflicts** (shows how many conflicts are pending; see [Updating Your System](../updating-system/)), **Install Apps** (every package from the software profiles, with its profile, and installed ones marked; see [Software Profiles](../../installer/software-profiles/)), **Theme** (see [Theming](../theming/)), **Wallpaper** (see [Wallpaper](../wallpaper/)), **Default Apps** (pick a file type, then which installed app opens it), **Refresh Rescue ISO** (see [Rescue Media](../../installer/rescue-media/); only listed when rescue media was set up at install), and **Documentation**, which opens this site. |
+| **Keybinds** | A searchable, read-only cheat sheet of every bind; see [Keybindings](../keybindings/). |
+| **Power** | Lock, Log Out, Suspend, Restart, Shut Down; see the table below. |
 
 Most of the Sobarch submenu's actions also exist as a `sobarch`
 command for terminals and SSH; see [The sobarch Command](../sobarch-command/).
@@ -32,28 +38,30 @@ command for terminals and SSH; see [The sobarch Command](../sobarch-command/).
 
 ## System submenus
 
-Each of these also has its own shortcut. Audio, Network, and Bluetooth
-reopen after each action so you can chain several; Escape closes them.
+Each of these also has its own shortcut, and opening one from its
+shortcut means `Escape` closes it rather than going back to System.
 
 | Menu | Entries |
 | --- | --- |
-| **Audio** (`Super+A`) | Toggle output mute, toggle mic mute, volume up/down 5%, switch output device, switch input device, per-app volume (mute, unmute, up, down). |
-| **Network** (`Super+N`) | Wi-Fi networks (scan, pick, enter a password if the network is new), toggle Wi-Fi, disconnect, forget a saved network, copy your IP address, and share the current Wi-Fi as a QR code. |
-| **Bluetooth** (`Super+Shift+B`) | Toggle power, scan and connect (pairs and trusts the device), paired devices (connect, disconnect, remove), disconnect. |
+| **Audio** (`Super+A`) | A volume meter at the top; volume up/down 5%, mute, mute microphone, the output and input device (pick to switch), and, while something is playing, per-app volume with each app's own volume and mute. |
+| **Network** (`Super+N`) | Your connection at the top. Wi-Fi networks (scan, with signal strength, then pick; you're asked for a password only for a new network, and a wrong one isn't saved), turn Wi-Fi on or off, disconnect, saved networks (`Enter` connects or disconnects, `Alt+1` forgets), copy your IP address (shown in the row), and share the current Wi-Fi as a QR code. Wi-Fi entries only appear on machines with Wi-Fi. |
+| **Bluetooth** (`Super+Shift+B`) | Power on or off, scan for new devices (pick one to pair, trust, and connect), and every paired device listed directly with its state and battery level: `Enter` connects or disconnects it, `Alt+1` removes it. Devices that need a passkey typed or confirmed (some keyboards and phones) can't pair here yet; use `bluetoothctl` in a terminal for those. |
 | **Power Profile** (laptops only; also a click on the battery module in waybar) | Switch between Performance, Balanced, and Power Saver. The active profile is marked. It is applied by TLP through `tlpctl`. |
-| **Firmware** (`Super+Shift+F`) | Check for updates, install updates, list devices, all through `fwupdmgr`. |
+| **Firmware** (`Super+Shift+F`) | Update status at the top, check for updates, install updates (when there are any), and every device with its firmware version; pick a device for its details. All through `fwupdmgr`. |
 
 ## Power
 
-Logout, Suspend, Reboot, and Shutdown ask for confirmation first; Lock does not.
+Log Out, Suspend, Restart, and Shut Down ask for confirmation first;
+Lock does not. Confirmations list **Cancel** first, so a stray `Enter`
+never confirms anything.
 
 | Action | Command |
 | --- | --- |
 | Lock | `hyprlock` |
-| Logout | `hyprctl dispatch exit` |
+| Log Out | `hyprctl dispatch exit` |
 | Suspend | `systemctl suspend` |
-| Reboot | `systemctl reboot` |
-| Shutdown | `systemctl poweroff` |
+| Restart | `systemctl reboot` |
+| Shut Down | `systemctl poweroff` |
 
 Each row's icon is a real icon, not a font glyph: fuzzel's dmenu mode
 resolves icon names/paths the same way Rofi does, falling back to a

@@ -1,121 +1,144 @@
 #!/bin/bash
+# Default applications: file types by name ("PDF documents", "Web
+# links") with the app each one currently opens in, then every app able
+# to handle the chosen type. Stays open after a change so the new default
+# is visible in place.
 
-ICONS="$HOME/.config/sobarch/icons"
+source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
-# apps: same icon setup-menu.sh's own "Default Apps" entry uses.
-TITLE="sobarch: default app"
+MENU_TITLE="sobarch: default app"
+MENU_ICON="apps.svg"
+MENU_PLACEHOLDER="Search file types"
 
-app_dirs=(/usr/share/applications "$HOME/.local/share/applications")
+app_dirs=("$HOME/.local/share/applications" /usr/share/applications)
 
-# Looping per-dir rather than a single "${app_dirs[@]}"/*.desktop glob:
-# a glob suffix on an array expansion only attaches to the last element,
-# silently dropping every earlier directory (passed to grep as a bare
-# path, "Is a directory", swallowed by 2>/dev/null) and leaving the menu
-# empty whenever the last dir doesn't happen to cover it.
-all_mimetypes=$(for dir in "${app_dirs[@]}"; do
-    grep -h '^MimeType=' "$dir"/*.desktop 2>/dev/null
-done | cut -d= -f2- | tr ';' '\n' | awk 'NF' | sort -u)
+# One pass over every desktop file: ID<\037>NAME<\037>;MIMETYPES;<\037>ICON per
+# visible app (NoDisplay ones left out). ID is the file's basename, the
+# form `xdg-mime default` writes verbatim into mimeapps.list. User
+# entries come first and win over a system one with the same ID, the
+# same precedence the XDG lookup itself uses. Looping per-dir rather
+# than a single "${app_dirs[@]}"/*.desktop glob: a glob suffix on an
+# array expansion only attaches to the last element.
+desktop_index=$(for dir in "${app_dirs[@]}"; do
+    [ -d "$dir" ] && printf '%s\n' "$dir"/*.desktop
+done | xargs -r -d '\n' awk '
+    FNR == 1 {
+        if (id != "" && !hidden && name != "" && !seen[id]++) print id "\037" name "\037;" mimes ";\037" icon
+        id = FILENAME; sub(/.*\//, "", id); name = mimes = icon = ""; hidden = 0; in_entry = 0
+    }
+    /^\[/ { in_entry = ($0 == "[Desktop Entry]") }
+    in_entry && /^NoDisplay=true/ { hidden = 1 }
+    in_entry && /^Name=/ && name == "" { name = substr($0, 6) }
+    in_entry && /^MimeType=/ { mimes = substr($0, 10); sub(/;$/, "", mimes) }
+    in_entry && /^Icon=/ && icon == "" { icon = substr($0, 6) }
+    END { if (id != "" && !hidden && name != "" && !seen[id]++) print id "\037" name "\037;" mimes ";\037" icon }')
 
-# A flat alphabetical dump of every mimetype some installed app declares
-# support for buries what a user is actually likely to want (PDF,
-# images, video...) under obscure/legacy formats an app happens to
-# register (application/clarisworks, application/iges, ...). This
-# curated set, in this fixed order, is shown first -- only entries
-# actually present above (an app is genuinely installed to handle them)
-# make the cut -- with everything else following alphabetically after,
-# same as before.
-common_order="text/plain text/html text/markdown text/csv application/pdf
-image/jpeg image/png image/gif image/svg+xml image/webp
-audio/mpeg audio/flac audio/ogg video/mp4 video/x-matroska video/webm
-application/zip application/x-7z-compressed application/json application/xml
-inode/directory x-scheme-handler/http x-scheme-handler/https
-application/epub+zip
-application/vnd.openxmlformats-officedocument.wordprocessingml.document
-application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
-application/vnd.openxmlformats-officedocument.presentationml.presentation"
+app_name() { awk -F'\037' -v id="$1" '$1 == id { print $2; exit }' <<<"$desktop_index"; }
 
-# Category icon slug (under $ICONS), by prefix/exact match; falls back
-# to a generic file icon for anything not covered.
+# Shown first, in this order, under readable names, each only if some
+# installed app actually declares it; everything else follows under its
+# raw mimetype, alphabetically.
+common="text/plain|Plain text
+text/markdown|Markdown
+text/html|HTML files
+text/csv|CSV files
+application/pdf|PDF documents
+image/jpeg|JPEG images
+image/png|PNG images
+image/gif|GIF images
+image/webp|WebP images
+image/svg+xml|SVG images
+audio/mpeg|MP3 audio
+audio/flac|FLAC audio
+audio/ogg|Ogg audio
+video/mp4|MP4 video
+video/x-matroska|MKV video
+video/webm|WebM video
+application/zip|ZIP archives
+application/x-7z-compressed|7-Zip archives
+application/json|JSON files
+application/xml|XML files
+inode/directory|Folders
+x-scheme-handler/http|Web links (http)
+x-scheme-handler/https|Web links (https)
+application/epub+zip|EPUB books
+application/vnd.openxmlformats-officedocument.wordprocessingml.document|Word documents
+application/vnd.openxmlformats-officedocument.spreadsheetml.sheet|Spreadsheets
+application/vnd.openxmlformats-officedocument.presentationml.presentation|Presentations"
+
 icon_for() {
     case "$1" in
-        text/*) printf 'file-text' ;;
-        application/pdf) printf 'file-type-pdf' ;;
-        image/*) printf 'photo' ;;
-        video/*) printf 'movie' ;;
-        audio/*) printf 'music' ;;
+        text/*) echo file-text.svg ;;
+        application/pdf) echo file-type-pdf.svg ;;
+        image/*) echo photo.svg ;;
+        video/*) echo movie.svg ;;
+        audio/*) echo music.svg ;;
         application/zip|application/x-7z-compressed|application/x-tar|application/gzip|application/x-bzip*|application/x-rar*|application/x-xz)
-            printf 'file-zip' ;;
-        application/json) printf 'json' ;;
-        inode/directory) printf 'folder' ;;
-        x-scheme-handler/*) printf 'world' ;;
-        application/msword|*wordprocessingml*) printf 'file-type-doc' ;;
-        application/vnd.ms-excel|*spreadsheetml*) printf 'file-type-xls' ;;
-        application/vnd.ms-powerpoint|*presentationml*) printf 'file-type-ppt' ;;
-        *) printf 'file' ;;
+            echo file-zip.svg ;;
+        application/json) echo json.svg ;;
+        inode/directory) echo folder.svg ;;
+        x-scheme-handler/*) echo world.svg ;;
+        application/msword|*wordprocessingml*) echo file-type-doc.svg ;;
+        application/vnd.ms-excel|*spreadsheetml*) echo file-type-xls.svg ;;
+        application/vnd.ms-powerpoint|*presentationml*) echo file-type-ppt.svg ;;
+        *) echo file.svg ;;
     esac
 }
 
-declare -A remaining
-while IFS= read -r mt; do
-    [ -n "$mt" ] && remaining["$mt"]=1
-done <<<"$all_mimetypes"
+all_types=$(awk -F'\037' '{ n = split($3, t, ";"); for (i = 1; i <= n; i++) if (t[i] != "") print t[i] }' \
+    <<<"$desktop_index" | sort -u)
 
-# Decorated (icon-marker-carrying) lines are streamed straight into
-# fuzzel below rather than built up in a bash variable first: a bash
-# variable can't hold an embedded NUL byte, so accumulating them (as
-# the old plain-glyph version of this script did) would silently
-# truncate every line at its first icon marker -- same NUL-byte
-# constraint themes-menu.sh's own comment documents.
-line=$(
-    {
-        for mt in $common_order; do
-            if [ -n "${remaining[$mt]:-}" ]; then
-                printf '%s\t%s\0icon\x1f%s\n' "$mt" "$mt" "$ICONS/$(icon_for "$mt").svg"
-                unset "remaining[$mt]"
-            fi
-        done
-        rest=$(printf '%s\n' "${!remaining[@]}" | sort)
-        while IFS= read -r mt; do
-            [ -n "$mt" ] && printf '%s\t%s\0icon\x1f%s\n' "$mt" "$mt" "$ICONS/$(icon_for "$mt").svg"
-        done <<<"$rest"
-    } | fuzzel --dmenu --with-nth=1 --prompt "mimetype: "
-)
-[ -n "$line" ] || exit 0
-mimetype="${line##*$'\t'}"
+# The common types' current defaults, queried in parallel: xdg-mime is
+# a shell script costing ~30ms a call, ~1s for the whole set serially.
+current_defaults() {
+    local dir mt i=0
+    dir=$(mktemp -d)
+    while IFS='|' read -r mt _; do
+        grep -qxF "$mt" <<<"$all_types" || continue
+        (xdg-mime query default "$mt" >"$dir/$i" 2>/dev/null) &
+        i=$((i + 1))
+    done <<<"$common"
+    wait
+    i=0
+    while IFS='|' read -r mt _; do
+        grep -qxF "$mt" <<<"$all_types" || continue
+        printf '%s\037%s\n' "$mt" "$(cat "$dir/$i")"
+        i=$((i + 1))
+    done <<<"$common"
+    rm -rf "$dir"
+}
 
-# Tab-separated "Name\tdesktop-id" per candidate, same convention
-# themes-menu.sh/bluetooth-menu.sh use to keep a pretty label in fuzzel
-# while carrying the real identifier through untouched. The id has to
-# be the desktop file's basename, not its path: `xdg-mime default`
-# writes it verbatim into mimeapps.list, which every desktop-file
-# lookup after that resolves by basename against the application dirs.
-line=$(for dir in "${app_dirs[@]}"; do
-    for file in "$dir"/*.desktop; do
-        [ -f "$file" ] || continue
-        awk -v mt="$mimetype" -v id="$(basename "$file")" '
-            /^NoDisplay=true/ { skip = 1 }
-            /^MimeType=/ {
-                line = $0
-                sub(/^MimeType=/, "", line)
-                n = split(line, types, ";")
-                for (i = 1; i <= n; i++) if (types[i] == mt) found = 1
-            }
-            /^Name=/ && !name {
-                line = $0
-                sub(/^Name=/, "", line)
-                name = line
-            }
-            END { if (found && !skip && name) print name "\t" id }
-        ' "$file"
-    done
-done | sort -f -u | fuzzel --dmenu --with-nth=1 --auto-select --prompt "open with: ")
-[ -n "$line" ] || exit 0
+# Every app declaring MIMETYPE, the current default marked; returns once
+# one is picked.
+apps_menu() {
+    local mt="$1" label="$2" current id name icon
+    current=$(xdg-mime query default "$mt" 2>/dev/null)
+    menu_reset
+    while IFS=$'\037' read -r id name icon; do
+        menu_add "$id" "$name" "$icon,apps.svg" "$([ "$id" = "$current" ] && echo default)"
+    done < <(awk -F'\037' -v mt=";$1;" 'index($3, mt) { print $1 "\037" $2 "\037" $4 }' <<<"$desktop_index" | sort -f -t $'\037' -k2)
+    MENU_PLACEHOLDER="Search apps" menu_show "open with" "$label" "$current" || return
+    [ "$MENU_ID" = "$current" ] && return
+    menu_run xdg-mime default "$MENU_ID" "$mt"
+}
 
-app_name="${line%%$'\t'*}"
-app_id="${line##*$'\t'}"
+declare -A label_of
+while IFS='|' read -r mt label; do label_of["$mt"]="$label"; done <<<"$common"
 
-if xdg-mime default "$app_id" "$mimetype"; then
-    notify-send -i "$ICONS/apps.svg" "$TITLE" "$mimetype now opens with $app_name."
-else
-    notify-send -u critical -i "$ICONS/apps.svg" "$TITLE" "Failed to set $app_name as default for $mimetype."
-fi
+selected=""
+while :; do
+    declare -A shown=()
+    menu_reset
+    while IFS=$'\037' read -r mt id; do
+        menu_add "$mt" "${label_of[$mt]}" "$(icon_for "$mt")" "$(app_name "$id")"
+        shown["$mt"]=1
+    done < <(current_defaults)
+    while IFS= read -r mt; do
+        [ -n "$mt" ] && [ -z "${shown[$mt]:-}" ] && menu_add "$mt" "$mt" "$(icon_for "$mt")"
+    done <<<"$all_types"
+    unset shown
+
+    menu_show "default apps" "" "$selected" || break
+    selected="$MENU_ID"
+    apps_menu "$MENU_ID" "${label_of[$MENU_ID]:-$MENU_ID}"
+done

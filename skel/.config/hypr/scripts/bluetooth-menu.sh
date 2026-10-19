@@ -1,71 +1,119 @@
 #!/bin/bash
+# Bluetooth control panel: adapter power, every paired device listed
+# inline with its live state, and a scan for new ones. Enter on a device
+# toggles its connection, custom-1 (Alt+1) removes it; the header names
+# both. Escape exits, or returns to system-menu.sh when opened from there.
 
-source "$HOME/.config/hypr/scripts/confirm.sh"
-source "$HOME/.config/hypr/scripts/notify-progress.sh"
+source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
-ICONS="$HOME/.config/sobarch/icons"
+MENU_TITLE="sobarch: bluetooth"
+MENU_ICON="bluetooth.svg"
 
-# bluetooth: reused from system-menu.sh's "Bluetooth" entry
-TITLE="sobarch: bluetooth"
+powered() { bluetoothctl show | grep -q "Powered: yes"; }
 
-# notify_on_fail runs a bluetoothctl action and, only if it fails,
-# surfaces its own output as a critical notification: same
-# error-passthrough convention network-menu.sh uses for nmcli, adapted
-# since bluetoothctl reports failures ("Failed to connect: ...") on
-# stdout rather than stderr, with a non-zero exit status alongside.
-notify_on_fail() {
-    local out
-    out=$("$@" 2>&1) || notify-send -u critical -i "$ICONS/bluetooth.svg" "$TITLE" "$out"
+# "MAC<tab>NAME" per device, sorted by name; any args are passed through
+# as a `bluetoothctl devices` filter (Paired, Connected, ...).
+devices() {
+    bluetoothctl devices "$@" | sed -nE 's/^Device ([0-9A-F:]+) (.*)$/\1\t\2/p' | sort -f -t $'\t' -k2
 }
 
-# Loops back to this same picker after every action instead of exiting,
-# so e.g. scanning then checking paired devices doesn't need the
-# keybind re-invoked each time. Only an empty selection (Escape) breaks
-# out. --minimal-lines added since every row now carries an icon (see
-# wallpaper-menu.sh's own comment on the empty-leftover-row
-# icon-duplication bug this avoids).
-while choice=$(printf '%s\0icon\x1f%s\n' \
-    "Toggle Power" "$ICONS/power.svg" \
-    "Scan & Connect" "$ICONS/bluetooth-connected.svg" \
-    "Paired Devices" "$ICONS/devices.svg" \
-    "Disconnect" "$ICONS/bluetooth-off.svg" \
-    | fuzzel --dmenu --prompt "bluetooth: " --lines=4 --line-height=32 --minimal-lines)
-    [ -n "$choice" ]
-do
-    case "$choice" in
-        "Toggle Power")
-            if bluetoothctl show | grep -q "Powered: yes"; then
-                notify_on_fail bluetoothctl power off
+info_field() { sed -nE "s/^\s*$1: //p" <<<"$2"; }
+
+# One row per paired device, its own freedesktop icon name (audio-headset,
+# input-mouse, ...) resolved through the icon theme first, falling back to
+# a generic one. Appends connected devices' names to $connected.
+add_device_rows() {
+    local mac name info state battery
+    while IFS=$'\t' read -r mac name; do
+        info=$(bluetoothctl info "$mac")
+        state=""
+        if grep -q "Connected: yes" <<<"$info"; then
+            battery=$(info_field "Battery Percentage" "$info" | sed -nE 's/.*\(([0-9]+)\)/\1/p')
+            state="connected${battery:+ · $battery%}"
+            connected+=("$name")
+        fi
+        menu_add "$mac" "$name" "$(info_field Icon "$info"),devices.svg" "$state"
+    done < <(devices Paired)
+}
+
+device_action() {
+    local mac="$1" info name
+    info=$(bluetoothctl info "$mac")
+    name=$(info_field Name "$info")
+    case "$MENU_KEY" in
+        0)
+            if grep -q "Connected: yes" <<<"$info"; then
+                menu_run bluetoothctl disconnect "$mac"
             else
-                notify_on_fail bluetoothctl power on
+                menu_progress "Connecting to $name..." "Connected to $name." bluetoothctl connect "$mac"
             fi
             ;;
-        "Scan & Connect")
-            bluetoothctl power on
-            bluetoothctl agent NoInputNoOutput
-            bluetoothctl default-agent
-            id=$(notify_progress normal "$TITLE" "Scanning for Bluetooth devices..." 0 persist "$ICONS/bluetooth.svg")
-            bluetoothctl --timeout 8 scan on >/dev/null 2>&1
-            notify_progress normal "$TITLE" "Scan complete." "$id" "" "$ICONS/bluetooth.svg" >/dev/null
-            mac=$(bluetoothctl devices | sed -E 's/^Device ([0-9A-F:]+) (.*)$/\2\t\1/' | sort -f | fuzzel --dmenu --with-nth=1 --prompt "connect: " | cut -f2)
-            [ -n "$mac" ] || continue
-            notify_on_fail bluetoothctl pair "$mac"
-            notify_on_fail bluetoothctl trust "$mac"
-            notify_on_fail bluetoothctl connect "$mac"
+        1) confirm "Remove $name? It will need pairing again to reconnect." Remove && menu_run bluetoothctl remove "$mac" ;;
+    esac
+}
+
+scan() { bluetoothctl --timeout 8 scan on >/dev/null 2>&1 || true; }
+
+# Prints only the failing step's output, so a failure toast isn't
+# prefixed by every earlier step's success chatter.
+pair_device() {
+    local step out
+    bluetoothctl agent NoInputNoOutput >/dev/null
+    bluetoothctl default-agent >/dev/null
+    for step in pair trust connect; do
+        out=$(bluetoothctl "$step" "$1" 2>&1) || { printf '%s\n' "$out"; return 1; }
+    done
+}
+
+# A fixed-length scan, then a list of what turned up: fuzzel can't update
+# a list while it's open, so results can't stream in live. Devices that
+# need a passkey confirmed or typed (some keyboards and phones) can't pair
+# here either, no agent outlives a one-shot bluetoothctl call; those
+# still need `bluetoothctl` in a terminal.
+scan_and_pair() {
+    local mac name paired
+    menu_progress "Scanning for devices..." "Scan complete." scan
+    paired=$(devices Paired | cut -f1)
+    menu_reset
+    while IFS=$'\t' read -r mac name; do
+        grep -qxF "$mac" <<<"$paired" && continue
+        menu_add "$mac" "$name" "$(info_field Icon "$(bluetoothctl info "$mac")"),devices.svg"
+    done < <(devices)
+    if ((${#MENU_IDS[@]} == 0)); then
+        menu_notify "No new devices found."
+        return
+    fi
+    menu_show pair "↵ pair and connect" || return
+    name=$(info_field Name "$(bluetoothctl info "$MENU_ID")")
+    menu_progress "Pairing with $name..." "Connected to $name." pair_device "$MENU_ID"
+}
+
+selected=""
+while :; do
+    menu_reset
+    connected=()
+    if powered; then
+        menu_add power "Turn Off" power.svg
+        menu_add scan "Scan for Devices" bluetooth-connected.svg
+        add_device_rows
+        mesg="Bluetooth on · ${#connected[@]} connected"
+        ((${#MENU_IDS[@]} > 2)) && mesg+=$'\n'"↵ connect/disconnect · Alt+1 remove"
+    else
+        menu_add power "Turn On" power.svg
+        mesg="Bluetooth off"
+    fi
+
+    menu_show bluetooth "$mesg" "$selected" || break
+    selected="$MENU_ID"
+    case "$MENU_ID" in
+        power)
+            if powered; then
+                menu_run bluetoothctl power off
+            else
+                menu_run bluetoothctl power on
+            fi
             ;;
-        "Paired Devices")
-            mac=$(bluetoothctl devices Paired | sed -E 's/^Device ([0-9A-F:]+) (.*)$/\2\t\1/' | sort -f | fuzzel --dmenu --with-nth=1 --prompt "paired: " | cut -f2)
-            [ -n "$mac" ] || continue
-            action=$(printf '%s\0icon\x1f%s\n' "Connect" "$ICONS/bluetooth-connected.svg" "Disconnect" "$ICONS/bluetooth-off.svg" "Remove" "$ICONS/trash.svg" | fuzzel --dmenu --prompt "action: " --minimal-lines)
-            case "$action" in
-                "Connect") notify_on_fail bluetoothctl connect "$mac" ;;
-                "Disconnect") notify_on_fail bluetoothctl disconnect "$mac" ;;
-                "Remove") confirm "Remove $mac?" && notify_on_fail bluetoothctl remove "$mac" ;;
-            esac
-            ;;
-        "Disconnect")
-            mac=$(bluetoothctl devices Connected | sed -E 's/^Device ([0-9A-F:]+) (.*)$/\2\t\1/' | sort -f | fuzzel --dmenu --with-nth=1 --prompt "disconnect: " | cut -f2)
-            [ -n "$mac" ] && notify_on_fail bluetoothctl disconnect "$mac"
-            ;;
+        scan) scan_and_pair ;;
+        *) device_action "$MENU_ID" ;;
     esac
 done

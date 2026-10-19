@@ -9,56 +9,58 @@
 # (see apply-wallpaper.sh's own comment for the id="sobarch-bg"/
 # id="sobarch-accent" contract) and plain images are listed the same
 # way; apply-wallpaper.sh is the one that tells them apart.
-set -euo pipefail
+#
+# Stays open after applying one, cursor kept on it and marked current,
+# so browsing through several to compare is Enter, Down, Enter... rather
+# than reopening the picker each time.
 
-ICONS="$HOME/.config/sobarch/icons"
-TITLE="sobarch: wallpaper"
+source "$HOME/.config/hypr/scripts/menu-lib.sh"
+
+MENU_TITLE="sobarch: wallpaper"
+MENU_ICON="photo.svg"
 BACKGROUNDS_DIR="$HOME/.local/share/backgrounds"
 CURRENT_FILE="$HOME/.config/sobarch/current-wallpaper"
+
+# Each row's icon is the wallpaper file itself (a real image, not an
+# icon-theme name), so fuzzel renders an actual thumbnail; row height is
+# raised well past the default since a thumbnail is unrecognizable at
+# normal height.
+MENU_LINE_HEIGHT=40
+MENU_PLACEHOLDER="Search wallpapers"
 
 shopt -s nullglob
 files=("$BACKGROUNDS_DIR"/*)
 shopt -u nullglob
 
-if [[ ${#files[@]} -eq 0 ]]; then
-    notify-send -u critical -i "$ICONS/photo.svg" "$TITLE" "No files in $BACKGROUNDS_DIR to pick from."
+if ((${#files[@]} == 0)); then
+    menu_notify "No files in $BACKGROUNDS_DIR to pick from." critical
     exit 1
 fi
 
-# Pretty name (extension stripped, dashes/underscores turned into
-# spaces) shown in the picker, tab-separated from the real path
-# (hidden via --with-nth) for the actual selection. The \0icon\x1f
-# suffix is fuzzel's own extended dmenu protocol (rofi's), and is
-# stripped before the tab-separated text is ever returned on stdin --
-# confirmed directly, it doesn't leak into $choice below. Pointing it
-# at the wallpaper's own file (real image, not an icon-theme name)
-# renders an actual thumbnail; --line-height is bumped well past
-# fuzzel's default for this menu specifically (other menus stay at the
-# default) since the thumbnail is unrecognizable at normal row height.
-# --minimal-lines (sizes the window to min(lines, actual entry count)
-# instead of always reserving fuzzel.ini's full lines=8) isn't just a
-# sizing nicety here: confirmed directly, an SVG icon (unlike a PNG)
-# left in the *unused* leftover row space below a short entry list
-# renders a second, oversized, mispositioned copy of itself -- a real
-# fuzzel rendering bug, reproduced with a single-SVG-entry list
-# matching this menu's actual real-world case, gone entirely once no
-# empty leftover rows exist to trigger it.
-choice=$(for f in "${files[@]}"; do
-    name="$(basename "$f")"
+# "sobarch_wallpaper-2.png" -> "Sobarch Wallpaper 2".
+pretty() {
+    local name="${1##*/}" out="" word
     name="${name%.*}"
-    name="${name//[-_]/ }"
-    printf "%s\t%s\0icon\x1f%s,image-x-generic\n" "$name" "$f" "$f"
-done | sort -f | fuzzel --dmenu --with-nth=1 --line-height=40 --minimal-lines --prompt "wallpaper: ")
-[[ -n "${choice:-}" ]] || exit 0
+    for word in ${name//[-_]/ }; do
+        out+="${out:+ }${word^}"
+    done
+    printf '%s' "$out"
+}
 
-pretty="${choice%%$'\t'*}"
-path="${choice#*$'\t'}"
+mapfile -t files < <(printf '%s\n' "${files[@]}" | sort -f)
 
-mkdir -p "$(dirname "$CURRENT_FILE")"
-printf "%s" "$path" >"$CURRENT_FILE"
-
-if "$HOME/.config/hypr/scripts/apply-wallpaper.sh"; then
-    notify-send -i "$ICONS/photo.svg" "$TITLE" "Applied $pretty."
-else
-    notify-send -u critical -i "$ICONS/photo.svg" "$TITLE" "Failed to apply $pretty."
-fi
+selected=""
+while :; do
+    current=$(cat "$CURRENT_FILE" 2>/dev/null)
+    [ -n "$selected" ] || selected="$current"
+    menu_reset
+    for f in "${files[@]}"; do
+        menu_add "$f" "$(pretty "$f")" "$f,image-x-generic" "$([ "$f" = "$current" ] && echo current)"
+    done
+    menu_show wallpaper "" "$selected" || break
+    selected="$MENU_ID"
+    mkdir -p "$(dirname "$CURRENT_FILE")"
+    printf '%s' "$MENU_ID" >"$CURRENT_FILE"
+    "$HOME/.config/hypr/scripts/apply-wallpaper.sh" ||
+        menu_notify "Failed to apply $(pretty "$MENU_ID")." critical
+done

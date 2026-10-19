@@ -478,3 +478,17 @@ name = "sobarch-icon-devices"
 themes-dir = "colors"
 write-to-file = ["~/.config/sobarch/icons/devices.svg"]
 supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-x"
+name = "sobarch-icon-x"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/x.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
+path = "~/.config/sobarch/tinty-templates/icon-check"
+name = "sobarch-icon-check"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/check.svg"]
+supported-systems = ["base16", "base24", "tinted8"]

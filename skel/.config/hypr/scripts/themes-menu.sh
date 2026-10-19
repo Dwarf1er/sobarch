@@ -6,16 +6,20 @@
 # config.toml item's own `hook` (see
 # ~/.config/tinted-theming/tinty/config.toml) handles reloading the app
 # it themes; nothing extra to do here beyond the apply itself.
-set -euo pipefail
+#
+# Stays open after applying, cursor kept on the scheme just applied and
+# marked current: an apply takes well under a second, and every fuzzel
+# launch re-reads its own colors.ini, so the picker itself reopens in
+# the new theme. Browsing is Enter, Down, Enter... as a live preview.
 
-ICONS="$HOME/.config/sobarch/icons"
+source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
-# palette: same icon setup-menu.sh's own "Themes" entry uses.
-TITLE="sobarch: themes"
+MENU_TITLE="sobarch: themes"
+MENU_ICON="palette.svg"
+MENU_PLACEHOLDER="Search themes"
 
 if ! command -v tinty >/dev/null 2>&1; then
-    notify-send -u critical -i "$ICONS/palette.svg" "$TITLE" \
-        "tinty isn't installed (Sobarch -> Update System, to fetch base-required packages)."
+    menu_notify "tinty isn't installed (Sobarch -> Update System, to fetch base-required packages)." critical
     exit 1
 fi
 
@@ -23,7 +27,7 @@ fi
 # base16-atelier-forest-light), which read as clutter in a picker;
 # reformat each into "Pretty Name" (only tagging non-base16 systems,
 # since base16 is the common case) while keeping the raw id around
-# (tab-separated, hidden via --with-nth) for the actual tinty apply call.
+# (tab-separated; it becomes the row id) for the actual tinty apply call.
 entries=$(tinty list | awk -F'-' '
     length($0) == 0 { next }
     {
@@ -80,13 +84,6 @@ SVG
     rm -f "$svg_tmp"
 }
 
-# Missing-swatch bookkeeping (raw ids only, never touches the icon
-# bytes below) has to happen as its own pass, not inside the pipeline
-# that builds fuzzel's input: a bash variable can't hold an embedded
-# NUL byte, so accumulating decorated lines (fuzzel's icon marker is
-# `\0icon\x1f...`) into a variable silently truncates every line at its
-# first icon. Streamed straight into fuzzel via a pipe instead, further
-# down, the NUL bytes never have to survive being stored anywhere.
 missing_raws=""
 if [[ "$have_rsvg" = 1 ]]; then
     mkdir -p "$SWATCH_DIR"
@@ -106,24 +103,18 @@ if [[ "$have_rsvg" = 1 ]]; then
     fi
 fi
 
-line=$(
+selected=""
+while :; do
+    current=$(tinty current 2>/dev/null)
+    [[ -n "$selected" ]] || selected="$current"
+    menu_reset
     while IFS=$'\t' read -r pretty raw; do
         [[ -n "$raw" ]] || continue
-        swatch="$SWATCH_DIR/$raw.png"
-        if [[ "$have_rsvg" = 1 && -f "$swatch" ]]; then
-            printf '%s\t%s\x00icon\x1f%s\n' "$pretty" "$raw" "$swatch"
-        else
-            printf '%s\t%s\n' "$pretty" "$raw"
-        fi
-    done <<<"$entries" | fuzzel --dmenu --with-nth=1 --prompt "theme: "
-)
-[[ -n "${line:-}" ]] || exit 0
-
-pretty="${line%%$'\t'*}"
-raw="${line#*$'\t'}"
-
-if tinty apply "$raw"; then
-    notify-send -i "$ICONS/palette.svg" "$TITLE" "Applied $pretty."
-else
-    notify-send -u critical -i "$ICONS/palette.svg" "$TITLE" "Failed to apply $pretty."
-fi
+        swatch=""
+        [[ "$have_rsvg" = 1 && -f "$SWATCH_DIR/$raw.png" ]] && swatch="$SWATCH_DIR/$raw.png"
+        menu_add "$raw" "$pretty" "$swatch" "$([[ "$raw" = "$current" ]] && echo current)"
+    done <<<"$entries"
+    menu_show theme "" "$selected" || break
+    selected="$MENU_ID"
+    menu_run tinty apply "$MENU_ID"
+done

@@ -1,112 +1,198 @@
 #!/bin/bash
+# Network control panel: connection status in the header, Wi-Fi scan
+# and join, saved networks (connect, disconnect, forget), IP copy and a
+# Wi-Fi QR share. Wi-Fi rows only appear on machines that have a Wi-Fi
+# device, so a desktop on Ethernet doesn't get a list of dead entries.
 
-source "$HOME/.config/hypr/scripts/notify-progress.sh"
+source "$HOME/.config/hypr/scripts/menu-lib.sh"
 
-ICONS="$HOME/.config/sobarch/icons"
+MENU_TITLE="sobarch: network"
+MENU_ICON="wifi.svg"
 
-# wifi: same icon system-menu.sh's own "Network" entry uses.
-TITLE="sobarch: network"
+wifi_dev=$(nmcli -t -f DEVICE,TYPE dev status 2>/dev/null | awk -F: '$2 == "wifi" { print $1; exit }')
 
-# notify_on_fail runs an nmcli action and, only if it fails, surfaces
-# its own stderr as a critical notification (nmcli puts error text on
-# stderr with a matching exit code).
-notify_on_fail() {
-    local err
-    err=$("$@" 2>&1 >/dev/null)
-    [ -n "$err" ] && notify-send -u critical -i "$ICONS/wifi.svg" "$TITLE" "$err"
+# NAME<\037>TYPE<\037>DEVICE of the first active non-loopback connection.
+# -e no: names are shown verbatim (no "\:" escaping), so TYPE and DEVICE
+# are taken from the end and everything before them is the name.
+primary() {
+    nmcli -e no -t -f NAME,TYPE,DEVICE connection show --active 2>/dev/null | awk -F: '
+        $(NF - 1) != "loopback" {
+            name = $1; for (i = 2; i <= NF - 2; i++) name = name ":" $i
+            print name "\037" $(NF - 1) "\037" $NF; exit
+        }'
 }
 
-# Loops back to this same picker after every action instead of exiting,
-# so e.g. checking Wi-Fi networks then toggling Wi-Fi doesn't need the
-# keybind re-invoked each time. Only an empty selection (Escape) breaks
-# out. --minimal-lines added since every row now carries an icon (see
-# wallpaper-menu.sh's own comment on the empty-leftover-row
-# icon-duplication bug this avoids).
-while choice=$(printf '%s\0icon\x1f%s\n' \
-    "Wi-Fi Networks" "$ICONS/wifi.svg" \
-    "Toggle Wi-Fi" "$ICONS/power.svg" \
-    "Disconnect" "$ICONS/wifi-off.svg" \
-    "Forget Network" "$ICONS/trash.svg" \
-    "Copy IP Address" "$ICONS/clipboard.svg" \
-    "Share Wi-Fi QR" "$ICONS/qrcode.svg" \
-    | fuzzel --dmenu --prompt "network: " --lines=6 --line-height=23 --minimal-lines)
-    [ -n "$choice" ]
-do
-    case "$choice" in
-        "Wi-Fi Networks")
-            id=$(notify_progress normal "$TITLE" "Scanning for Wi-Fi networks..." 0 persist "$ICONS/wifi.svg")
-            # SSID may itself contain a colon in rare cases, so the
-            # split takes the last two fields as signal/security and
-            # rejoins everything before that as the SSID, rather than
-            # assuming SSID is exactly field 1.
-            networks=$(nmcli -e no -t -f SSID,SIGNAL,SECURITY dev wifi list --rescan yes | awk -F: '
-                NF < 3 { next }
-                {
-                    security = $NF
-                    signal = $(NF - 1)
-                    ssid = $1
-                    for (i = 2; i <= NF - 2; i++) ssid = ssid ":" $i
-                    if (ssid == "" || seen[ssid]++) next
-                    printf "%-22s %3s%%  %s\t%s\n", ssid, signal, (security == "" ? "Open" : security), ssid
-                }')
-            notify_progress normal "$TITLE" "Scan complete." "$id" "" "$ICONS/wifi.svg" >/dev/null
-            line=$(printf '%s\n' "$networks" | fuzzel --dmenu --with-nth=1 --prompt "wifi: " --width=45)
-            [ -n "$line" ] || continue
-            ssid="${line##*$'\t'}"
-            if nmcli -e no -t -f NAME connection show | grep -qxF "$ssid"; then
-                notify_on_fail nmcli connection up "$ssid"
+ip_of() { nmcli -g IP4.ADDRESS dev show "$1" 2>/dev/null | head -n1 | cut -d/ -f1; }
+
+# IN-USE<\037>SSID<\037>SIGNAL<\037>SECURITY per visible network, strongest
+# first, each SSID once. SSID may itself contain a colon, so the fixed
+# fields are taken from both ends and everything between is the SSID.
+scan_results() {
+    nmcli -e no -t -f IN-USE,SSID,SIGNAL,BARS,SECURITY dev wifi list --rescan yes 2>/dev/null | awk -F: '
+        NF < 5 { next }
+        {
+            ssid = $2; for (i = 3; i <= NF - 3; i++) ssid = ssid ":" $i
+            if (ssid == "" || seen[ssid]++) next
+            print $1 "\037" ssid "\037" $(NF - 2) "\037" $NF
+        }'
+}
+
+# Joins a network that has no saved profile yet. A failed attempt (wrong
+# password, mostly) still leaves a half-made profile behind under the
+# SSID's name; it's removed, so the next try asks for the password again
+# instead of silently retrying the bad one.
+join_new() {
+    local ssid="$1" security="$2" pass
+    if [ -n "$security" ] && [ "$security" != "--" ]; then
+        pass=$(menu_input password "Password for “$ssid”" password) || return
+        menu_progress "Connecting to $ssid..." "Connected to $ssid." \
+            nmcli dev wifi connect "$ssid" password "$pass" ifname "$wifi_dev" ||
+            nmcli connection delete id "$ssid" >/dev/null 2>&1
+    else
+        menu_progress "Connecting to $ssid..." "Connected to $ssid." \
+            nmcli dev wifi connect "$ssid" ifname "$wifi_dev"
+    fi
+}
+
+# Writes into a file rather than stdout: menu_progress swallows a
+# successful command's output.
+scan_to() { scan_results >"$1"; }
+
+wifi_menu() {
+    local in_use ssid signal security results
+    local -A sec
+    results=$(mktemp)
+    menu_progress "Scanning for Wi-Fi networks..." "Scan complete." scan_to "$results"
+    menu_reset
+    # Signal as a percentage: nmcli's own BARS glyphs (▂▄▆█) render as
+    # illegible slivers at this font size.
+    while IFS=$'\037' read -r in_use ssid signal security; do
+        sec["$ssid"]="$security"
+        if [ "$in_use" = "*" ]; then
+            menu_add "$ssid" "$ssid" wifi.svg "connected"
+        elif [ -z "$security" ] || [ "$security" = "--" ]; then
+            menu_add "$ssid" "$ssid" wifi.svg "open · $signal%"
+        else
+            menu_add "$ssid" "$ssid" wifi.svg "$signal%"
+        fi
+    done <"$results"
+    rm -f "$results"
+    if ((${#MENU_IDS[@]} == 0)); then
+        menu_notify "No Wi-Fi networks found."
+        return
+    fi
+    menu_show wi-fi || return
+    ssid="$MENU_ID"
+    if nmcli -e no -t -f NAME connection show | grep -qxF "$ssid"; then
+        menu_progress "Connecting to $ssid..." "Connected to $ssid." nmcli connection up id "$ssid"
+    else
+        join_new "$ssid" "${sec[$ssid]}"
+    fi
+}
+
+# Every saved profile except loopback; Enter toggles it, Alt+1 forgets.
+saved_menu() {
+    local selected="" name type active icon
+    while :; do
+        menu_reset
+        while IFS=$'\037' read -r name type active; do
+            case "$type" in
+                802-11-wireless) icon=wifi.svg ;;
+                802-3-ethernet) icon=plug.svg ;;
+                *) icon=world.svg ;;
+            esac
+            menu_add "$name" "$name" "$icon" "$([ "$active" = yes ] && echo active)"
+        done < <(nmcli -e no -t -f NAME,TYPE,ACTIVE connection show 2>/dev/null | awk -F: '
+            $(NF - 1) != "loopback" {
+                name = $1; for (i = 2; i <= NF - 2; i++) name = name ":" $i
+                print name "\037" $(NF - 1) "\037" $NF
+            }' | sort -f)
+        menu_show "saved" "↵ connect/disconnect · Alt+1 forget" "$selected" || return
+        selected="$MENU_ID"
+        name="$MENU_ID"
+        case "$MENU_KEY" in
+            0)
+                if nmcli -e no -t -f NAME connection show --active | grep -qxF "$name"; then
+                    menu_run nmcli connection down id "$name"
+                else
+                    menu_progress "Connecting to $name..." "Connected to $name." nmcli connection up id "$name"
+                fi
+                ;;
+            1) confirm "Forget “$name”? Its saved password is deleted too." Forget &&
+                menu_run nmcli connection delete id "$name" ;;
+        esac
+    done
+}
+
+# Rendered as text directly in a fuzzel pane instead of imv/PNG, to
+# match the small centered floating look fuzzel gets for free (a
+# layer-shell surface, unlike a real window, which would need its own
+# float+size+center window rule). --mesg-mode=expand sizes the window to
+# the message, and with no list rows that message is the whole window;
+# any key dismisses it. fuzzel.ini's line-height=22 leaves a gap between
+# each row of half-block glyphs, which breaks the code up; 15-17 render
+# it seamless in the configured font (checked live), 16 leaves margin
+# both ways. Drawn in the theme's text colour rather than the dimmer
+# default message colour, for scanning contrast.
+share_qr() {
+    local conn="$1" ssid psk payload
+    ssid=$(nmcli -g 802-11-wireless.ssid connection show "$conn")
+    psk=$(nmcli -s -g 802-11-wireless-security.psk connection show "$conn")
+    if [ -n "$psk" ]; then
+        payload="WIFI:T:WPA;S:${ssid};P:${psk};;"
+    else
+        payload="WIFI:T:nopass;S:${ssid};;"
+    fi
+    local text_color
+    text_color=$(sed -n 's/^text=//p' "$HOME/.config/fuzzel/colors.ini" 2>/dev/null)
+    fuzzel --dmenu --hide-prompt --minimal-lines --mesg-mode=expand --line-height=16 \
+        ${text_color:+--message-color="$text_color"} \
+        --mesg="Scan to join “$ssid”"$'\n\n'"$(qrencode -t UTF8 "$payload" | sed 's/^/ /')" </dev/null
+}
+
+selected=""
+while :; do
+    IFS=$'\037' read -r conn type dev < <(primary)
+    ip=""
+    [ -n "$dev" ] && ip=$(ip_of "$dev")
+    case "$type" in
+        802-11-wireless) mesg="Connected to $conn" ;;
+        802-3-ethernet) mesg="Connected via Ethernet" ;;
+        "") mesg="Not connected" ;;
+        *) mesg="Connected to $conn" ;;
+    esac
+    saved=$(nmcli -t -f TYPE connection show 2>/dev/null | grep -vc '^loopback$')
+
+    menu_reset
+    if [ -n "$wifi_dev" ]; then
+        if [ "$(nmcli radio wifi)" = enabled ]; then
+            menu_add wifi "Wi-Fi Networks" wifi.svg
+            menu_add radio "Turn Wi-Fi Off" power.svg
+        else
+            menu_add radio "Turn Wi-Fi On" power.svg
+        fi
+        if [ "$type" = 802-11-wireless ]; then
+            menu_add disconnect "Disconnect" wifi-off.svg
+            menu_add qr "Share Wi-Fi" qrcode.svg
+        fi
+    fi
+    menu_add saved "Saved Networks" world.svg "$saved saved"
+    [ -n "$ip" ] && menu_add ip "Copy IP Address" clipboard.svg "$ip"
+
+    menu_show network "$mesg" "$selected" || break
+    selected="$MENU_ID"
+    case "$MENU_ID" in
+        wifi) wifi_menu ;;
+        radio)
+            if [ "$(nmcli radio wifi)" = enabled ]; then
+                menu_run nmcli radio wifi off
             else
-                pass=$(fuzzel --dmenu --password --prompt "password: ")
-                notify_on_fail nmcli dev wifi connect "$ssid" password "$pass"
+                menu_run nmcli radio wifi on
             fi
             ;;
-        "Toggle Wi-Fi")
-            if [ "$(nmcli radio wifi)" = "enabled" ]; then
-                notify_on_fail nmcli radio wifi off
-            else
-                notify_on_fail nmcli radio wifi on
-            fi
-            ;;
-        "Disconnect")
-            dev=$(nmcli -t -f DEVICE,TYPE dev status | awk -F: '$2=="wifi"{print $1; exit}')
-            [ -n "$dev" ] && notify_on_fail nmcli dev disconnect "$dev"
-            ;;
-        "Forget Network")
-            name=$(nmcli -e no -t -f NAME connection show | sort -f | fuzzel --dmenu --prompt "forget: ")
-            [ -n "$name" ] && notify_on_fail nmcli connection delete "$name"
-            ;;
-        "Copy IP Address")
-            dev=$(nmcli -t -f DEVICE,STATE dev status | awk -F: '$2=="connected"{print $1; exit}')
-            [ -n "$dev" ] && nmcli -t -f IP4.ADDRESS dev show "$dev" | cut -d: -f2 | cut -d/ -f1 | wl-copy
-            ;;
-        "Share Wi-Fi QR")
-            conn=$(nmcli -t -f NAME,TYPE connection show --active | awk -F: '$2=="802-11-wireless"{print $1; exit}')
-            [ -n "$conn" ] || continue
-            ssid=$(nmcli -g 802-11-wireless.ssid connection show "$conn")
-            psk=$(nmcli -s -g 802-11-wireless-security.psk connection show "$conn")
-            if [ -n "$psk" ]; then
-                payload="WIFI:T:WPA;S:${ssid};P:${psk};;"
-            else
-                payload="WIFI:T:nopass;S:${ssid};;"
-            fi
-            # Rendered as ASCII directly in a fuzzel pane instead of
-            # imv/PNG, to match the small centered floating look fuzzel
-            # gets for free (a wlroots layer-shell surface, unlike a
-            # real window, which would need its own float+size+center
-            # window rule and would still tile/fullscreen by default).
-            # --mesg (with --mesg-mode=expand, which sizes the window to
-            # the message instead of wrapping it) replaces the old
-            # --width/--lines character-count fudge factor entirely:
-            # fuzzel measures its own message text directly instead of
-            # this script guessing at column counts, so it can't drift
-            # out of alignment for a different SSID/password length or
-            # QR version the way the old estimate could.
-            # --minimal-lines drops the empty dmenu list area below the
-            # message, since this picker has no real entries -- it's
-            # message-only, dismissed with any key.
-            qr_text=$(qrencode -t UTF8 "$payload" | sed 's/^/ /')
-            fuzzel --dmenu --hide-prompt --minimal-lines \
-                --mesg="$qr_text" --mesg-mode=expand </dev/null
-            ;;
+        disconnect) menu_run nmcli dev disconnect "$wifi_dev" ;;
+        qr) share_qr "$conn" ;;
+        saved) saved_menu ;;
+        ip) printf '%s' "$ip" | wl-copy && menu_notify "Copied $ip to the clipboard." ;;
     esac
 done

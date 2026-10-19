@@ -24,9 +24,10 @@ Both are applied at login, so they need no setup from you.
 
 `Super+T` opens kitty, `Super+E` the file manager, and `Super+B` the
 browser (LibreWolf). To change which app opens a given file type, use
-**Super, Sobarch, Default Apps**: pick a MIME type (common ones such as
-PDFs, images, video, and web links are listed first), then pick from the
-installed apps that handle it.
+**Super, Sobarch, Default Apps**: pick a file type (common ones such as
+PDF documents, images, video, and web links are listed first by name,
+each showing the app it opens in now), then pick from the installed apps
+that handle it.
 
 ## File manager
 

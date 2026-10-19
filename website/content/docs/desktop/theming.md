@@ -30,12 +30,15 @@ border colors as they were.
 
 ## Switching schemes
 
-Open the theme picker from **Super → Sobarch**, or run
+Open the theme picker from **Super → Sobarch → Theme**, or run
 `~/.config/hypr/scripts/themes-menu.sh` directly. It lists every scheme
 tinty knows about, tagging non-base16 systems for clarity
-(`(24-color)`, `(8-color)`), and applies whichever one you pick. Each
-entry shows a small four-color swatch. Swatches are generated in the
-background the first time, so a scheme you haven't seen yet may show
+(`(24-color)`, `(8-color)`), opens on your current scheme (marked
+`current`), and applies whichever one you pick. The picker stays open
+afterward and redraws in the new colors, so you can step through
+schemes as a live preview and press `Escape` once you've settled on one.
+Each entry shows a small four-color swatch. Swatches are generated in
+the background the first time, so a scheme you haven't seen yet may show
 as a plain row until the next time you open the picker.
 
 <figure class="figure">

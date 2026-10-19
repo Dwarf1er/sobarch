@@ -14,9 +14,11 @@ file in `~/.local/share/backgrounds/`, the per-user counterpart of the
 `/usr/share/backgrounds` convention most distros ship their own
 default wallpapers under. Picking one applies it immediately to every
 connected monitor (see [Multiple monitors](#multiple-monitors) for how
-it's sized to each one). Each entry shows a thumbnail, and
-names are shown with dashes and underscores turned into spaces and the
-file extension dropped. The shipped wallpaper is
+it's sized to each one), and the picker stays open with your choice
+marked `current`, so you can compare a few before pressing `Escape`.
+Each entry shows a thumbnail, and names are shown in title case with
+dashes and underscores turned into spaces and the file extension
+dropped. The shipped wallpaper is
 `sobarch-wallpaper.svg`, used until you pick something else.
 
 ## SVG wallpapers recolor automatically

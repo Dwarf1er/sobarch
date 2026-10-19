@@ -42,7 +42,7 @@ build by hand.
 ## How do I update my laptop's firmware?
 
 `fwupd` is part of every install. Use **Super → System → Firmware** or
-`Super+Shift+F` to check for updates, install them, or list devices;
+`Super+Shift+F` to check for updates, install them, or see each device's firmware version;
 the same actions are available from a terminal through `fwupdmgr`.
 See [Menu System](../../desktop/menu-system/).
 

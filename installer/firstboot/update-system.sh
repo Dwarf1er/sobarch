@@ -87,20 +87,37 @@ if [[ "$MODE" == gui ]]; then
     notice() { notify-send -u "$1" -i "$ICONS/refresh.svg" "$TITLE" "$2"; }
     progress_start() { PROG_ID=$(notify_progress normal "$TITLE" "$1" 0 persist); }
     progress_end() { notify_progress "$1" "$TITLE" "$2" "$PROG_ID" >/dev/null; }
-    ask_yes() { confirm "$1"; }
+    ask_yes() { confirm "$1" "${2:-Yes}"; }
     as_root() { pkexec "$@"; }
     # Prints one of the canonical choice strings the walkthrough's
-    # `case` matches on; empty means skip.
-    pick_action() {
-        printf '%s\n' \
-            "[K] Keep mine" \
-            "[U] Use new" \
-            "[D] Diff" \
-            "[E] Edit now" \
-            "[S] Skip for later" \
-            "[A] Use new for all remaining" \
-            | fuzzel --dmenu --prompt "$1: "
-    }
+    # `case` matches on; empty means skip. Drawn through menu-lib.sh
+    # (icons, the file being resolved as the header) like every other
+    # desktop menu, falling back to a plain list if that's missing: this
+    # script ships in sobarch-scripts, and can run once before the
+    # sobarch-skel update that adds menu-lib.sh has been applied.
+    if source "$HOME/.config/hypr/scripts/menu-lib.sh" 2>/dev/null; then
+        pick_action() {
+            menu_reset
+            menu_add "[K] Keep mine" "Keep Mine" check.svg
+            menu_add "[U] Use new" "Use New Version" download.svg
+            menu_add "[D] Diff" "Show Differences" git-merge.svg
+            menu_add "[E] Edit now" "Edit the Merge" file-text.svg
+            menu_add "[S] Skip for later" "Skip for Now" x.svg
+            menu_add "[A] Use new for all remaining" "Use New for All Remaining" refresh.svg
+            menu_show conflict "$1" && printf '%s\n' "$MENU_ID"
+        }
+    else
+        pick_action() {
+            printf '%s\n' \
+                "[K] Keep mine" \
+                "[U] Use new" \
+                "[D] Diff" \
+                "[E] Edit now" \
+                "[S] Skip for later" \
+                "[A] Use new for all remaining" \
+                | fuzzel --dmenu --prompt "$1: "
+        }
+    fi
     show_file() { kitty -e less "$1"; }
     edit_file() { kitty -e "${EDITOR:-nvim}" "$1"; }
 else
@@ -291,7 +308,7 @@ for f in "${conflicts[@]}"; do
                 break
                 ;;
             "[U] Use new")
-                ask_yes "Overwrite $rel with the new version?" || continue
+                ask_yes "Overwrite $rel with the new version? Your changes to it are discarded." Overwrite || continue
                 durable_replace "$mode" "$new" "$original"
                 durable_replace "$mode" "$new" "$baseline"
                 rm -f "$f"
@@ -333,7 +350,7 @@ for f in "${conflicts[@]}"; do
                 break
                 ;;
             "[A] Use new for all remaining")
-                ask_yes "Use new for all remaining conflicts?" || continue
+                ask_yes "Use the new version for every remaining conflict? Your changes to those files are discarded." "Use New for All" || continue
                 use_new_for_rest=true
                 durable_replace "$mode" "$new" "$original"
                 durable_replace "$mode" "$new" "$baseline"
