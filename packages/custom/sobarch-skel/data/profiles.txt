@@ -1,6 +1,6 @@
 developer|Developer|mise,presenterm
 gaming|Gaming|gamescope,lutris,mangohud,prismlauncher,protontricks,steam,gale-bin:aur,protonup-qt-bin:aur
-creative|Creative|audacity,calf,easyeffects,gimp,inkscape,lsp-plugins,obs-studio,shotcut
+creative|Creative|audacity,calf,deepfilternet-ladspa,easyeffects,gimp,inkscape,lsp-plugins,obs-studio,shotcut
 maker|Maker / 3D Printing|blender,freecad,orca-slicer-bin:aur
 virtualization|Virtualization|quickemu-git:aur,quickgui-bin:aur
 office|Office|homebank,libreoffice-fresh

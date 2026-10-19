@@ -56,6 +56,7 @@ PROFILES: tuple[Profile, ...] = (
         _pkgs(
             "audacity",
             "calf",
+            "deepfilternet-ladspa",
             "easyeffects",
             "gimp",
             "inkscape",

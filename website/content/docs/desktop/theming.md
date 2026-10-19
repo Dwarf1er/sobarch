@@ -17,7 +17,7 @@ tinted8 scheme installed by tinty can be applied.
 
 Themed apps: Hyprland (window borders), waybar, mako, fuzzel, hyprlock,
 qt6ct (Qt app colors), [starship](../../shell-editor/terminal-and-shell/),
-fastfetch, [Neovim](../../shell-editor/neovim/), the desktop
+fastfetch, [btop](../../shell-editor/terminal-and-shell/#btop), [Neovim](../../shell-editor/neovim/), the desktop
 [wallpaper](../wallpaper/), the icons shown in the menus, and
 [kitty's](../../shell-editor/terminal-and-shell/) terminal colors.
 GTK apps use the dark `adw-gtk3` theme and Papirus-Dark icons, which

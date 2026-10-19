@@ -113,6 +113,19 @@ write-to-file = ["~/.config/starship.toml"]
 supported-systems = ["base16", "base24", "tinted8"]
 
 [[items]]
+path = "~/.config/sobarch/tinty-templates/btop"
+name = "sobarch-btop"
+themes-dir = "colors"
+# Written under btop's own user themes dir and picked by name
+# (color_theme = "sobarch" in ~/.config/btop/btop.conf) rather than
+# rendering btop.conf itself: btop's own options menu saves to
+# btop.conf, so a tinty-rendered copy would wipe those settings on
+# every scheme switch. No hook: btop has no reload signal, and a
+# running instance keeps its colors until relaunched.
+write-to-file = ["~/.config/btop/themes/sobarch.theme"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
 path = "~/.config/sobarch/tinty-templates/fastfetch"
 name = "sobarch-fastfetch"
 themes-dir = "colors"

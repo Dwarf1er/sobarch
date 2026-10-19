@@ -42,6 +42,21 @@ label colors come from the active [theme](../../desktop/theming/) like
 everything else. To stop it, remove that line from `~/.bashrc` (you'll
 be offered a merge if a later update touches the same file).
 
+## btop
+
+`btop` is the system monitor: CPU, memory, disks, network, and a
+process list you can sort, filter, view as a tree, and signal, all on
+one screen. Run it from a terminal. Its colors come from the active
+[theme](../../desktop/theming/); a btop that's already open keeps the
+old colors until you restart it.
+
+It also shows overall GPU load, memory, temperature, and clocks on
+NVIDIA GPUs, and load, power, and clocks on Intel ones. AMD GPUs only
+appear if you install `rocm-smi-lib`, which pulls in part of the ROCm
+stack. To see which processes are using the GPU, on any vendor, use
+`nvtop` from the [System Tuning
+profile](../../installer/software-profiles/) instead.
+
 ## mise
 
 `mise` (a dev tool version manager) activates automatically if it's

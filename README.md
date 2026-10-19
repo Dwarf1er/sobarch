@@ -70,7 +70,7 @@ Optional, applied after first boot, and unchecked by default:
 | --- | --- |
 | Developer | `mise`, `presenterm` |
 | Gaming | Steam, Lutris, Prism Launcher, gamescope, MangoHud, Protontricks, ProtonUp-Qt |
-| Creative | GIMP, Inkscape, OBS Studio, Shotcut, Audacity, EasyEffects, Calf, LSP plugins |
+| Creative | GIMP, Inkscape, OBS Studio, Shotcut, Audacity, EasyEffects, Calf, LSP plugins, DeepFilterNet |
 | Maker / 3D Printing | Blender, FreeCAD, OrcaSlicer |
 | Virtualization | QuickEMU, QuickGUI |
 | Office | LibreOffice, Homebank |

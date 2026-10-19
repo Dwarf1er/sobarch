@@ -1,0 +1,59 @@
+# Tinted8 {{scheme.name}}
+# Author: {{scheme.author}}
+#
+# btop's own .theme format (theme[key]="#RRGGBB", one per line), every
+# key btop's built-in Default theme defines, so none silently falls back
+# to that theme's own unrelated colors. Each meter's gradient runs
+# between two of the scheme's accents rather than from a near-background
+# shade like Default's, so graphs stay legible on any scheme. Selected by
+# ~/.config/btop/btop.conf's color_theme; btop re-reads it on its next
+# launch, there is no live reload.
+
+theme[main_bg]="#{{ui.global.background.normal.hex}}"
+theme[main_fg]="#{{ui.global.foreground.normal.hex}}"
+theme[title]="#{{ui.global.foreground.normal.hex}}"
+theme[hi_fg]="#{{palette.blue.normal.hex}}"
+theme[selected_bg]="#{{ui.selection.background.hex}}"
+theme[selected_fg]="#{{ui.global.foreground.normal.hex}}"
+theme[inactive_fg]="#{{palette.gray.dim.hex}}"
+theme[graph_text]="#{{palette.gray.normal.hex}}"
+theme[meter_bg]="#{{ui.selection.background.hex}}"
+theme[proc_misc]="#{{palette.cyan.normal.hex}}"
+theme[cpu_box]="#{{palette.green.normal.hex}}"
+theme[mem_box]="#{{palette.yellow.normal.hex}}"
+theme[net_box]="#{{palette.magenta.normal.hex}}"
+theme[proc_box]="#{{palette.blue.normal.hex}}"
+theme[div_line]="#{{ui.selection.background.hex}}"
+theme[temp_start]="#{{palette.blue.normal.hex}}"
+theme[temp_mid]="#{{palette.magenta.normal.hex}}"
+theme[temp_end]="#{{palette.red.normal.hex}}"
+theme[cpu_start]="#{{palette.green.normal.hex}}"
+theme[cpu_mid]="#{{palette.yellow.normal.hex}}"
+theme[cpu_end]="#{{palette.red.normal.hex}}"
+theme[free_start]="#{{palette.green.normal.hex}}"
+theme[free_mid]="#{{palette.green.normal.hex}}"
+theme[free_end]="#{{palette.cyan.normal.hex}}"
+theme[cached_start]="#{{palette.cyan.normal.hex}}"
+theme[cached_mid]="#{{palette.cyan.normal.hex}}"
+theme[cached_end]="#{{palette.blue.normal.hex}}"
+theme[available_start]="#{{palette.yellow.normal.hex}}"
+theme[available_mid]="#{{palette.yellow.normal.hex}}"
+theme[available_end]="#{{palette.orange.normal.hex}}"
+theme[used_start]="#{{palette.orange.normal.hex}}"
+theme[used_mid]="#{{palette.orange.normal.hex}}"
+theme[used_end]="#{{palette.red.normal.hex}}"
+theme[download_start]="#{{palette.blue.normal.hex}}"
+theme[download_mid]="#{{palette.blue.normal.hex}}"
+theme[download_end]="#{{palette.cyan.normal.hex}}"
+theme[upload_start]="#{{palette.magenta.normal.hex}}"
+theme[upload_mid]="#{{palette.magenta.normal.hex}}"
+theme[upload_end]="#{{palette.orange.normal.hex}}"
+theme[process_start]="#{{palette.green.normal.hex}}"
+theme[process_mid]="#{{palette.yellow.normal.hex}}"
+theme[process_end]="#{{palette.red.normal.hex}}"
+theme[proc_pause_bg]="#{{palette.red.normal.hex}}"
+theme[proc_follow_bg]="#{{palette.blue.normal.hex}}"
+theme[proc_banner_bg]="#{{palette.magenta.normal.hex}}"
+theme[proc_banner_fg]="#{{ui.global.background.normal.hex}}"
+theme[followed_bg]="#{{palette.blue.normal.hex}}"
+theme[followed_fg]="#{{ui.global.background.normal.hex}}"

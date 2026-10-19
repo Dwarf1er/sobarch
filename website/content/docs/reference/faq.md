@@ -67,8 +67,9 @@ If the chassis type is reported wrongly (some firmware does this), add
 the packages by hand with `sudo pacman -S tlp tlp-rdw tlp-pd`, then
 enable `tlp.service` and `tlp-pd.service`.
 
-For other tools, the **System Tuning** profile adds `lact`, `nvtop`,
-`smartmontools`, and `ethtool`; see [Software
+For other tools, the **System Tuning** profile adds `lact`, `nvtop`
+(per-process GPU usage, which the default system monitor, `btop`,
+doesn't show), `smartmontools`, and `ethtool`; see [Software
 Profiles](../../installer/software-profiles/).
 
 ## Can I dual-boot with Windows or another OS?
