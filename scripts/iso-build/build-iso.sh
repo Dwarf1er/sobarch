@@ -152,6 +152,11 @@ if [[ $(tty) == "/dev/tty1" ]]; then
     if [[ -n "$(script_cmdline)" ]]; then
         automated_script
     else
+        # T2 Macs need their Wi-Fi/Bluetooth firmware pulled from macOS before the
+        # network step; this only succeeds on the T2 kernel.
+        if [[ "$(</sys/class/dmi/id/sys_vendor)" == "Apple Inc." ]] && command -v apple-bcm-firmware-fetcher >/dev/null; then
+            apple-bcm-firmware-fetcher || echo "Wi-Fi/Bluetooth firmware was not extracted; use a wired connection."
+        fi
         python3 /root/sobarch/installer/tui/__main__.py < /dev/tty
     fi
 fi

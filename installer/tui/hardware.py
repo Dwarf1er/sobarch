@@ -25,6 +25,7 @@ class HardwareInfo:
     laptop_packages: list[str]
     is_uefi: bool
     is_t2_mac: bool
+    t2_packages: list[str]
 
 
 def _parse_bool(value: str) -> bool:
@@ -63,4 +64,5 @@ def detect_hardware(script_path: Path = HARDWARE_DETECT_SCRIPT) -> HardwareInfo:
         laptop_packages=values.get("LAPTOP_PACKAGES", "").split(),
         is_uefi=EFI_VARS_DIR.is_dir(),
         is_t2_mac=_parse_bool(values.get("IS_T2_MAC", "false")),
+        t2_packages=values.get("T2_PACKAGES", "").split(),
     )

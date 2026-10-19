@@ -19,6 +19,8 @@ ARCHINSTALL_DIR = Path(__file__).resolve().parent.parent / "archinstall"
 BASE_JSON_TEMPLATE = ARCHINSTALL_DIR / "base.json"
 CREDENTIALS_JSON_TEMPLATE = ARCHINSTALL_DIR / "credentials.json"
 
+T2_REPO_URL = "https://mirror.funami.tech/arch-mact2/os/x86_64"
+
 MIB = 1024 * 1024
 
 # Room for the backup GPT in the last 33 sectors, rounded up to the MiB alignment.
@@ -132,7 +134,7 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
     else:
         boot_end_mib = _to_mib(boot["start"]) + _to_mib(boot["size"])
 
-        if state.rescue_media:
+        if state.rescue_media and not hardware.is_t2_mac:
             if rescue is None or rescue_boot is None:
                 raise ConfigGenError("rescue media was requested but base.json has no rescue partition template")
             if hardware.is_uefi:
@@ -182,9 +184,21 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
         # archinstall re-fetches each region's URLs itself, so empty lists suffice.
         base["mirror_config"]["mirror_regions"] = {region: [] for region in state.mirror_regions}
 
+    if hardware.is_t2_mac:
+        # The arch-mact2 repo is unsigned; it stays in the target's pacman.conf for kernel updates.
+        base["kernels"] = ["linux-t2"]
+        base["mirror_config"]["custom_repositories"].append(
+            {
+                "name": "arch-mact2",
+                "url": T2_REPO_URL,
+                "sign_check": "Never",
+                "sign_option": "TrustAll",
+            }
+        )
+
     base["app_config"]["bluetooth_config"]["enabled"] = hardware.bluetooth_detected
 
-    extra_packages = {pkg for pkg in (hardware.cpu_microcode_pkg, *hardware.gpu_packages, *hardware.laptop_packages) if pkg}
+    extra_packages = {pkg for pkg in (hardware.cpu_microcode_pkg, *hardware.gpu_packages, *hardware.laptop_packages, *hardware.t2_packages) if pkg}
     base["packages"] = sorted(set(base["packages"]) | extra_packages)
 
     credentials["users"][0]["username"] = state.username

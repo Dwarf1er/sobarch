@@ -80,11 +80,13 @@ esac
 
 # Apple Macs with the T2 security chip; the model list is t2linux's.
 is_t2_mac=false
+t2_packages=""
 if [ "$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null || true)" = "Apple Inc." ]; then
     case "$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)" in
         MacBookPro15,[1-4]|MacBookPro16,[1-4]|MacBookAir8,[12]|MacBookAir9,1| \
         iMac20,[12]|iMacPro1,1|Macmini8,1|MacPro7,1)
             is_t2_mac=true
+            t2_packages="linux-t2-headers apple-t2-audio-config apple-bcm-firmware-fetcher t2fanrd tiny-dfr"
             ;;
     esac
 fi
@@ -100,4 +102,5 @@ BLUETOOTH_DETECTED=$bluetooth_detected
 IS_LAPTOP=$is_laptop
 LAPTOP_PACKAGES="$laptop_packages"
 IS_T2_MAC=$is_t2_mac
+T2_PACKAGES="$t2_packages"
 EOF

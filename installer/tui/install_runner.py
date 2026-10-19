@@ -31,6 +31,10 @@ CHROOT_SETUP_SCRIPTS = [
 ]
 CHROOT_SETUP_DIR_IN_TARGET = Path("/root/sobarch-setup")
 
+# Written by apple-bcm-firmware-fetcher in the live environment (see build-iso.sh).
+T2_FIRMWARE_DIR = Path("/lib/firmware/brcm")
+T2_FIRMWARE_MANIFEST = Path("/var/lib/apple-bcm-firmware-fetcher/installed-files")
+
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 # Not /tmp: arch-chroot mounts a fresh tmpfs there on every call.
 SOBARCH_SKEL_BUILD_DIR_IN_TARGET = Path("/var/tmp/sobarch-skel-build")
@@ -193,6 +197,25 @@ def _build_and_install_base_packages(log_file, on_output: OutputCallback) -> int
     return returncode
 
 
+def _copy_t2_firmware(on_output: OutputCallback) -> None:
+    """Copy the Wi-Fi/Bluetooth firmware extracted from macOS into the target.
+
+    Only the fetcher's own files are copied; linux-firmware owns the rest of brcm/.
+    """
+    if not T2_FIRMWARE_MANIFEST.exists():
+        on_output("No Wi-Fi/Bluetooth firmware was extracted from macOS; see the T2 Mac docs.")
+        return
+    target_dir = MOUNTPOINT / T2_FIRMWARE_DIR.relative_to("/")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    copied = 0
+    for line in T2_FIRMWARE_MANIFEST.read_text().splitlines():
+        source = T2_FIRMWARE_DIR / line.strip().removeprefix("./")
+        if source.is_file():
+            shutil.copy2(source, target_dir / source.name)
+            copied += 1
+    on_output(f"Copied {copied} Wi-Fi/Bluetooth firmware files into the new install.")
+
+
 # One aur-sync call each, in this order: aur-sync sorts targets by name, which
 # would put lib32-nvidia-580xx-utils before the package it depends on.
 NVIDIA_LEGACY_PACKAGES = ("nvidia-580xx-utils", "lib32-nvidia-580xx-utils")
@@ -278,6 +301,9 @@ def run_install(
             if returncode != 0:
                 raise InstallError("failed to build/install the NVIDIA 580xx driver", log_path)
 
+        if hardware.is_t2_mac:
+            _copy_t2_firmware(on_output)
+
         timer.start("first-boot unit deployment")
         write_firstboot_package_lists(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
         write_security_flags(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
@@ -304,10 +330,13 @@ def run_install(
 
         target_setup_dir = MOUNTPOINT / CHROOT_SETUP_DIR_IN_TARGET.relative_to("/")
         target_setup_dir.mkdir(parents=True, exist_ok=True)
-        for script in CHROOT_SETUP_SCRIPTS:
+        # Before plymouth-setup.sh, which rebuilds the initramfs again.
+        setup_scripts = ["t2-setup.sh", *CHROOT_SETUP_SCRIPTS] if hardware.is_t2_mac else CHROOT_SETUP_SCRIPTS
+        for script in setup_scripts:
             shutil.copy2(ARCHINSTALL_DIR / script, target_setup_dir / script)
 
         env_updates: dict[str, str] = {
+            "SOBARCH_USERNAME": state.username,
             "NVIDIA_PROPRIETARY_DRIVER": "true" if hardware.nvidia_proprietary_driver else "false",
         }
         if generated.rescue_partition_number is not None:
@@ -321,7 +350,7 @@ def run_install(
         elif generated.rescue_boot_merged:
             env_updates["RESCUE_BOOT_MERGED"] = "true"
 
-        for script in CHROOT_SETUP_SCRIPTS:
+        for script in setup_scripts:
             timer.start(script)
             on_output(f"Running {script} inside the new install...")
             script_path = CHROOT_SETUP_DIR_IN_TARGET / script

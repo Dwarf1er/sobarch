@@ -45,11 +45,15 @@ for arg in $(cat /proc/cmdline); do
 done
 base_cmdline="${base_cmdline# }"
 
+# The running kernel's package (linux, linux-t2, ...) names its /boot files.
+kernel_pkgbase="$(cat "/usr/lib/modules/$(uname -r)/pkgbase" 2>/dev/null || true)"
+kernel_pkgbase="${kernel_pkgbase:-linux}"
+
 kernel_version_in() {
     local dir
     for dir in "$1"/usr/lib/modules/*/; do
         [ -f "${dir}pkgbase" ] || continue
-        [ "$(cat "${dir}pkgbase")" = "linux" ] || continue
+        [ "$(cat "${dir}pkgbase")" = "$kernel_pkgbase" ] || continue
         basename "$dir"
         return 0
     done
@@ -114,8 +118,8 @@ for id in "${snap_ids[@]}"; do
         continue
     fi
     if [ "$snap_version" = "$current_version" ]; then
-        kernel_path="boot():/vmlinuz-linux"
-        initrd_path="boot():/initramfs-linux.img"
+        kernel_path="boot():/vmlinuz-$kernel_pkgbase"
+        initrd_path="boot():/initramfs-$kernel_pkgbase.img"
     else
         ensure_kernel_store "$snap_version" "$subvol_dir" || continue
         kernel_path="boot():/$KERNEL_STORE_NAME/$snap_version/vmlinuz"
