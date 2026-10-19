@@ -69,6 +69,17 @@ awk -v entry_file="$REPO_DIR/scripts/iso-build/grub-t2-entry.cfg" '
 mv "$WORK_DIR/grub.cfg" "$PROFILE/grub/grub.cfg"
 grep -q "archlinux-t2" "$PROFILE/grub/grub.cfg"
 
+awk -v default_file="$REPO_DIR/scripts/iso-build/grub-t2-default.cfg" '
+    { print }
+    $0 == "default=archlinux" {
+        while ((getline line < default_file) > 0) print line
+        done = 1
+    }
+    END { exit !done }
+' "$PROFILE/grub/grub.cfg" > "$WORK_DIR/grub.cfg"
+mv "$WORK_DIR/grub.cfg" "$PROFILE/grub/grub.cfg"
+grep -q "default=archlinux-t2" "$PROFILE/grub/grub.cfg"
+
 # Unsigned, so the T2 kernel is only as trustworthy as that mirror.
 cat >> "$PROFILE/pacman.conf" <<'PACMAN_CONF'
 
@@ -155,6 +166,9 @@ if [[ $(tty) == "/dev/tty1" ]]; then
         # T2 Macs need their Wi-Fi/Bluetooth firmware pulled from macOS before the
         # network step; this only succeeds on the T2 kernel.
         if [[ "$(</sys/class/dmi/id/sys_vendor)" == "Apple Inc." ]] && command -v apple-bcm-firmware-fetcher >/dev/null; then
+            if [[ "$(uname -r)" != *-t2 ]]; then
+                echo "This is not the T2 kernel. Reboot and choose 'Sobarch installer for T2 Macs' in the boot menu."
+            fi
             apple-bcm-firmware-fetcher || echo "Wi-Fi/Bluetooth firmware was not extracted; use a wired connection."
         fi
         python3 /root/sobarch/installer/tui/__main__.py < /dev/tty
@@ -163,8 +177,11 @@ fi
 SCRIPT
 chmod +x "$PROFILE/airootfs/root/.automated_script.sh"
 
-echo "build-iso: running mkarchiso"
-mkarchiso -v -w "$WORK_DIR/mkarchiso-work" -o "$WORK_DIR/out" "$PROFILE"
+# The GRUB image embeds a fixed module list; grub-t2-default.cfg needs smbios.
+echo "build-iso: running mkarchiso (with smbios added to the embedded GRUB modules)"
+sed 's/grubmodules=(all_video/grubmodules=(smbios all_video/' "$(command -v mkarchiso)" > "$WORK_DIR/mkarchiso"
+grep -q 'grubmodules=(smbios' "$WORK_DIR/mkarchiso"
+bash "$WORK_DIR/mkarchiso" -v -w "$WORK_DIR/mkarchiso-work" -o "$WORK_DIR/out" "$PROFILE"
 
 built_iso="$(find "$WORK_DIR/out" -maxdepth 1 -name '*.iso' | head -1)"
 if [[ -z "$built_iso" ]]; then

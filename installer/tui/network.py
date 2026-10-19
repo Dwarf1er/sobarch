@@ -29,6 +29,19 @@ def _strip_ansi(text: str) -> str:
     return _ANSI_ESCAPE.sub("", text)
 
 
+def _table_rows(output: str, header: str) -> list[str]:
+    """Rows below the table header; error messages before it (no adapter) aren't rows."""
+    rows = []
+    in_table = False
+    for line in _strip_ansi(output).splitlines():
+        line = line.strip()
+        if line.startswith(header):
+            in_table = True
+        elif in_table and line and not line.startswith("-"):
+            rows.append(line)
+    return rows
+
+
 def is_connected() -> bool:
     """Fetch a real URL, since a route can exist with no internet behind it."""
     result = _run(
@@ -41,15 +54,7 @@ def is_connected() -> bool:
 def list_station_devices() -> list[str]:
     """Wireless adapters in station mode."""
     result = _run(["iwctl", "station", "list"])
-    devices = []
-    for line in _strip_ansi(result.stdout).splitlines():
-        line = line.strip()
-        if not line or line.startswith("-") or line.startswith("Name") or line.startswith("Devices"):
-            continue
-        name = line.split()[0]
-        if name:
-            devices.append(name)
-    return devices
+    return [row.split()[0] for row in _table_rows(result.stdout, "Name")]
 
 
 def scan_networks(device: str, max_wait_seconds: float = 10.0) -> list[NetworkInfo]:
@@ -66,12 +71,9 @@ def scan_networks(device: str, max_wait_seconds: float = 10.0) -> list[NetworkIn
 
         result = _run(["iwctl", "station", device, "get-networks"])
         networks = []
-        for line in _strip_ansi(result.stdout).splitlines():
-            line = line.strip()
-            if not line or line.startswith("-") or line.startswith("Network") or line.startswith("Available"):
-                continue
-            # Security and signal are the last two fields; the SSID may contain spaces.
-            parts = line.split()
+        for line in _table_rows(result.stdout, "Network name"):
+            # The connected network is marked with a leading ">".
+            parts = line.removeprefix(">").split()
             if len(parts) < 3:
                 continue
             ssid = " ".join(parts[:-2])
