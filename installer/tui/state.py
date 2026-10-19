@@ -14,6 +14,11 @@ class WizardState:
     free_space_size_bytes: int | None = None
     free_space_at_disk_end: bool = False
 
+    # Install into one existing partition, replacing it with an ESP and a root.
+    # The free_space_* start/size fields then hold that partition's extent.
+    partition_install: bool = False
+    partition_device: str | None = None
+
     hostname: str = ""
     username: str = ""
     password: str = ""
@@ -41,6 +46,10 @@ class WizardState:
     install_everything: bool = False
     # Profile name -> selected packages. install_everything is resolved at output time.
     profile_packages: dict[str, list[str]] = field(default_factory=dict)
+
+    @property
+    def shared_disk(self) -> bool:
+        return self.free_space_install or self.partition_install
 
     def is_complete(self) -> bool:
         return bool(

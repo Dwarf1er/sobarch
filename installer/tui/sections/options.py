@@ -39,7 +39,7 @@ class OptionsSection(Section):
 
     def on_show(self) -> None:
         rescue = self.query_one("#rescue-toggle", Toggle)
-        if self.sobarch_app.state.free_space_install:
+        if self.sobarch_app.state.shared_disk:
             rescue.set_value(False)
             rescue.disabled = True
             rescue.set_label("Include rescue media (unavailable for dual-boot installs)")
@@ -59,7 +59,7 @@ class OptionsSection(Section):
     def collect(self) -> None:
         state = self.sobarch_app.state
         state.rescue_media = (
-            False if state.free_space_install else self.query_one("#rescue-toggle", Toggle).value
+            False if state.shared_disk else self.query_one("#rescue-toggle", Toggle).value
         )
         state.ssh_enabled = self.query_one("#ssh-toggle", Toggle).value
         state.git_name = self.query_one("#git-name", Input).value.strip()

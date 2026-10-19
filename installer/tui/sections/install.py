@@ -83,14 +83,18 @@ class InstallSection(Section):
         actions.highlighted = 0
 
     def _confirm_name(self) -> str:
-        return PurePosixPath(self.sobarch_app.state.disk_device or "").name
+        state = self.sobarch_app.state
+        return PurePosixPath((state.partition_device if state.partition_install else state.disk_device) or "").name
 
     def _begin_confirm(self) -> None:
         state = self.sobarch_app.state
         disk = state.disk_device
         existing = next((d.partitions for d in list_disks() if d.path == disk), ())
         warning = Text()
-        if state.free_space_install:
+        if state.partition_install:
+            warning.append(f"ALL DATA ON {state.partition_device} WILL BE ERASED.\n", style="bold red")
+            warning.append(f"It is replaced by a new boot partition and root partition. The rest of {disk} is left untouched.\n")
+        elif state.free_space_install:
             warning.append(f"New partitions will be created in the free space on {disk}.\n", style="bold red")
             warning.append("Existing partitions are left untouched.\n")
         else:
@@ -134,7 +138,9 @@ class InstallSection(Section):
             return
         state = self.sobarch_app.state
         target = state.disk_device or "(none)"
-        if state.free_space_install:
+        if state.partition_install:
+            target += f"  (dual-boot, replaces {state.partition_device} only)"
+        elif state.free_space_install:
             target += "  (dual-boot, free space only)"
         lines = [
             ("Disk", target),

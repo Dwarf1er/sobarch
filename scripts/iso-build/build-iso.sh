@@ -24,7 +24,7 @@ OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 SOURCE_DATE_EPOCH="$(date -u +%s)"
 export SOURCE_DATE_EPOCH
 
-pacman -Sy --noconfirm --needed archiso git
+pacman -Sy --noconfirm --needed archiso git grub
 
 WORK_DIR="$(mktemp -d /var/tmp/sobarch-iso-build.XXXXXX)"
 trap 'rm -rf "$WORK_DIR"' EXIT
@@ -51,9 +51,31 @@ sed -i \
     -e 's/It allows you to install Arch Linux/It allows you to install Sobarch/g' \
     "$PROFILE/syslinux/archiso_sys-linux.cfg"
 
-sed -i 's/title    Arch Linux install medium/title    Sobarch installer/' \
-    "$PROFILE/efiboot/loader/entries/01-archiso-linux.conf" \
-    "$PROFILE/efiboot/loader/entries/02-archiso-speech-linux.conf"
+sed -i 's/Arch Linux install medium/Sobarch installer/' "$PROFILE/grub/grub.cfg"
+
+# UEFI boots through GRUB, not systemd-boot: t2linux's own ISO does the same
+# since GRUB is the loader known to boot on T2 Macs, and it takes the T2 entry.
+echo "build-iso: switching UEFI boot to GRUB and adding the T2 Mac entry"
+sed -i "s/'uefi.systemd-boot'/'uefi.grub'/" "$PROFILE/profiledef.sh"
+grep -q "'uefi.grub'" "$PROFILE/profiledef.sh"
+
+awk -v entry_file="$REPO_DIR/scripts/iso-build/grub-t2-entry.cfg" '
+    !done && index($0, "memtest86+/memtest.efi") {
+        while ((getline line < entry_file) > 0) print line
+        done = 1
+    }
+    { print }
+' "$PROFILE/grub/grub.cfg" > "$WORK_DIR/grub.cfg"
+mv "$WORK_DIR/grub.cfg" "$PROFILE/grub/grub.cfg"
+grep -q "archlinux-t2" "$PROFILE/grub/grub.cfg"
+
+# Unsigned, so the T2 kernel is only as trustworthy as that mirror.
+cat >> "$PROFILE/pacman.conf" <<'PACMAN_CONF'
+
+[arch-mact2]
+SigLevel = Never
+Server = https://mirror.funami.tech/arch-mact2/os/x86_64
+PACMAN_CONF
 
 echo "sobarch" > "$PROFILE/airootfs/etc/hostname"
 
@@ -74,10 +96,15 @@ rsync -a \
     --exclude='*.pyc' \
     "$REPO_DIR/" "$PROFILE/airootfs/root/sobarch/"
 
-echo "build-iso: adding python/python-textual to the profile package list"
+echo "build-iso: adding the installer and T2 Mac packages to the profile package list"
 {
     echo "python"
     echo "python-textual"
+    echo "linux-t2"
+    echo "apple-t2-audio-config"
+    echo "apple-bcm-firmware-fetcher"
+    echo "t2fanrd"
+    echo "tiny-dfr"
 } >> "$PROFILE/packages.x86_64"
 
 # releng's root autologin runs ~/.automated_script.sh. TODO: confirm this

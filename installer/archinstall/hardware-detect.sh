@@ -78,6 +78,17 @@ case "$(cat /sys/class/dmi/id/chassis_type 2>/dev/null || true)" in
     *) is_laptop=false ;;
 esac
 
+# Apple Macs with the T2 security chip; the model list is t2linux's.
+is_t2_mac=false
+if [ "$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null || true)" = "Apple Inc." ]; then
+    case "$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)" in
+        MacBookPro15,[1-4]|MacBookPro16,[1-4]|MacBookAir8,[12]|MacBookAir9,1| \
+        iMac20,[12]|iMacPro1,1|Macmini8,1|MacPro7,1)
+            is_t2_mac=true
+            ;;
+    esac
+fi
+
 cat <<EOF
 CPU_MICROCODE_PKG="$CPU_MICROCODE_PKG"
 GPU_VENDORS="$gpu_vendors"
@@ -88,4 +99,5 @@ NVIDIA_LEGACY_580XX=$nvidia_legacy_580xx
 BLUETOOTH_DETECTED=$bluetooth_detected
 IS_LAPTOP=$is_laptop
 LAPTOP_PACKAGES="$laptop_packages"
+IS_T2_MAC=$is_t2_mac
 EOF

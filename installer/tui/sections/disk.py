@@ -5,7 +5,7 @@ from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.widgets import Input, Static
 
-from disk_probe import DiskProbe, probe_disk
+from disk_probe import DiskProbe, ExistingPartition, probe_disk
 from disks import DiskInfo, list_disks
 from sections.base import Section
 from widgets import RadioList, Row, Toggle
@@ -16,6 +16,7 @@ class _Entry:
     disk: DiskInfo
     free_space_install: bool
     probe: DiskProbe | None
+    partition: ExistingPartition | None = None
 
 
 class DiskSection(Section):
@@ -26,14 +27,16 @@ class DiskSection(Section):
         state = self.sobarch_app.state
         yield Static(
             "The chosen disk is wiped and repartitioned. A disk with free space "
-            "also offers a dual-boot entry that installs into that space only.",
+            "also offers a dual-boot entry that installs into that space only. "
+            "On a T2 Mac, a partition made in macOS can be chosen instead: only that "
+            "partition is replaced.",
             classes="note",
         )
         self._entries = self._build_entries()
         if not self._entries:
             yield Static("No disks detected.", classes="error")
         selected = next(
-            (i for i, e in enumerate(self._entries) if e.disk.path == state.disk_device and e.free_space_install == state.free_space_install),
+            (i for i, e in enumerate(self._entries) if self._matches_state(e, state)),
             None,
         )
         yield RadioList([self._label(e) for e in self._entries], selected=selected, id="disk-choice")
@@ -52,9 +55,16 @@ class DiskSection(Section):
     def _sync_encryption_fields(self) -> None:
         self.query_one("#encryption-fields").display = self.query_one("#encryption-toggle", Toggle).value
 
+    @staticmethod
+    def _matches_state(entry: _Entry, state) -> bool:
+        if entry.disk.path != state.disk_device or entry.free_space_install != state.free_space_install:
+            return False
+        return (entry.partition.device if entry.partition else None) == state.partition_device
+
     def _build_entries(self) -> list[_Entry]:
-        # Free-space installs are UEFI/GPT only.
-        is_uefi = self.sobarch_app.get_hardware().is_uefi
+        # Free-space and partition installs are UEFI/GPT only.
+        hardware = self.sobarch_app.get_hardware()
+        is_uefi = hardware.is_uefi
         entries: list[_Entry] = []
         for disk in list_disks():
             entries.append(_Entry(disk=disk, free_space_install=False, probe=None))
@@ -67,10 +77,19 @@ class DiskSection(Section):
                 continue
             if probe.has_gpt and probe.free_space is not None:
                 entries.append(_Entry(disk=disk, free_space_install=True, probe=probe))
+            if probe.has_gpt and hardware.is_t2_mac:
+                entries.extend(
+                    _Entry(disk=disk, free_space_install=False, probe=probe, partition=partition)
+                    for partition in probe.replaceable
+                )
         return entries
 
     def _label(self, entry: _Entry) -> str:
         base = f"{entry.disk.path}  ({entry.disk.model}, {entry.disk.size_human}{', removable' if entry.disk.removable else ''})"
+        if entry.partition is not None:
+            part = entry.partition
+            label = f' "{part.label}"' if part.label else ""
+            return f"{base}, replace {part.device}{label} ({part.fstype or 'no filesystem'}, {part.size_bytes / 1024**3:.1f} GiB)"
         if not entry.free_space_install:
             return base
         assert entry.probe is not None and entry.probe.free_space is not None
@@ -101,12 +120,23 @@ class DiskSection(Section):
             state.disk_device = None
             state.disk_size_bytes = None
             state.free_space_install = False
+            state.partition_install = False
+            state.partition_device = None
             return
 
         entry = self._entries[index]
         state.disk_device = entry.disk.path
         state.disk_size_bytes = entry.disk.size_bytes
         state.free_space_install = entry.free_space_install
+        state.partition_install = entry.partition is not None
+        state.partition_device = entry.partition.device if entry.partition else None
+
+        if entry.partition is not None:
+            state.free_space_start_bytes = entry.partition.start_bytes
+            state.free_space_size_bytes = entry.partition.size_bytes
+            state.free_space_at_disk_end = False
+            state.rescue_media = False
+            return
         if not entry.free_space_install:
             return
 

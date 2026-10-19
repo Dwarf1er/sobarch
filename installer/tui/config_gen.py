@@ -5,6 +5,7 @@ The templates are edited as parsed JSON because the partition edits are structur
 
 import json
 import os
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -85,7 +86,7 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
     rescue_boot_partition_number = None
     rescue_boot_merged = False
 
-    if state.free_space_install:
+    if state.shared_disk:
         # Never wipe or shrink anything. Rescue media is always off on this path.
         if rescue is not None:
             partitions.remove(rescue)
@@ -93,6 +94,28 @@ def generate_configs(state: WizardState, hardware: HardwareInfo) -> GeneratedCon
             partitions.remove(rescue_boot)
 
         device_mod["wipe"] = False
+        if state.partition_install:
+            # Delete only the chosen partition; its extent is then the free space.
+            if not state.partition_device:
+                raise ConfigGenError("a partition install needs a target partition")
+            assert state.free_space_start_bytes is not None and state.free_space_size_bytes is not None
+            sector_size = boot["start"]["sector_size"]
+            partitions.insert(
+                0,
+                {
+                    "btrfs": [],
+                    "dev_path": state.partition_device,
+                    "flags": [],
+                    "fs_type": None,
+                    "mount_options": [],
+                    "mountpoint": None,
+                    "obj_id": str(uuid.uuid4()),
+                    "size": {"sector_size": sector_size, "unit": "B", "value": state.free_space_size_bytes},
+                    "start": {"sector_size": sector_size, "unit": "B", "value": state.free_space_start_bytes},
+                    "status": "delete",
+                    "type": "primary",
+                },
+            )
         assert state.free_space_start_bytes is not None and state.free_space_size_bytes is not None
         # Round inward so an unaligned gap edge never overlaps a neighbour.
         free_space_start_mib = -(-state.free_space_start_bytes // MIB)
