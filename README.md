@@ -136,10 +136,10 @@ plain comparison without `gpg`.
 
 ## Day-to-day use
 
-No terminal is required for upkeep. Tap `Super` for the Fuzzel main menu,
-which covers updating the system, reviewing config merge conflicts,
-installing additional packages, switching themes and wallpapers, and
-refreshing the rescue ISO.
+Everyday upkeep doesn't need a terminal. Tap `Super` for the Fuzzel main
+menu, which covers updating the system, reviewing config merge conflicts,
+installing apps, switching themes and wallpapers, setting default apps,
+audio, Wi-Fi, Bluetooth and firmware, and refreshing the rescue ISO.
 
 **Updating.** **Super, Sobarch, Update System** (or `sobarch update` in a
 terminal) runs `pacman -Syu`, rebuilds any vendored package that is behind,

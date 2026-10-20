@@ -32,8 +32,8 @@ title = "Security baseline"
 content = "A default-deny nftables firewall and a locked root account ship out of the box. SSH stays off unless enabled during install."
 
 [[extra.included]]
-title = "No terminal required"
-content = "A Fuzzel-driven menu on the Super key covers pulling config updates, resolving merge conflicts, installing packages, switching themes and wallpapers, and refreshing the rescue ISO."
+title = "One menu for upkeep"
+content = "A Fuzzel menu on the Super key handles everyday tasks: updating the whole system, resolving config merge conflicts, installing apps, switching themes and wallpapers, setting default apps, managing audio, Wi-Fi, Bluetooth and firmware, and refreshing the rescue ISO. The same actions are available from the terminal through the sobarch command."
 
 [[extra.profiles]]
 name = "Developer"
