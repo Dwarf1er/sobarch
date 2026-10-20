@@ -25,6 +25,9 @@ hl.monitor({
 	scale = "auto",
 })
 
+-- Written by the Displays menu (Sobarch, System, Displays); optional.
+pcall(dofile, os.getenv("HOME") .. "/.config/hypr/monitors.lua")
+
 -- Machine-specific monitor layout and workspace pinning; optional.
 pcall(dofile, os.getenv("HOME") .. "/.config/hypr/local.lua")
 

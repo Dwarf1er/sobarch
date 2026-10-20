@@ -41,6 +41,12 @@ firmware_state() {
     esac
 }
 
+displays_state() {
+    local n
+    n=$(hyprctl monitors 2>/dev/null | grep -c '^Monitor')
+    ((n == 1)) && echo "1 monitor" || echo "$n monitors"
+}
+
 # tlpctl is only installed on laptops.
 selected=""
 while :; do
@@ -49,6 +55,7 @@ while :; do
     menu_add network "Network" wifi.svg "$(network_state)"
     menu_add bluetooth "Bluetooth" bluetooth.svg "$(bluetooth_state)"
     command -v tlpctl >/dev/null && menu_add power-profile "Power Profile" battery-2.svg "$(tlpctl get 2>/dev/null)"
+    menu_add displays "Displays" devices.svg "$(displays_state)"
     menu_add firmware "Firmware" cpu.svg "$(firmware_state)"
 
     menu_show system "" "$selected" || break
@@ -58,6 +65,7 @@ while :; do
         network) menu_sub network-menu.sh ;;
         bluetooth) menu_sub bluetooth-menu.sh ;;
         power-profile) menu_sub power-profile-menu.sh ;;
+        displays) menu_sub displays-menu.sh ;;
         firmware) menu_sub fwupd-menu.sh ;;
     esac
 done

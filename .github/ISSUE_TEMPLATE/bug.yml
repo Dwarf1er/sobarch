@@ -1,0 +1,19 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Diagnostic report
+      description: Run `sobarch doctor --write`, read the file it writes, and paste it here (or attach it). It has hostname, username, IPs and serials redacted. If the system won't boot or install, say so and skip this.
+      render: text
