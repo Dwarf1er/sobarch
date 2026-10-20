@@ -111,8 +111,14 @@ collect() {
 
     section "Security"
     printf 'ssh-enabled: %s\n' "$(cat /etc/sobarch/ssh-enabled 2>/dev/null)"
-    printf 'nftables: %s\n' "$(systemctl is-active nftables 2>&1)"
-    printf 'root account: %s\n' "$(passwd -S root 2>/dev/null | awk '{print $2}')"
+    # nftables.service is a oneshot that loads the rules and exits, so
+    # "inactive" is normal; the loaded ruleset is what counts.
+    printf 'nftables.service enabled: %s\n' "$(systemctl is-enabled nftables 2>&1)"
+    echo "nftables ruleset (tables/chains):"
+    rules="$(root_try nft list ruleset)"
+    grep -E '^(\(|table|[[:space:]]+chain|[[:space:]]+type .*policy)' <<<"$rules"
+    echo "root account:"
+    root_try passwd -S root
 }
 
 # Strip identifying values from stdin.
