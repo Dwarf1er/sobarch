@@ -30,8 +30,21 @@ journalctl -u sobarch-firstboot-security.service
 journalctl -u sobarch-firstboot-rescue.service
 ```
 
-Each is safe to start by hand if you don't want to wait for the
+The rfkill, skel, and git-setup units are enabled at ordinary boot
+instead (`sobarch-firstboot-rfkill.service`,
+`sobarch-firstboot-skel.service`, `sobarch-firstboot-git.service`);
+check them the same way.
+
+Each network-triggered unit is safe to start by hand if you don't want to wait for the
 dispatcher: `systemctl start --no-block sobarch-firstboot-packages.service`.
+
+## A config update left `.sobarch-new` files
+
+That means a file you edited also changed in the new defaults and the
+two couldn't be merged automatically; your version is untouched. Run
+`sobarch review-conflicts` (or **Sobarch → Review Conflicts**) to keep
+yours, take the new one, diff, or edit the merge. See
+[Updating Your Config](../../desktop/updating-system/).
 
 ## Boot splash, boot menu, or login screen branding is missing
 
@@ -69,6 +82,8 @@ sobarch aur-sync <package-name>
 
 An "unable to lock database" message just means another pacman
 operation was running; the sync retries on its own for a short while.
+A "refusing to build unvendored package" message means the name isn't
+in the repository's vendored set; the sync only builds those.
 
 ## Update notifications never appear
 

@@ -60,7 +60,7 @@ the second. Full documentation lives at
 | **Bootable snapshots** | BTRFS root snapshots (Snapper) appear as boot entries in the Limine menu. A spare Arch ISO on its own partition makes rollback possible even when the system won't boot, with no USB drive needed. |
 | **Security baseline** | A default-deny `nftables` firewall and a locked root account out of the box. SSH stays off unless enabled during install. Optional LUKS encryption of the root partition. |
 | **Reviewed packages only** | Arch's official repositories plus a small set of AUR packages vendored and reviewed into this repo, built locally by a dedicated build user. No AUR helper, no third-party binary repository. |
-| **Flexible installs** | Wipe a disk, or install into free space for dual-boot. Interactive TUI, unattended with an answer file, or over the network with PXE. |
+| **Flexible installs** | Wipe a disk, or install into free space for dual-boot. Interactive TUI, unattended with an answer file, or over the network with PXE. Intel Macs with the T2 chip are supported through a dedicated ISO boot entry. |
 
 ## Software profiles
 
@@ -69,7 +69,7 @@ Optional, applied after first boot, and unchecked by default:
 | Profile | Included |
 | --- | --- |
 | Developer | `mise`, `presenterm` |
-| Gaming | Steam, Lutris, Prism Launcher, gamescope, MangoHud, Protontricks, ProtonUp-Qt |
+| Gaming | Steam, Lutris, Prism Launcher, gamescope, MangoHud, Protontricks, ProtonUp-Qt, Gale |
 | Creative | GIMP, Inkscape, OBS Studio, Shotcut, Audacity, EasyEffects, Calf, LSP plugins, DeepFilterNet |
 | Maker / 3D Printing | Blender, FreeCAD, OrcaSlicer |
 | Virtualization | QuickEMU, QuickGUI |
@@ -113,6 +113,8 @@ docs](https://sobarch.antoinepoulin.com/docs/installer/unattended-install/)).
 Booting that path over the network instead of from a USB drive is also
 possible, see the [PXE Netboot
 docs](https://sobarch.antoinepoulin.com/docs/installer/pxe-netboot/).
+On an Intel Mac with the T2 chip, use the prebuilt ISO (see the [T2 Mac
+docs](https://sobarch.antoinepoulin.com/docs/installer/t2-mac/)).
 
 ### Prebuilt ISO
 

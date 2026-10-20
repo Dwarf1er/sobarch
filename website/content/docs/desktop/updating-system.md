@@ -33,7 +33,7 @@ throughout:
 2. The [package sync mechanism](../../packages/installing-updating/)
    updates vendored AUR/custom packages. Packages the base system
    requires that were added after your install are picked up here too.
-3. If `sobarch-skel` changed, [boot and login theming](../boot-theming/)
+3. If `sobarch-skel` or `sobarch-scripts` was updated, [boot and login theming](../boot-theming/)
    is re-applied, so branding changes ship through this same command
    as config changes.
 4. The merge described above runs, then your tinty templates are

@@ -138,7 +138,7 @@ if ! $review_only; then
     [[ "$(pacman -Q sobarch-skel 2>/dev/null || true)" != "$skel_before" ]] && reapply_theming
 
     # Check unprivileged first so a no-op run never prompts for a password.
-    # sobarch-scripts only updates when named explicitly, so check it too.
+    # sobarch-scripts is checked too, so a new update flow applies this run.
     update_pending=false
     to_refresh=()
     for pkg in sobarch-skel sobarch-scripts; do

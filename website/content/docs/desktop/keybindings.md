@@ -77,7 +77,7 @@ Input method switching (`Super+Space`) is covered in
 ## The cheat sheet
 
 <figure class="figure">
-  <img class="img-fluid rounded shadow-sm" src="/images/desktop/keybindings-cheatsheet.webp" width="1366" height="768" alt="The on-screen keybindings cheat sheet, opened with Super+/">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/keybindings-cheatsheet.webp" width="1920" height="1080" alt="The on-screen keybindings cheat sheet, opened with Super+/">
 </figure>
 
 `Super+/` opens a read-only fuzzel list built by grepping the

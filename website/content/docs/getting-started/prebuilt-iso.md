@@ -27,7 +27,12 @@ image was built.
   (tty1) auto-launches the TUI, so there is no command to type.
 - **It needs a network connection.** Packages, including the vendored
   AUR ones, are downloaded (and built, where needed) during the install,
-  exactly as they are from the stock Arch ISO.
+  exactly as they are from the stock Arch ISO. Nothing is cached on the
+  image.
+- **It supports T2 Macs.** UEFI boots through GRUB, which has an extra
+  **Sobarch installer for T2 Macs** entry running the `linux-t2` kernel
+  (selected automatically on Apple hardware). See [T2
+  Macs](../../installer/t2-mac/).
 - **It works for unattended and PXE installs.** If a `script=` kernel
   parameter is present, the ISO runs that script instead of launching the
   TUI, the same hook the stock Arch ISO provides. See [PXE

@@ -45,18 +45,20 @@ on the AUR forever.
 | `vesktop-bin` | Vesktop, a Discord client with Vencord built in | Browsers & Chat profile |
 | `nvidia-580xx-utils`, `lib32-nvidia-580xx-utils` | Legacy NVIDIA 580xx driver branch (one build also produces the matching DKMS and OpenCL packages) | Installer, only when a Maxwell, Pascal or Volta GPU is detected |
 
-The "every install" packages (these two plus `tinty-bin`, listed below) are built synchronously during the
-install itself, before first boot. Profile packages are installed
-after first boot, as described in
+The "every install" packages (these two plus `tinty-bin`, listed below)
+are named in `scripts/aur-sync/base-required-packages.txt`, the one
+list both the installer and **Update System** read. They are built
+synchronously during the install itself, before first boot. Profile
+packages are installed after first boot, as described in
 [Software Profiles](../../installer/software-profiles/).
 
 ## Custom packages
 
 | Package | What it ships |
 | --- | --- |
-| `sobarch-skel` | The default desktop configuration (the dotfiles merged into `$HOME` by [Updating Your Config](../../desktop/updating-system/)), the profile list the Install menu reads, and the branding assets used for the boot splash, boot menu and login screen. |
-| `sobarch-scripts` | The `sobarch` command, the update flow, the package sync script and its pacman hook, the first-boot scripts, the NetworkManager dispatcher script, the daily update-check timer, and the snapshot restore and rescue refresh helpers. Scripts live in `/usr/local/lib/sobarch/`. |
-| `sobarch-limine-snapshots` | The service that keeps one Limine boot entry per Snapper snapshot, so any snapshot can be booted straight from the boot menu. See [Snapshots](../../installer/snapshots/). |
+| `sobarch-skel` | The default desktop configuration (the dotfiles merged into `$HOME` by [Updating Your Config](../../desktop/updating-system/)), the profile list the Install menu reads, the system-wide default-application list (`/etc/xdg/mimeapps.list`, which your own choices override), and the branding assets used for the boot splash, boot menu and login screen. |
+| `sobarch-scripts` | The `sobarch` command, the update flow, the package sync script and its pacman hook, the first-boot scripts, the NetworkManager dispatcher script, the daily update-check timer, and the snapshot restore and rescue refresh helpers, and the scripts that re-apply the boot menu, login screen and boot splash theming. Scripts live in `/usr/local/lib/sobarch/`; the `sobarch` command is `/usr/local/bin/sobarch`. |
+| `sobarch-limine-snapshots` | The `sobarch-limine-snapshotd` service (and the sync script it runs), which keeps one Limine boot entry per Snapper snapshot, so any snapshot can be booted straight from the boot menu. See [Snapshots](../../installer/snapshots/). |
 | `sobarch-via-udev` | A udev rule granting `hidraw` access so keyboards can be configured from the VIA web app (usevia.app) without root. Opt-in through the System Tuning profile. |
 | `tinty-bin` | Base16/Base24 colour scheme manager behind [theming](../../desktop/theming/); repackages upstream's prebuilt release binary, since the AUR only has the slow-to-compile `tinty-git`. Built on every install. |
 | `vesktop-integrity-launch` | A launch wrapper for Vesktop that checks the Vencord files against a local baseline and runs Vesktop's own repair when they don't match. |
@@ -65,7 +67,7 @@ after first boot, as described in
 
 `vesktop-integrity-launch` is not a profile choice of its own. It's a
 companion of `vesktop-bin`: whenever `vesktop-bin` is installed by
-name (from the Install menu, first boot, or `sobarch aur-sync
+name (from the Install Apps menu, first boot, or `sobarch aur-sync
 vesktop-bin`), the wrapper is built and installed alongside it. A pacman hook
 then writes a menu entry in `/usr/local/share/applications/` that
 overrides the stock one so launching Vesktop from the app launcher goes
@@ -93,6 +95,19 @@ own pull request.
 
 Sobarch's own custom packages are checked locally instead: a git
 pre-commit hook rebuilds each `.SRCINFO` and, if a package's payload
-changed without a version bump, bumps it and stages the fix.
+changed without a version bump, bumps the version (today's date, or
+the next `pkgrel` if it was already bumped today) and stages the fix.
 Contributors enable it once per clone with
-`scripts/install-git-hooks.sh`.
+`scripts/install-git-hooks.sh`. The `tinty-bin` and
+`vesktop-integrity-launch` bump pull requests run the same validator.
+
+## Other CI workflows
+
+- **ISO build:** on the 5th of each month (and on demand) a workflow
+  builds the prebuilt installer ISO, signs it with a detached GPG
+  signature, and publishes both as a GitHub Release. See
+  [Prebuilt ISO](../../getting-started/prebuilt-iso/).
+- **Website:** every push to `master` that touches `website/` rebuilds
+  this site with Zola and deploys it to GitHub Pages.
+- **AUR update check:** runs weekly (Mondays) or on demand, as described
+  above.

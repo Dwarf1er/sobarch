@@ -49,7 +49,7 @@ you opted out, you never see it. From a terminal, `sobarch rescue-refresh`
 does the same refresh.
 
 Rescue media is unavailable on a [dual-boot](../dual-boot/) free-space
-install, and the rescue partitions are not covered by [disk
+install and on [T2 Macs](../t2-mac/), and the rescue partitions are not covered by [disk
 encryption](../disk-encryption/).
 
 This is what [snapshot rollback](../snapshots/#restoring-a-snapshot-as-the-new-root)'s

@@ -18,12 +18,14 @@ it always sees the packages as they are now.
 
 ## Installing one on demand
 
-From the desktop: **Super → Sobarch → Install**. This flattens every
-[software profile](../../installer/software-profiles/)'s packages into
-one deduped, individually-installable list (anything already installed
-is left out) and installs whichever one
-you pick: official-repo packages via `pacman`, AUR/custom packages
-through the same sync mechanism described below.
+From the desktop: **Super → Sobarch → Install Apps**. This flattens
+every [software profile](../../installer/software-profiles/)'s packages
+into one deduped list (not-yet-installed packages first, tagged with
+their profile and `AUR` where it applies; installed ones follow, marked
+`installed`) and installs whichever one you pick: official-repo
+packages via `pacman`, AUR/custom packages through the same sync
+mechanism described below. A failed AUR build points you to
+`/var/log/sobarch/aur-sync.log`.
 
 ## Staying up to date
 

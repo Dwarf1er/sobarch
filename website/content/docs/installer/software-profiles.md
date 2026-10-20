@@ -53,7 +53,7 @@ Packages](../../packages/aur-and-custom/).
 ## Installing a profile package later
 
 Anything you skipped during install, or decide you want afterward, is
-available from the desktop: **Super → Sobarch → Install**. It's the
+available from the desktop: **Super → Sobarch → Install Apps**. It's the
 same combined install logic first boot already runs (official-repo
 packages via `pacman`, AUR/custom packages via the [package sync
 mechanism](../../packages/installing-updating/)), just for one package
@@ -61,5 +61,5 @@ at a time instead of a whole profile. Already-installed packages don't
 show up in the list.
 
 <figure class="figure">
-  <img class="img-fluid rounded shadow-sm" src="/images/desktop/software-install-menu.webp" width="1366" height="768" alt="The Install menu, listing packages not yet installed">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/software-install-menu.webp" width="1920" height="1080" alt="The Install Apps menu, listing the profile packages with their install state">
 </figure>

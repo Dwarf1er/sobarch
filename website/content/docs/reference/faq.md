@@ -33,9 +33,9 @@ then updated in the background afterward. See
 
 ## How do I install something that isn't installed?
 
-Optional software is in **Super → Sobarch → Install**, which lists every
-[profile](../../installer/software-profiles/) package you don't have
-yet. Anything else in the official repositories is a normal
+Optional software is in **Super → Sobarch → Install Apps**, which lists
+every [profile](../../installer/software-profiles/) package, the ones
+you don't have yet first. Anything else in the official repositories is a normal
 `pacman -S`. There's no AUR helper, so other AUR packages are yours to
 build by hand.
 
@@ -69,7 +69,9 @@ enable `tlp.service` and `tlp-pd.service`.
 
 For other tools, the **System Tuning** profile adds `lact`, `nvtop`
 (per-process GPU usage, which the default system monitor, `btop`,
-doesn't show), `smartmontools`, and `ethtool`; see [Software
+doesn't show), `smartmontools`, `ethtool`, and `sobarch-via-udev` (a udev
+rule that lets the VIA keyboard configurator at usevia.app reach your
+keyboard without root); see [Software
 Profiles](../../installer/software-profiles/).
 
 ## Can I dual-boot with Windows or another OS?

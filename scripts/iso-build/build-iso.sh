@@ -118,8 +118,8 @@ echo "build-iso: adding the installer and T2 Mac packages to the profile package
     echo "tiny-dfr"
 } >> "$PROFILE/packages.x86_64"
 
-# releng's root autologin runs ~/.automated_script.sh. TODO: confirm this
-# still holds for current releng. The script= handling is copied from
+# releng's root autologin runs ~/.automated_script.sh (via its .zlogin).
+# The script= handling is copied from
 # releng's own script so PXE unattended installs keep working; the TUI
 # launches only when no script= was given.
 echo "build-iso: wiring auto-launch of the installer TUI (with a script= PXE override)"

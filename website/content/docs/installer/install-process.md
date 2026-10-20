@@ -10,8 +10,9 @@ toc = true
 +++
 
 After you confirm on the Install step (or an [unattended
-run](../unattended-install/) starts), the installer does the following, in
-order, and shows the output live in the same pane.
+run](../unattended-install/) starts), the installer first checks that the
+network is reachable (the install stops with a message if it is not), then
+does the following, in order, and shows the output live in the same pane.
 
 1. **`archinstall`** partitions the disk, installs the base packages, the
    Limine bootloader, NetworkManager, and the other services from the
@@ -21,16 +22,19 @@ order, and shows the output live in the same pane.
    `sobarch-skel`, `sobarch-scripts`, `sobarch-limine-snapshots`, and the
    AUR packages the base system requires. This uses the same sync
    mechanism described under [Packages](../../packages/aur-and-custom/).
-   On the [prebuilt ISO](../../getting-started/prebuilt-iso/) the cached
-   builds are reused where their versions match.
+   Nothing is cached, on the [prebuilt ISO](../../getting-started/prebuilt-iso/)
+   or otherwise: everything is built during the install.
 3. **The NVIDIA legacy driver** is built here too, only on
    Maxwell/Pascal/Volta hardware; see [Hardware
-   Detection](../hardware-detection/). It takes a while.
+   Detection](../hardware-detection/). It takes a while. On a [T2
+   Mac](../t2-mac/), the Wi-Fi/Bluetooth firmware the live ISO extracted
+   from macOS is copied into the new system.
 4. **Your choices are recorded** for first boot: the selected profile
    packages, the SSH flag, and the git identity.
 5. **First-boot units are installed and enabled.** See [First
    Boot](../../getting-started/first-boot/).
-6. **Setup scripts run inside the new system**, in this order: NVIDIA
+6. **Setup scripts run inside the new system**, in this order: the T2
+   Mac configuration (T2 Macs only), NVIDIA
    configuration (when it applies), [Snapper](../snapshots/) retention and
    the first snapshot, the Limine boot menu theme, the Plymouth boot
    splash theme, formatting the [rescue media](../rescue-media/)

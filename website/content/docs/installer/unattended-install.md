@@ -61,7 +61,7 @@ for a complete example. Every field below is optional except `disk`,
 | `sys_lang` | `"en_US.UTF-8"` | |
 | `timezone` | `"UTC"` | |
 | `mirror_regions` | `[]` (automatic) | A list of country names from `archinstall`'s own mirror-status data. The older single-string `mirror_region` is still accepted. |
-| `rescue_media` | `true` | |
+| `rescue_media` | `true` | Ignored (treated as off) on T2 Macs. |
 | `ssh_enabled` | `false` | |
 | `encryption_password` | `""` (disabled) | Plaintext; a non-empty value LUKS-encrypts the root (btrfs) partition and unlocks with this passphrase at boot. The ESP and any rescue-media partitions are never encrypted. |
 | `git_name` / `git_email` | `""` | Both or neither. |
@@ -70,8 +70,8 @@ for a complete example. Every field below is optional except `disk`,
 
 ## What's deliberately not supported yet
 
-- **Dual-boot / free-space installs.** Only whole-disk installs are
-  supported; `disk` always wipes the target. Reusing an existing EFI
+- **Dual-boot / free-space installs and T2 partition installs.** Only
+  whole-disk installs are supported; `disk` always wipes the target. Reusing an existing EFI
   System Partition or a detected free-space gap (see
   [Dual-Boot](../dual-boot/)) involves judgment calls the interactive
   installer's Disk step exists for.

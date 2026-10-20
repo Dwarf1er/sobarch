@@ -19,7 +19,9 @@ steps are:
 - **Disk**: wipes and partitions the entire target disk by default, or
   installs into existing free space instead for
   [dual-boot](../dual-boot/) alongside another OS; also the optional
-  [LUKS encryption](../disk-encryption/) toggle and passphrase
+  [LUKS encryption](../disk-encryption/) toggle and passphrase. On a
+  [T2 Mac](../t2-mac/), each partition you made in macOS is also offered
+  as a target to replace
 - **Account**: hostname, username, and password (entered twice).
   Hostnames are lowercase letters, digits, and inner hyphens; usernames
   start with a lowercase letter or underscore. This account is the

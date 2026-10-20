@@ -20,7 +20,7 @@ any other dual-boot install.
 From Windows: **Disk Management** → right-click the partition to shrink
 → **Shrink Volume** → enter how much space to free up. This becomes the
 disk's unallocated space that sobarch installs into. Leave at least
-20GiB free; less than that isn't enough for a comfortable install.
+20GiB free; the installer only offers free space of that size or more.
 
 ## 2. Install into the free space
 
@@ -38,6 +38,9 @@ entire disk" one: installing into that free space instead. Picking it:
   the Options step is turned off and unavailable (the extra partitions it
   needs aren't worth the added complexity on a disk already shared with
   another OS).
+
+On a T2 Mac, see [T2 Macs](../t2-mac/) for replacing a single partition
+instead.
 
 This is UEFI/GPT only. A BIOS/MBR disk never offers this option: MBR's
 3-primary-partition limit is already tight for sobarch's own layout

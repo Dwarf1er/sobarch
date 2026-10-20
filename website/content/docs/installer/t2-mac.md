@@ -35,9 +35,11 @@ issues.
 
 ## 2. Boot the ISO
 
-Hold **Option** at startup and pick the orange **EFI Boot** entry. In the
-GRUB menu choose **Sobarch installer for T2 Macs**; the first entry is the
-stock kernel and the keyboard won't work with it.
+Hold **Option** at startup and pick the orange **EFI Boot** entry. The GRUB
+menu preselects **Sobarch installer for T2 Macs** on Apple hardware. Don't
+switch to the first entry: it is the stock kernel, and the keyboard won't
+work with it. If you end up on it, the installer's console says so and tells
+you to reboot into the T2 entry.
 
 The ISO extracts the Wi-Fi and Bluetooth firmware from macOS on its own
 before the installer starts. If that fails (macOS already removed, or an

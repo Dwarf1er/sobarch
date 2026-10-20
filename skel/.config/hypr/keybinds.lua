@@ -2,7 +2,7 @@
 ---- KEYBINDINGS ----
 ---------------------
 
--- "-- kb: <combo> | <description>" above a bind lists it in keybinds-menu.sh.
+-- A "kb:" tag comment above a bind, as "<combo> | <description>", lists it in keybinds-menu.sh.
 
 local terminal = "kitty"
 local fileManager = "pcmanfm"

@@ -42,7 +42,7 @@ the background the first time, so a scheme you haven't seen yet may show
 as a plain row until the next time you open the picker.
 
 <figure class="figure">
-  <img class="img-fluid rounded shadow-sm" src="/images/desktop/theming-picker-menu.webp" width="1366" height="768" alt="The theme picker, listing available base16/base24/tinted8 color schemes">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/theming-picker-menu.webp" width="1920" height="1080" alt="The theme picker, listing available base16/base24/tinted8 color schemes">
 </figure>
 
 Applying a scheme writes each app's color file and reloads that app:
@@ -54,8 +54,10 @@ The picker itself doesn't need to know about it; it only calls
 
 ## Adding a scheme
 
-`tinty install` fetches new schemes and runs automatically on login, so
-newly available schemes show up in the picker without any manual step.
+`tinty install` fetches the schemes on your first login (retried at the
+next login if you were offline) and again whenever you run
+[Update System](../updating-system/), so newly published schemes show up
+in the picker after an update.
 Browse the [tinted gallery](https://tinted-theming.github.io/tinted-gallery/)
 for the full list of available schemes.
 
@@ -65,21 +67,21 @@ Terminal, waybar, and wallpaper all recolor together, whatever scheme
 is active:
 
 <figure class="figure">
-  <img class="img-fluid rounded shadow-sm" src="/images/desktop/theming-onedark.webp" width="1366" height="768" alt="The desktop themed with OneDark, the default scheme">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/theming-onedark.webp" width="1920" height="1080" alt="The desktop themed with OneDark, the default scheme">
   <figcaption class="figure-caption">OneDark, the default</figcaption>
 </figure>
 
 <figure class="figure">
-  <img class="img-fluid rounded shadow-sm" src="/images/desktop/theming-catppuccin-mocha.webp" width="1366" height="768" alt="The desktop themed with Catppuccin Mocha">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/theming-catppuccin-mocha.webp" width="1920" height="1080" alt="The desktop themed with Catppuccin Mocha">
   <figcaption class="figure-caption">Catppuccin Mocha</figcaption>
 </figure>
 
 <figure class="figure">
-  <img class="img-fluid rounded shadow-sm" src="/images/desktop/theming-catppuccin-latte.webp" width="1366" height="768" alt="The desktop themed with Catppuccin Latte">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/theming-catppuccin-latte.webp" width="1920" height="1080" alt="The desktop themed with Catppuccin Latte">
   <figcaption class="figure-caption">Catppuccin Latte</figcaption>
 </figure>
 
 <figure class="figure">
-  <img class="img-fluid rounded shadow-sm" src="/images/desktop/theming-github-dark.webp" width="1366" height="768" alt="The desktop themed with GitHub Dark">
+  <img class="img-fluid rounded shadow-sm" src="/images/desktop/theming-github-dark.webp" width="1920" height="1080" alt="The desktop themed with GitHub Dark">
   <figcaption class="figure-caption">GitHub Dark</figcaption>
 </figure>

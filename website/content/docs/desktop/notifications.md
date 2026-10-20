@@ -25,8 +25,8 @@ discarded, and the indicator in the bar shows that it's active.
 
 ### Updates available
 
-A daily check (a systemd user timer that first runs about ten minutes
-after login) looks for two things without installing anything:
+A daily check (a systemd user timer that first runs ten minutes
+after login, plus a random delay of up to fifteen) looks for two things without installing anything:
 
 - Pending official package updates, or a newer `sobarch-skel` or
   `sobarch-scripts`. The notification says so and, when clicked, opens

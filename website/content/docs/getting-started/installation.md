@@ -13,7 +13,7 @@ There are two ways to reach the installer, and both end up in the same
 TUI:
 
 - **The sobarch ISO**, the primary route. It boots straight into the
-  installer and has the base system's packages cached on it. See
+  installer, and is the only route that works on T2 Macs. See
   [Prebuilt ISO](../prebuilt-iso/) for downloading, verifying, and
   writing it to a USB drive.
 - **A stock Arch ISO plus one command**, described below. It always
@@ -44,9 +44,9 @@ arguments after `bash -s --` are passed through to the installer, which
 is how an [unattended
 install](../../installer/unattended-install/) is started.
 
-Unlike the sobarch ISO, nothing is cached on this path, so the base
-system's packages are downloaded and its vendored AUR packages are
-built during the install.
+Either way the install needs a network connection: the base system's
+packages are downloaded and its vendored AUR packages are built during the
+install.
 
 If you would rather not type Wi-Fi commands, start the installer anyway:
 when the machine has no connectivity, a **Network** step is added to the
@@ -55,13 +55,15 @@ installer itself. See [Network Step](../../installer/network-step/).
 ## The installer
 
 Both UEFI and BIOS machines are supported; the title bar shows which
-mode the installer detected. The TUI is a single screen: a list of steps
+mode the installer detected (and `dry-run` when that flag is set). The TUI is a single screen: a list of steps
 on the left (Disk, Account, Locale, Options, Software, Install, plus
 Network first when the machine is offline) and the selected step's form
 on the right. Fill in each step in any order, then use the Install step to
 review a summary and start the install. Starting it asks you to type the
 target disk's name to confirm, since it is destructive. See [Disk &
 Account Setup](../../installer/disk-and-accounts/) for every step.
+On an Intel Mac with a T2 chip, see [T2 Macs](../../installer/t2-mac/)
+first.
 
 The install itself hands off to `archinstall` and then runs sobarch's own
 post-install steps; see [What the Install Does](../../installer/install-process/).

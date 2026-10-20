@@ -29,8 +29,14 @@ toc = true
 - **Laptop chassis** (read from the firmware's chassis type: laptop,
   notebook, portable, convertible, tablet, and similar) adds `tlp`,
   `tlp-rdw`, and `tlp-pd` for power management. Desktops and virtual
-  machines don't get them. See [Battery life and power
+  machines don't get them. After install, TLP and its power-profile
+  daemon are enabled and `systemd-rfkill` is masked so it doesn't fight
+  TLP over radio state. See [Battery life and power
   tuning](../../reference/faq/#what-about-battery-life-and-power-tuning).
+- **T2 Macs** (Apple hardware whose model is one of the T2 models, read
+  from the firmware) switch the kernel to `linux-t2` and add the T2
+  audio, fan, Touch Bar, Touch ID and firmware packages. See [T2
+  Macs](../t2-mac/).
 
 ## NVIDIA-specific setup
 

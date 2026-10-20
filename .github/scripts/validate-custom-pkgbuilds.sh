@@ -53,9 +53,9 @@ for dir in packages/custom/*/; do
     committed="${dir%/}/.SRCINFO"
 
     if ((${#changed_files[@]})); then
-# Payload paths are the PKGBUILD's $startdir/../../../<path> references,
-# matched as files unless followed by a '$' or ending in /. (directories).
-# The extra captured character is there to detect that trailing '$'.
+        # Payload paths are the PKGBUILD's $startdir/../../../<path> references,
+        # matched as files unless followed by a '$' or ending in /. (directories).
+        # The extra captured character is there to detect that trailing '$'.
         extra_paths=()
         while IFS= read -r raw; do
             [[ -n "$raw" ]] || continue
@@ -111,7 +111,7 @@ for dir in packages/custom/*/; do
         fi
     fi
 
-# Runs last so it picks up any version bump made above.
+    # Runs last so it picks up any version bump made above.
     generated="$(mktemp)"
     if ! (cd "$dir" && makepkg --printsrcinfo) > "$generated" 2>/dev/null; then
         echo "== $name: makepkg --printsrcinfo failed =="

@@ -14,16 +14,19 @@ set of Lua files using Neovim's own built-in `vim.pack` plugin manager,
 so there's no separate plugin-manager runtime to learn or update.
 
 <figure class="figure">
-  <img class="img-fluid rounded shadow-sm" src="/images/shell-editor/neovim.webp" width="1351" height="685" alt="Neovim with LSP, treesitter, and the tinty-themed colorscheme">
+  <img class="img-fluid rounded shadow-sm" src="/images/shell-editor/neovim.webp" width="1920" height="1024" alt="Neovim with LSP, treesitter, and the tinty-themed colorscheme">
 </figure>
 
 ## What's included
 
 - **[mason.nvim](https://github.com/mason-org/mason.nvim)** installs
   and manages LSP servers, formatters, and debug adapters on demand.
-- **nvim-treesitter**, **nvim-cmp** (completion), **nvim-dap**
-  (debugging), and **conform.nvim** (formatting, on save) handle the
-  rest of the core editing experience.
+- **nvim-treesitter** (pinned to its `master` branch; `lua` and
+  `markdown` parsers by default), **nvim-cmp** with **LuaSnip**
+  (completion and snippets), **nvim-dap** with **nvim-dap-ui**
+  (debugging; the UI opens and closes with the session), and
+  **conform.nvim** (formatting, on save) handle the rest of the core
+  editing experience.
 - **telescope.nvim** (with `fzf-native`) for fuzzy finding, **lualine.nvim**
   for the statusline, **autoclose.nvim** and **markdown-toc.nvim** for
   smaller conveniences.
@@ -62,6 +65,7 @@ restart Neovim.
 | `F9` | Toggle a breakpoint |
 | `F5` / `Shift+F5` | Start or continue / stop debugging |
 | `F10` / `F11` / `Shift+F11` | Step over / into / out |
+| `Ctrl+Shift+F5` | Restart the debug session |
 | `Esc` | Clear search highlighting |
 
 ## Defaults
@@ -69,14 +73,15 @@ restart Neovim.
 Line numbers are shown both absolute and relative. Yanks go to the
 system clipboard, searches ignore case unless you type a capital, and
 undo history is saved between sessions. Indentation is four spaces,
-except two for JavaScript, TypeScript, JSON, CSS, and HTML. Floating
-windows have rounded borders, and the `date` snippet inserts today's
-date.
+except two for JavaScript, TypeScript, JSON, CSS, and HTML. Yanked text
+flashes briefly. Floating windows have rounded borders, and the `date`
+snippet inserts today's date (`YYYY-MM-DD`).
 
 ## Optional language extras
 
-Rust, Go, Web (JS/TS/CSS/HTML/JSON), C# (via Roslyn, with debugging),
-and Godot (GDScript, plus the Godot editor's external-editor hookup and
+Rust, Go, Web (JS/TS/CSS/HTML/JSON, formatted with prettier), C# (via
+Roslyn through `roslyn.nvim`, with `netcoredbg` debugging and
+`csharpier` formatting), and Godot (GDScript, plus the Godot editor's external-editor hookup and
 debugging) each have a ready-made extra that adds its own treesitter
 parsers, Mason-installed LSP servers and formatters, and (for C# and
 Godot) debug adapters. None of them load by default: create
@@ -87,6 +92,10 @@ example:
 require("extras.rust")
 require("extras.web")
 ```
+
+The available names are `extras.rust`, `extras.go`, `extras.web`,
+`extras.csharp`, and `extras.godot`. After you add one, Mason installs
+its tools the next time Neovim starts.
 
 `local.lua` isn't tracked by sobarch's dotfiles or touched by
 [Updating Your System](../../desktop/updating-system/), so it's safe

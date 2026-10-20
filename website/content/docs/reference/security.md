@@ -46,7 +46,7 @@ option; when it is on, root login over SSH is explicitly disabled too,
 on top of the account-level lock, so that guarantee doesn't depend on
 SSH's own state.
 
-Power actions (lock, suspend, reboot, shutdown) are granted to the
+Power actions (shutdown, reboot, suspend) are granted to the
 `wheel` group without a password prompt via a small polkit rule. This
 exists because a manually-launched compositor session, with no display
 manager session integration beyond `ly`'s own, can fail to resolve as
