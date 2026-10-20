@@ -63,14 +63,20 @@ Workspaces 1 to 10 exist, with `0` reaching workspace 10.
 
 ## Media and volume
 
-| Keybind | Action |
-| --- | --- |
-| `Volume Up`/`Volume Down` | Raise/lower volume 5%, with an on-screen indicator |
-| `Mute` | Toggle mute |
-| `Mic Mute` | Toggle mic mute |
-| `Brightness Up`/`Brightness Down` | Raise/lower brightness 10% |
-| `Media Next`/`Media Previous` | Skip track |
-| `Media Play/Pause` | Play or pause |
+Each action has a media-key bind and a Super-layer bind, for keyboards
+without media keys.
+
+| Media key | Keybind | Action |
+| --- | --- | --- |
+| `Volume Up` | `Super+=` | Raise volume 5%, with an on-screen indicator |
+| `Volume Down` | `Super+-` | Lower volume 5% |
+| `Mute` | `Super+Shift+-` | Toggle mute |
+| `Mic Mute` | `Super+Shift+=` | Toggle mic mute |
+| `Brightness Up` | `Super+]` | Raise brightness 10% |
+| `Brightness Down` | `Super+[` | Lower brightness 10% |
+| `Media Play/Pause` | `Super+;` | Play or pause |
+| `Media Next` | `Super+'` | Next track |
+| `Media Previous` | `Super+,` | Previous track |
 
 Input method switching (`Super+Space`) is covered in
 [Input Methods](../input-methods/).
@@ -81,7 +87,7 @@ Input method switching (`Super+Space`) is covered in
   <img class="img-fluid rounded shadow-sm" src="/images/desktop/keybindings-cheatsheet.webp" width="1920" height="1080" alt="The on-screen keybindings cheat sheet, opened with Super+/">
 </figure>
 
-`Super+/` opens a read-only fuzzel list built by grepping the
+`Super+/` opens a fuzzel list built by grepping the
 Hyprland config for `-- kb: <combo> | <description>` comments, one per
 real bind, so the list can't list a bind that doesn't exist or omit
 one that does. Each row shows the action with its keys on the right,
@@ -91,3 +97,13 @@ fuzzel's vim-style navigation (`Ctrl+J`/`Ctrl+K` to move between
 entries, `Ctrl+H`/`Ctrl+L` to move the cursor, `Ctrl+D`/`Ctrl+U` to
 page) and `Escape` to go back one level, since those come from fuzzel
 and the menus themselves and have no Hyprland bind to tag.
+
+Rows marked `▸` run their action when you press `Enter`: the menu closes
+first, then the command runs, so region screenshots and the other menus
+open on the desktop rather than over the list. Rows without the mark are
+reference only. Those are the binds that act on the focused window
+(close, exit, float, fullscreen, split, focus, move, workspaces) and the
+cheat sheet itself, which are better pressed than launched from a menu.
+A bind opts in with a `-- run: <shell command>` line right after its
+`-- kb:` line in `keybinds.lua`; the command is a copy of what the bind
+does, so keep the two in step when you edit one.
