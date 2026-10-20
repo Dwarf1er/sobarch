@@ -50,6 +50,7 @@ while :; do
     menu_add wallpaper "Wallpaper" photo.svg "$(current_wallpaper)"
     menu_add mimetypes "Default Apps" apps.svg
     ((has_rescue)) && menu_add rescue "Refresh Rescue ISO" device-usb.svg
+    menu_add doctor "Diagnostic Report" stethoscope.svg
     menu_add docs "Documentation" book.svg
 
     menu_show "sobarch settings" "" "$selected" || break
@@ -63,6 +64,7 @@ while :; do
         wallpaper) menu_sub wallpaper-menu.sh ;;
         mimetypes) menu_sub mimetype-menu.sh ;;
         rescue) menu_sub refresh-rescue-menu.sh ;;
+        doctor) menu_sub doctor-menu.sh ;;
         docs) xdg-open "https://sobarch.antoinepoulin.com" & menu_done ;;
     esac
 done

@@ -21,6 +21,7 @@ for administrator rights only where that script needs them. Run
 | `sobarch aur-sync [PKG...]` | With no arguments, updates the vendored AUR/custom packages you already have installed. With names, builds and installs exactly those. See [Installing & Updating](../../packages/installing-updating/). |
 | `sobarch snapshot-restore [--yes] N` | Makes Snapper snapshot `N` your permanent root. It takes effect after a reboot. See [Snapshots](../../installer/snapshots/). |
 | `sobarch rescue-refresh` | Re-fetches the Arch ISO onto the rescue partition. See [Rescue Media](../../installer/rescue-media/). |
+| `sobarch doctor [--write]` | Prints a redacted diagnostic report for bug reports; `--write` saves it as `~/sobarch-doctor-<timestamp>.txt`. See [Troubleshooting](../../reference/troubleshooting/#reporting-a-bug). |
 | `sobarch help` | Shows the command list. |
 
 An unknown command prints the usage text and exits with status 2.
@@ -45,6 +46,7 @@ menu or notification.
 | Sobarch, Install Apps (an AUR package) | `sobarch aur-sync <package>` |
 | Sobarch, Install Apps (an official package) | `pkexec pacman -S --needed --noconfirm <package>` |
 | Sobarch, Refresh Rescue ISO | `sobarch rescue-refresh` |
+| Sobarch, Diagnostic Report | `sobarch doctor --write` |
 | Booted-snapshot notification | `sobarch snapshot-restore --yes N` |
 
 `--gui` swaps the plain terminal prompts for fuzzel pickers and

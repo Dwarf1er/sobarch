@@ -306,6 +306,13 @@ write-to-file = ["~/.config/sobarch/icons/device-usb.svg"]
 supported-systems = ["base16", "base24", "tinted8"]
 
 [[items]]
+path = "~/.config/sobarch/tinty-templates/icon-stethoscope"
+name = "sobarch-icon-stethoscope"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/stethoscope.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
 path = "~/.config/sobarch/tinty-templates/icon-file-text"
 name = "sobarch-icon-file-text"
 themes-dir = "colors"

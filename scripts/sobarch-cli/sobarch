@@ -22,6 +22,8 @@ Usage: sobarch <command> [args]
                           (takes effect after a reboot)
   rescue-refresh          re-fetch the Arch ISO onto the rescue
                           partition
+  doctor [--write]        print a redacted diagnostic report for bug
+                          reports (--write saves it under your home)
   help                    show this message
 USAGE
 }
@@ -46,6 +48,7 @@ case "$cmd" in
     aur-sync) as_root "$LIB/aur-sync.sh" "$@" ;;
     snapshot-restore) as_root "$LIB/snapshot-rollback.sh" --online "$@" ;;
     rescue-refresh) as_root "$LIB/refresh-rescue-iso.sh" "$@" ;;
+    doctor) exec "$LIB/doctor.sh" "$@" ;;
     help | -h | --help) usage ;;
     *)
         echo "sobarch: unknown command '$cmd'" >&2

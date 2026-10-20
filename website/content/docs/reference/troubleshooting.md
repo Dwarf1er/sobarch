@@ -108,3 +108,18 @@ check that the first-boot security unit finished:
 [Snapshots](../../installer/snapshots/) cover both recovering a file
 from the boot menu and restoring an older snapshot as the new root,
 including from a live ISO if the system won't boot at all.
+
+## Reporting a bug
+
+Run `sobarch doctor --write` (or Sobarch, Diagnostic Report, in the
+menu) and attach the file it writes to your
+[issue](https://github.com/Dwarf1er/sobarch/issues/new?template=bug.yml).
+
+The report lists sobarch package, kernel, and Hyprland versions, a
+hardware summary, failed units, journal and `aur-sync` log tails,
+first-boot state, and snapshot and boot-entry state. Hostname,
+username, IP and MAC addresses, serial numbers, and UUIDs are replaced
+with placeholders before the file is written, but read it before
+posting. Snapshot details need root, so run `sobarch doctor` where
+`sudo` works without a password prompt to include them; otherwise
+those sections say they were skipped.
