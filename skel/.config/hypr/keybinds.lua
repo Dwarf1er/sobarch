@@ -75,6 +75,8 @@ hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd(screenshot .. " -m region --c
 hl.bind(mainMod .. " + O", hl.dsp.exec_cmd('grim -g "$(slurp)" - | tesseract - - | wl-copy'))
 -- kb: SUPER + SHIFT + O | Scan QR/barcode in region to clipboard
 hl.bind(mainMod .. " + SHIFT + O", hl.dsp.exec_cmd('grim -g "$(slurp)" - | zbarimg --raw - | wl-copy'))
+-- kb: SUPER + SHIFT + R | Screen recording: start (select region) / stop
+hl.bind(mainMod .. " + SHIFT + R", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/record.sh toggle"))
 -- kb: SUPER + D | Toggle do-not-disturb
 hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("makoctl mode -t do-not-disturb"))
 
@@ -116,31 +118,31 @@ hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
 -- kb: Volume Up | Raise volume 5%
 hl.bind(
 	"XF86AudioRaiseVolume",
-	hl.dsp.exec_cmd("wpctl set-volume --limit 1.0 @DEFAULT_AUDIO_SINK@ 5%+"),
+	hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/osd.sh volume-up"),
 	{ locked = true, repeating = true }
 )
 -- kb: Volume Down | Lower volume 5%
 hl.bind(
 	"XF86AudioLowerVolume",
-	hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),
+	hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/osd.sh volume-down"),
 	{ locked = true, repeating = true }
 )
 -- kb: Mute | Toggle mute
 hl.bind(
 	"XF86AudioMute",
-	hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),
+	hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/osd.sh mute"),
 	{ locked = true, repeating = true }
 )
 -- kb: Mic Mute | Toggle mic mute
 hl.bind(
 	"XF86AudioMicMute",
-	hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),
+	hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/osd.sh mic-mute"),
 	{ locked = true, repeating = true }
 )
 -- kb: Brightness Up | Raise brightness 10%
-hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl s 10%+"), { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/osd.sh brightness-up"), { locked = true, repeating = true })
 -- kb: Brightness Down | Lower brightness 10%
-hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl s 10%-"), { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/osd.sh brightness-down"), { locked = true, repeating = true })
 
 -- kb: Media Next | Next track
 hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"), { locked = true })

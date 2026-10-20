@@ -47,6 +47,8 @@ displays_state() {
     ((n == 1)) && echo "1 monitor" || echo "$n monitors"
 }
 
+recording_state() { pgrep -x wf-recorder >/dev/null && echo "recording"; }
+
 # tlpctl is only installed on laptops.
 selected=""
 while :; do
@@ -56,6 +58,7 @@ while :; do
     menu_add bluetooth "Bluetooth" bluetooth.svg "$(bluetooth_state)"
     command -v tlpctl >/dev/null && menu_add power-profile "Power Profile" battery-2.svg "$(tlpctl get 2>/dev/null)"
     menu_add displays "Displays" devices.svg "$(displays_state)"
+    command -v wf-recorder >/dev/null && menu_add recording "Screen Recording" movie.svg "$(recording_state)"
     menu_add firmware "Firmware" cpu.svg "$(firmware_state)"
 
     menu_show system "" "$selected" || break
@@ -66,6 +69,7 @@ while :; do
         bluetooth) menu_sub bluetooth-menu.sh ;;
         power-profile) menu_sub power-profile-menu.sh ;;
         displays) menu_sub displays-menu.sh ;;
+        recording) menu_sub recording-menu.sh ;;
         firmware) menu_sub fwupd-menu.sh ;;
     esac
 done

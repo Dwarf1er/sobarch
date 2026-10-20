@@ -73,6 +73,11 @@ PROFILES: tuple[Profile, ...] = (
         + _pkgs("sobarch-via-udev", aur=True),
     ),
     Profile(
+        "Printing",
+        "printing",
+        _pkgs("cups", "cups-filters", "cups-pdf"),
+    ),
+    Profile(
         "Input Method",
         "input-method",
         _pkgs("fcitx5", "fcitx5-configtool", "fcitx5-gtk", "fcitx5-hangul"),

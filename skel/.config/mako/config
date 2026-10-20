@@ -23,3 +23,15 @@ group-by=category
 
 [mode=do-not-disturb]
 invisible=1
+
+# Volume, mic and brightness toasts from osd.sh; a key press is deliberate,
+# so they show during do-not-disturb too.
+[category=osd]
+anchor=bottom-center
+margin=0,0,80,0
+width=280
+height=80
+default-timeout=1200
+
+[mode=do-not-disturb category=osd]
+invisible=0

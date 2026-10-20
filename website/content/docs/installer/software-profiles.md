@@ -38,6 +38,7 @@ delayed isn't actually avoidable if any of it happened during install.
 | **Office** | `homebank`, `libreoffice-fresh` |
 | **Browsers & Chat** | `signal-desktop`, `brave-origin-bin` (AUR), `vesktop-bin` (AUR) |
 | **System Tuning** | `ethtool`, `lact`, `nvtop`, `smartmontools`, `sobarch-via-udev` (AUR) |
+| **Printing** | `cups`, `cups-filters`, `cups-pdf` |
 | **Input Method** | `fcitx5`, `fcitx5-configtool`, `fcitx5-gtk`, `fcitx5-hangul` |
 <!-- profiles:end -->
 

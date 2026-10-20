@@ -24,7 +24,7 @@ you left it.
 | Entry | What it opens |
 | --- | --- |
 | **Apps** | The regular application list, one level in. |
-| **System** | Audio, network, Bluetooth, the power profile switcher (laptops only), displays, and firmware, each row showing its current state (volume, connection, Bluetooth status, firmware status). See below. |
+| **System** | Audio, network, Bluetooth, the power profile switcher (laptops only), displays, screen recording, and firmware, each row showing its current state (volume, connection, Bluetooth status, firmware status). See below. |
 | **Sobarch** | **Update System** / **Review Conflicts** (shows how many conflicts are pending; see [Updating Your System](../updating-system/)), **Install Apps** (every package from the curated software profiles, not arbitrary packages: available ones first with their profile and an `AUR` tag where it applies, then installed ones marked `installed`; see [Software Profiles](../../installer/software-profiles/)), **Theme** (see [Theming](../theming/)), **Wallpaper** (see [Wallpaper](../wallpaper/)), **Default Apps** (set an app for a whole group such as Images or Video, or for one file type; see [Appearance and Apps](../appearance-and-apps/#default-applications)), **Refresh Rescue ISO** (see [Rescue Media](../../installer/rescue-media/); only listed when rescue media was set up at install), and **Documentation**, which opens this site. |
 | **Keybinds** | A searchable, read-only cheat sheet of every bind; see [Keybindings](../keybindings/). |
 | **Power** | Lock, Log Out, Suspend, Restart, Shut Down; see the table below. |
@@ -48,6 +48,7 @@ shortcut means `Escape` closes it rather than going back to System.
 | **Bluetooth** (`Super+Shift+B`) | Power on or off, scan for new devices (pick one to pair, trust, and connect), and every paired device listed directly with its state and battery level: `Enter` connects or disconnects it, `Alt+1` removes it. Devices that need a passkey typed or confirmed (some keyboards and phones) can't pair here yet; use `bluetoothctl` in a terminal for those. |
 | **Power Profile** (laptops only; also a click on the battery module in waybar) | Switch between Performance, Balanced, and Power Saver. The active profile is marked and the menu stays open. It is applied by TLP through `tlpctl`; without TLP the entry shows a notification explaining what to install. |
 | **Displays** | Resolution, refresh rate, scale, rotation, position, mirroring and enabling or disabling each monitor. See [Displays](../displays/). |
+| **Screen Recording** | Record a region or the focused screen, or stop the recording in progress. See [Screen Recording](../screen-recording/). |
 | **Firmware** (`Super+Shift+F`) | Update status at the top, check for updates, install updates (when there are any), and every device with its firmware version; pick a device for its details. All through `fwupdmgr`. |
 
 ## Power

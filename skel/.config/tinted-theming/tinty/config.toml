@@ -313,6 +313,13 @@ write-to-file = ["~/.config/sobarch/icons/stethoscope.svg"]
 supported-systems = ["base16", "base24", "tinted8"]
 
 [[items]]
+path = "~/.config/sobarch/tinty-templates/icon-sun"
+name = "sobarch-icon-sun"
+themes-dir = "colors"
+write-to-file = ["~/.config/sobarch/icons/sun.svg"]
+supported-systems = ["base16", "base24", "tinted8"]
+
+[[items]]
 path = "~/.config/sobarch/tinty-templates/icon-file-text"
 name = "sobarch-icon-file-text"
 themes-dir = "colors"

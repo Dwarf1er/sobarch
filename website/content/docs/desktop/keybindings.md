@@ -59,12 +59,13 @@ Workspaces 1 to 10 exist, with `0` reaching workspace 10.
 | `Super+Shift+S` | Screenshot a region to the clipboard |
 | `Super+O` | OCR a screen region (English text) to the clipboard |
 | `Super+Shift+O` | Scan a QR code or barcode in a region to the clipboard |
+| `Super+Shift+R` | Start a screen recording (pick a region), or stop the one in progress. See [Screen Recording](../screen-recording/) |
 
 ## Media and volume
 
 | Keybind | Action |
 | --- | --- |
-| `Volume Up`/`Volume Down` | Raise/lower volume 5% |
+| `Volume Up`/`Volume Down` | Raise/lower volume 5%, with an on-screen indicator |
 | `Mute` | Toggle mute |
 | `Mic Mute` | Toggle mic mute |
 | `Brightness Up`/`Brightness Down` | Raise/lower brightness 10% |

@@ -15,6 +15,13 @@ over everything else, and the newest is shown first. A normal one
 disappears after five seconds. A critical one stays until you click or
 dismiss it.
 
+## On-screen indicator
+
+The volume, mute, mic mute and brightness keys show a small bar at the
+bottom of the screen for about a second. It is a mako notification that
+replaces itself, so it needs no extra daemon, takes the theme colors, and
+still appears while do-not-disturb is on.
+
 ## Do not disturb
 
 `Super+D` toggles do-not-disturb, and so does clicking the bell
