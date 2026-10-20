@@ -192,7 +192,8 @@ hl.bind(mainMod .. " + minus", hl.dsp.exec_cmd(osd .. "volume-down"), held)
 -- kb: SUPER + SHIFT + - | Toggle mute
 -- run: $HOME/.config/hypr/scripts/osd.sh mute
 hl.bind(mainMod .. " + SHIFT + minus", hl.dsp.exec_cmd(osd .. "mute"), held)
--- Some QMK layers send "-" as the keypad key; same actions, no cheat sheet rows.
+-- Some QMK layers send "+" and "-" as the keypad keys; same actions, no cheat sheet rows.
+hl.bind(mainMod .. " + KP_Add", hl.dsp.exec_cmd(osd .. "volume-up"), held)
 hl.bind(mainMod .. " + KP_Subtract", hl.dsp.exec_cmd(osd .. "volume-down"), held)
 hl.bind(mainMod .. " + SHIFT + KP_Subtract", hl.dsp.exec_cmd(osd .. "mute"), held)
 -- kb: SUPER + SHIFT + = | Toggle mic mute
