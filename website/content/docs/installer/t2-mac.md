@@ -16,6 +16,12 @@ ships that kernel (`linux-t2`, from the third-party `arch-mact2`
 repository) next to the stock one. The [stock Arch ISO plus
 command](../../getting-started/installation/) does not work on these Macs.
 
+Tested on a 2018 MacBook Air only. Some support is flaky there: waking
+from suspend can leave features such as Wi-Fi, Bluetooth, the keyboard
+backlight or Touch ID broken until a reboot. Other models are untested.
+The [t2linux state page](https://wiki.t2linux.org/state/) tracks known
+issues.
+
 ## 1. Prepare macOS
 
 - In **Disk Utility**, add a **partition** (not a volume) to the internal
@@ -115,4 +121,3 @@ Touch ID works for the console login and the lock screen through the
 - Hybrid graphics on the 15 and 16-inch MacBook Pros (the AMD GPU stays
   on and power use is higher than it needs to be).
 - Suspend problems some models have; see the t2linux state page.
-- Not yet tested on real hardware.

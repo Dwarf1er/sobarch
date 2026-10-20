@@ -11,9 +11,7 @@ window#waybar {
     background-color: @base00;
     color: @base05;
     border: 1px solid alpha(@base05, 0.12);
-    border-radius: 20px;
-    /* Keeps the end modules out of the rounded corners, which otherwise
-       show a black wedge. */
+    border-radius: 0;
     padding: 0 10px;
 }
 
@@ -109,6 +107,17 @@ tooltip {
     background-position: 14px center;
     background-size: 16px 16px;
     padding-left: 32px;
+}
+
+/* Icon-only chips: the label is a single space, so trim the right padding
+   to keep the icon centered. */
+#network,
+#bluetooth {
+    padding-right: 6px;
+}
+
+#bluetooth.connected {
+    padding-right: 14px;
 }
 
 /* Do Not Disturb (collapses to zero width when inactive) */
