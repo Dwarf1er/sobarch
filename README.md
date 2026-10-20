@@ -10,6 +10,9 @@
 ![PRs](https://img.shields.io/github/issues-pr/Dwarf1er/sobarch?style=for-the-badge)
 ![Stars](https://img.shields.io/github/stars/Dwarf1er/sobarch?style=for-the-badge)
 ![Release](https://img.shields.io/github/v/release/Dwarf1er/sobarch?style=for-the-badge)
+![ISO build](https://img.shields.io/github/actions/workflow/status/Dwarf1er/sobarch/iso-build.yml?style=for-the-badge&label=ISO%20build)
+![AUR check](https://img.shields.io/github/actions/workflow/status/Dwarf1er/sobarch/aur.yml?style=for-the-badge&label=AUR%20check)
+![Website](https://img.shields.io/github/actions/workflow/status/Dwarf1er/sobarch/website.yml?style=for-the-badge&label=Website)
 
 </div>
 
@@ -179,6 +182,9 @@ The [manual](https://sobarch.antoinepoulin.com/docs/) covers everything above in
 After cloning, run `scripts/install-git-hooks.sh` once. It points git at
 this repo's tracked `.githooks/` dir, which validates `packages/custom/`
 PKGBUILDs before each commit (requires `makepkg` on `PATH`).
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request, and
+[SECURITY.md](SECURITY.md) to report a vulnerability.
 
 ## License
 
