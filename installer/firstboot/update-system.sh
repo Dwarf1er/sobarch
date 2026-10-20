@@ -40,6 +40,7 @@ LY_THEME_SETUP="/usr/local/lib/sobarch/ly-theme-setup.sh"
 PLYMOUTH_SETUP="/usr/local/lib/sobarch/plymouth-setup.sh"
 SKEL_SRC="/usr/share/sobarch/skel"
 BASELINE_DIR="$HOME/.local/state/sobarch/skel-baseline"
+LAST_UPDATE_FILE="$HOME/.local/state/sobarch/last-update"
 
 ICONS="$HOME/.config/sobarch/icons"
 TITLE="sobarch: update system"
@@ -122,15 +123,62 @@ reapply_theming() {
     fi
 }
 
+# Titles of Arch news items published after epoch $1; fails if the feed
+# can't be fetched.
+recent_news() {
+    local feed date_str title
+    feed="$(curl -fsS --max-time 8 https://archlinux.org/feeds/news/ 2>/dev/null)" || return 1
+    while IFS='|' read -r date_str title; do
+        (($(date -d "$date_str" +%s 2>/dev/null || echo 0) > $1)) || continue
+        sed -e 's/&amp;/\&/g; s/&lt;/</g; s/&gt;/>/g; s/&quot;/"/g; s/&#39;/'"'"'/g' <<<"$title"
+    done < <(awk 'BEGIN { RS = "</item>" } /<item>/ {
+        t = $0; sub(/.*<title>/, "", t); sub(/<\/title>.*/, "", t)
+        d = $0; sub(/.*<pubDate>/, "", d); sub(/<\/pubDate>.*/, "", d)
+        print d "|" t }' <<<"$feed")
+}
+
+# Warn about news since the last successful update; returns 1 to abort.
+check_news() {
+    local since news
+    since="$(cat "$LAST_UPDATE_FILE" 2>/dev/null || date -d '14 days ago' +%s)"
+    news="$(recent_news "$since")" || return 0
+    [[ -n "$news" ]] || return 0
+    ask_yes "Arch news since your last update (some need manual steps first):
+$news
+Read them at archlinux.org/news." "Update Anyway"
+}
+
+# Reports what an update can leave wrong; quiet when all is well.
+post_update_check() {
+    local failed problems=()
+    failed="$({ systemctl --failed --no-legend --plain; systemctl --user --failed --no-legend --plain; } 2>/dev/null | awk '{print $1}' | paste -sd' ')"
+    [[ -n "$failed" ]] && problems+=("failed units: $failed")
+    [[ -d "/usr/lib/modules/$(uname -r)" ]] || problems+=("the kernel was updated; reboot to use it")
+    ((${#problems[@]} == 0)) && return 0
+    notice normal "After the update: $(printf '%s; ' "${problems[@]}" | sed 's/; $//')."
+}
+
 if ! $review_only; then
-    # One privileged call for both halves, so one password prompt. Exit
-    # codes say which half failed; neither aborts the config sync below.
+    if ! check_news; then
+        notice normal "Update cancelled."
+        exit 0
+    fi
+    # UEFI only: a stale BOOTX64.EFI after a limine upgrade can leave the machine
+    # unbootable. Exits 12 so the package steps below still count as done.
+    LIMINE_SYNC_CHECK='[ ! -f /boot/EFI/BOOT/BOOTX64.EFI ] || cmp -s /usr/share/limine/BOOTX64.EFI /boot/EFI/BOOT/BOOTX64.EFI || exit 12'
+    # One privileged call for all of it, so one password prompt. Exit codes say
+    # which part failed; none aborts the config sync below.
     skel_before="$(pacman -Q sobarch-skel 2>/dev/null || true)"
     progress_start "Updating system packages (pacman -Syu)..."
     rc=0
-    as_root bash -c "pacman -Syu $PACMAN_FLAGS || exit 10; '$AUR_SYNC' || exit 11" || rc=$?
+    as_root bash -c "pacman -Syu $PACMAN_FLAGS || exit 10; '$AUR_SYNC' || exit 11; $LIMINE_SYNC_CHECK" || rc=$?
     case "$rc" in
-        0) progress_end normal "System packages up to date." ;;
+        0 | 12)
+            progress_end normal "System packages up to date."
+            mkdir -p "$(dirname "$LAST_UPDATE_FILE")"
+            date +%s >"$LAST_UPDATE_FILE"
+            [[ "$rc" == 12 ]] && notice critical "Limine's boot binary in /boot/EFI/BOOT differs from the installed one; copy /usr/share/limine/BOOTX64.EFI over it before rebooting."
+            ;;
         10) progress_end critical "pacman -Syu failed (offline, or a conflict that needs a terminal); continuing with config sync only." ;;
         11) progress_end critical "Official packages updated, but syncing vendored AUR/custom packages failed; see /var/log/sobarch/aur-sync.log." ;;
         *) progress_end critical "System update didn't run (authentication cancelled?); continuing with config sync only." ;;
@@ -179,6 +227,7 @@ if ! $review_only; then
     if ! "$BUILD_TINTY_TEMPLATES"; then
         notice critical "Rebuilding tinty theme templates failed; run 'tinty build' on ~/.config/sobarch/tinty-templates/* manually to retry."
     fi
+    post_update_check
 fi
 
 mapfile -t conflicts < <(find "$HOME" -name '*.sobarch-new' 2>/dev/null | sort)

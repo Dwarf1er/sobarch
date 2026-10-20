@@ -29,17 +29,28 @@ From the desktop: **Super → Sobarch → Update System**. It brings the
 whole system current in one run, with a progress notification
 throughout:
 
-1. `pacman -Syu` updates official packages.
-2. The [package sync mechanism](../../packages/installing-updating/)
+1. The [Arch news](https://archlinux.org/news/) feed is checked first. If items were
+   published since your last successful update, they are listed and you
+   choose whether to go on: some updates need a manual step first. An
+   unreachable feed doesn't block the update. `snap-pac` snapshots the
+   root filesystem around the `pacman -Syu` transaction, so a bad update
+   can be rolled back (see [Snapshots](../../installer/snapshots/)).
+2. `pacman -Syu` updates official packages.
+3. The [package sync mechanism](../../packages/installing-updating/)
    updates vendored AUR/custom packages. Packages the base system
    requires that were added after your install are picked up here too.
-3. If `sobarch-skel` or `sobarch-scripts` was updated, [boot and login theming](../boot-theming/)
+4. If `sobarch-skel` or `sobarch-scripts` was updated, [boot and login theming](../boot-theming/)
    is re-applied, so branding changes ship through this same command
    as config changes.
-4. The merge described above runs, then your tinty templates are
+5. The merge described above runs, then your tinty templates are
    rebuilt, and you are walked through any conflicts interactively: **K**eep
    yours, **U**se the new version, view the **D**iff, **E**dit, **S**kip for now, or use the new
    version for **A**ll remaining conflicts.
+6. A short sanity check reports anything left wrong: failed units, and
+   a kernel update that needs a reboot. On UEFI installs, an earlier step
+   also verifies that the Limine binary in `/boot/EFI/BOOT` matches the
+   installed one, and warns if it doesn't. When all is well, the check
+   says nothing.
 
 You don't have to remember to run it: a [daily check](../notifications/)
 shows a notification when updates are waiting, and clicking it starts

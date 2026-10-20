@@ -66,3 +66,6 @@ layout isn't meant to be used with). It supports two modes:
 On an installed system, `sobarch snapshot-restore <number>` is a
 shortcut for the `--online` mode (it asks for `sudo` itself); add
 `--yes` to skip the typed confirmation.
+
+Snapshots cover the root filesystem only, not `/home`. To back up your
+files, see [Backing Up /home](../../reference/backups/).

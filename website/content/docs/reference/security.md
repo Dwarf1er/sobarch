@@ -84,6 +84,24 @@ user has no `sudo` or `pacman` rights: dependencies are installed
 beforehand by the root-side script, and only the final `pacman -U`
 runs as root. The installed packages themselves are not sandboxed.
 
+## Local hardening
+
+Sobarch does not ship AppArmor or USBGuard, by design.
+
+- **AppArmor** only protects through per-application profiles. Arch
+  ships very few, a full set is large and changes often, and a profile
+  that is wrong for a browser, a game launcher, or an AUR package shows
+  up as an app that fails for no visible reason. It also needs a kernel
+  parameter in the boot entries, which the project doesn't change lightly.
+- **USBGuard** blocks devices by policy. On a desktop that means docks,
+  controllers, headsets, and your own keyboard are the first things it
+  blocks, and a bad policy can leave you without input at boot. Its
+  threat model is an unattended machine, not a personal desktop.
+
+Either can be installed and configured by you, but neither is supported
+here. If a real requirement for one appears, this decision can be
+revisited.
+
 ## What isn't covered
 
 - **Encryption of everything.** Disk encryption is optional (a LUKS
@@ -91,5 +109,8 @@ runs as root. The installed packages themselves are not sandboxed.
   partition; the boot partition and any rescue-media partition are
   never encrypted.
 - **Personal file backup.** [Snapshots](../../installer/snapshots/)
-  cover the root filesystem for rollback, not your own files; back
-  those up with your own tools.
+  cover the root filesystem for rollback, not your own files; see
+  [Backing Up /home](../backups/).
+- **Mandatory access control.** A compromised application runs with
+  your whole user account. The defenses are the reviewed package
+  sources above and keeping packages updated, not sandboxing.
