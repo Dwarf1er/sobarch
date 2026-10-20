@@ -58,7 +58,7 @@ never confirms anything.
 | Action | Command |
 | --- | --- |
 | Lock | `hyprlock` |
-| Log Out | `hyprctl dispatch exit` |
+| Log Out | `hyprctl dispatch 'hl.dsp.exit()'` |
 | Suspend | `systemctl suspend` |
 | Restart | `systemctl reboot` |
 | Shut Down | `systemctl poweroff` |

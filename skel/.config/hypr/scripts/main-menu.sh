@@ -15,7 +15,7 @@ power_menu() {
         case "$MENU_ID" in
             lock) menu_run hyprlock && menu_done ;;
             logout) confirm "Log out now? Unsaved work in open apps will be lost." "Log Out" &&
-                menu_run hyprctl dispatch exit && menu_done ;;
+                menu_run hyprctl dispatch 'hl.dsp.exit()' && menu_done ;;
             suspend) confirm "Suspend now?" "Suspend" && menu_run systemctl suspend && menu_done ;;
             reboot) confirm "Restart now?" "Restart" && menu_run systemctl reboot && menu_done ;;
             shutdown) confirm "Shut down now?" "Shut Down" && menu_run systemctl poweroff && menu_done ;;
