@@ -14,8 +14,10 @@ if ! command -v tinty >/dev/null 2>&1; then
     exit 1
 fi
 
-# Picks up edits to local.toml.
-/usr/local/lib/sobarch/tinty-config.sh 2>/dev/null
+# Picks up edits to local.toml; a broken one is skipped and reported.
+if cfg_err=$(/usr/local/lib/sobarch/tinty-config.sh 2>&1) && [ -n "$cfg_err" ]; then
+    menu_notify "$(head -n 6 <<<"$cfg_err")" critical
+fi
 
 # "base16-atelier-forest-light" -> "Atelier Forest Light", raw id kept as the row id.
 entries=$(tinty list | awk -F'-' '
