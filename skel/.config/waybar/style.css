@@ -136,7 +136,27 @@ tooltip {
     background-repeat: no-repeat;
     background-position: 14px center;
     background-size: 16px 16px;
-    padding: 6px 14px 6px 32px;
+    padding: 6px 6px 6px 32px;
+    margin: 6px 3px;
+}
+
+/* Microphone muted (collapses to zero width otherwise) */
+#custom-mic {
+    color: @base08;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    border-radius: 999px;
+    transition: all 0.2s ease;
+}
+
+#custom-mic.muted {
+    background: alpha(@base08, 0.14);
+    background-image: url("../sobarch/icons/microphone-off.svg");
+    background-repeat: no-repeat;
+    background-position: 14px center;
+    background-size: 16px 16px;
+    padding: 6px 6px 6px 32px;
     margin: 6px 3px;
 }
 
@@ -246,6 +266,7 @@ tooltip {
 #bluetooth:hover,
 #custom-system:hover,
 #custom-dnd.active:hover,
+#custom-mic.muted:hover,
 #custom-fcitx5:hover {
     background-color: alpha(currentColor, 0.22);
 }

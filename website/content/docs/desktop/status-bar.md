@@ -18,9 +18,10 @@ the left, the clock in the middle, and status modules on the right.
 | Clock | Day, date, and time. Hover for a calendar of the whole year | Scroll: move through years. Right click: back to this year |
 | Input method | `EN`, `FR`, or `한` (see [Input Methods](../input-methods/)) | Toggle input method |
 | Do not disturb | A bell icon, only while it's on | Toggle [do-not-disturb](../notifications/) |
+| Microphone | A crossed-out mic icon, only while the mic is muted | Toggle mic mute |
 | Network | Wi-Fi or Ethernet state, dimmed when offline; hover for the SSID and signal | Open the network menu |
 | Bluetooth | Power state, dimmed when off, and how many devices are connected; hover for their names | Open the Bluetooth menu |
-| Volume | Output volume, dimmed when muted | Left click: audio menu. Right click: toggle mute. Scroll: volume up and down 5% |
+| Volume | Output volume, dimmed when muted | Left click: audio menu. Right click: toggle mute (with an on-screen indicator). Scroll: volume up and down 5%, with the on-screen indicator |
 | Battery | Charge percent, with warning and critical colors at 20% and 10%; hover for time remaining | Open the power profile menu (needs TLP, installed on laptops by default). Hidden on machines without a battery |
 
 The menus are described in [Menu System](../menu-system/). Changing the

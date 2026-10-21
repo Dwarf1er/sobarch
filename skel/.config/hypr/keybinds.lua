@@ -96,8 +96,8 @@ hl.bind(mainMod .. " + SHIFT + O", hl.dsp.exec_cmd('grim -g "$(slurp)" - | zbari
 -- run: $HOME/.config/hypr/scripts/record.sh toggle
 hl.bind(mainMod .. " + SHIFT + R", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/record.sh toggle"))
 -- kb: SUPER + D | Toggle do-not-disturb
--- run: makoctl mode -t do-not-disturb
-hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("makoctl mode -t do-not-disturb"))
+-- run: $HOME/.config/hypr/scripts/osd.sh dnd
+hl.bind(mainMod .. " + D", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/osd.sh dnd"))
 
 -- Move focus (vim-style)
 -- kb: SUPER + H/J/K/L | Focus window left/down/up/right

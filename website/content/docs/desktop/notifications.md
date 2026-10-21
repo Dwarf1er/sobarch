@@ -17,7 +17,7 @@ dismiss it.
 
 ## On-screen indicator
 
-The volume, mute, mic mute and brightness keys show a small bar at the
+The volume, mute, mic mute, brightness and do-not-disturb toggles show a small bar at the
 bottom of the screen for about a second. It is a mako notification that
 replaces itself, so it needs no extra daemon, takes the theme colors, and
 still appears while do-not-disturb is on.

@@ -1,8 +1,8 @@
 #!/bin/bash
-# Volume, mic and brightness keys: change the value, then show a mako
-# progress toast that replaces itself.
+# Volume, mic, brightness and do-not-disturb: change the value, then show a
+# mako toast that replaces itself.
 #
-#   osd.sh volume-up|volume-down|mute|mic-mute|brightness-up|brightness-down
+#   osd.sh volume-up|volume-down|mute|mic-mute|dnd|brightness-up|brightness-down
 
 ICONS="$HOME/.config/sobarch/icons"
 
@@ -37,6 +37,14 @@ case "${1:-}" in
             show microphone-off.svg "Microphone" "Muted"
         else
             show microphone.svg "Microphone" "On"
+        fi
+        ;;
+    dnd)
+        makoctl mode -t do-not-disturb >/dev/null || exit
+        if makoctl mode | grep -qx do-not-disturb; then
+            show bell-off.svg "Do Not Disturb" "On"
+        else
+            show bell.svg "Do Not Disturb" "Off"
         fi
         ;;
     brightness-up | brightness-down)
