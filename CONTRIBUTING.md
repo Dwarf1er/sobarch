@@ -31,13 +31,24 @@ Try the installer without installing anything:
 python3 installer/tui/__main__.py --dry-run
 ```
 
+## Branches and releases
+
+`master` is the stable channel and only changes when a release is cut.
+`develop` is the nightly channel, and all work lands there. Branch from
+`develop` and open your pull request against it, not `master`. Releases
+are tags (`vYYYY.MM.N`) on `master`, with notes generated from the
+commits.
+
+Users choose a channel with `sobarch channel`. To try a `develop` install,
+run the bootstrap with `SOBARCH_CHANNEL=develop`.
+
 ## Making a change
 
 - Configs under `skel/` and scripts under `installer/firstboot/` ship as
   packages. A change there bumps the matching package version; the hook
   does it for you.
 - Vendored AUR packages under `packages/aur/` are updated by the weekly
-  workflow's pull requests, not by hand.
+  workflow's pull requests (against `develop`), not by hand.
 - Keep code comments short and rare. Match the style of the file you are
   editing.
 - User-facing behavior changes belong in `website/content/docs/`.
