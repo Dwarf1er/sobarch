@@ -4,7 +4,7 @@ pkgname=sobarch-scripts
 # The firstboot *.service units are not packaged: they need __USERNAME__
 # substituted per install, so install_runner.py deploys them.
 pkgver=20261021
-pkgrel=3
+pkgrel=4
 pkgdesc="Sobarch first-boot reconciliation scripts and the local AUR/custom package sync mechanism"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
@@ -19,7 +19,7 @@ sha256sums=()
 package() {
     install -dm755 "$pkgdir/usr/local/lib/sobarch"
 
-    for script in apply-skel.sh apply-security-baseline.sh apply-git-setup.sh install-profile-packages.sh unblock-rfkill.sh refresh-rescue-iso.sh setup-rescue-iso.sh build-tinty-templates.sh doctor.sh; do
+    for script in apply-skel.sh apply-security-baseline.sh apply-git-setup.sh install-profile-packages.sh unblock-rfkill.sh refresh-rescue-iso.sh setup-rescue-iso.sh build-tinty-templates.sh tinty-config.sh doctor.sh; do
         install -Dm755 "$startdir/../../../installer/firstboot/$script" "$pkgdir/usr/local/lib/sobarch/$script"
     done
 

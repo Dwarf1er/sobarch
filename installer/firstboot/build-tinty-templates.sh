@@ -12,6 +12,9 @@ TEMPLATES_DIR="$HOME/.config/sobarch/tinty-templates"
 command -v tinty >/dev/null 2>&1 || exit 0
 [[ -d "$TEMPLATES_DIR" ]] || exit 0
 
+# Regenerate first: the base config may have changed with a skel update.
+/usr/local/lib/sobarch/tinty-config.sh
+
 tinty install || true
 
 for template_dir in "$TEMPLATES_DIR"/*/; do

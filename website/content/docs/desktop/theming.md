@@ -70,11 +70,24 @@ is applied, and an optional command that reloads the app. Once an item
 exists, the theme picker applies it with every other app, since the
 picker only calls `tinty apply`.
 
-The items live in `~/.config/tinted-theming/tinty/config.toml`. Sobarch
-ships that file, and [Update System](../updating-system/) merges new
-defaults into it, so add your own items at the end of the file to keep
-merges simple. If an update does conflict, resolve it with Sobarch,
-Review Conflicts.
+Your own items go in `~/.config/tinted-theming/tinty/local.toml`, a file
+you create. Sobarch's items live in `config.base.toml` next to it, and
+`config.toml`, the file tinty actually reads, is generated from the two.
+Updates never touch `local.toml`, and you never edit `config.toml`
+(your changes there would be overwritten). If `local.toml` has a syntax
+error, it is ignored with a message on the terminal and the Sobarch
+items keep working.
+
+After editing `local.toml` or a template, run:
+
+```sh
+/usr/local/lib/sobarch/build-tinty-templates.sh
+tinty apply "$(tinty current)"
+```
+
+The first command regenerates `config.toml`, installs any new items and
+renders every local template. Opening the theme picker also regenerates
+`config.toml`.
 
 ### Option 1: use an existing template
 
@@ -83,7 +96,8 @@ Many apps already have a published template. Search the
 named `tinted-<app>`) and the
 [base16 template list](https://github.com/tinted-theming/home/blob/main/builder-repos.md).
 A template repo holds one prebuilt theme file per scheme, so you only
-need to point tinty at it, the way Sobarch does for kitty:
+need to point tinty at it. Sobarch's own `config.base.toml` does this for
+kitty, and an item in your `local.toml` looks the same:
 
 ```toml
 [[items]]
@@ -103,12 +117,8 @@ supported-systems = ["base16", "base24", "tinted8"]
 | `hook` | Optional shell command run after the file is written, usually a reload. |
 | `supported-systems` | Scheme systems this template has files for: `base16`, `base24`, `tinted8`. Schemes of other systems skip the item. |
 
-Fetch the new item and apply the current scheme again:
-
-```sh
-tinty install
-tinty apply "$(tinty current)"
-```
+Put it in `local.toml`, then run the two commands above to fetch the new
+item and apply the current scheme.
 
 Then make your app read the written file, usually with an `include` or
 `source` line in its own config (see [Wiring the app](#wiring-the-app)).
@@ -150,7 +160,7 @@ themes [zathura](https://pwmt.org/projects/zathura/).
    set highlight-active-color "#{% raw %}{{base0D-hex}}{% endraw %}"
    ```
 
-4. Register the item at the end of `config.toml`:
+4. Register the item in `local.toml`:
 
    ```toml
    [[items]]
@@ -161,19 +171,14 @@ themes [zathura](https://pwmt.org/projects/zathura/).
    supported-systems = ["base16", "base24"]
    ```
 
-5. Render every scheme, register the item and apply:
-
-   ```sh
-   tinty build ~/.config/sobarch/tinty-templates/zathura
-   tinty install
-   tinty apply "$(tinty current)"
-   ```
+5. Render every scheme, register the item and apply, with the two
+   commands from the start of this section.
 
 6. Make zathura read the file, by adding `include colors` to
    `~/.config/zathura/zathurarc`.
 
 From then on the picker recolors zathura with everything else. Re-run
-`tinty build` on the template directory whenever you edit the template.
+`build-tinty-templates.sh` whenever you edit the template.
 
 #### Which color goes where
 
