@@ -91,6 +91,11 @@ from `develop`: it only stops following it, so restore a snapshot if you
 need the old versions back. The command asks for confirmation when you
 leave `develop`, and `--yes` skips the prompt.
 
-To install from `develop`, run the bootstrap with
-`SOBARCH_CHANNEL=develop`, then run `sobarch channel develop` after the
-first boot.
+To install from `develop`, pass the flag through the usual bootstrap
+command:
+
+```sh
+curl -fsSL <bootstrap-url> | bash -s -- --channel develop
+```
+
+Then run `sobarch channel develop` after the first boot.

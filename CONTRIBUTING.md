@@ -40,7 +40,7 @@ are tags (`vYYYY.MM.N`) on `master`, with notes generated from the
 commits.
 
 Users choose a channel with `sobarch channel`. To try a `develop` install,
-run the bootstrap with `SOBARCH_CHANNEL=develop`.
+pipe the bootstrap into `bash -s -- --channel develop`.
 
 ## Making a change
 
