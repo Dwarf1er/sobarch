@@ -3,8 +3,8 @@ pkgname=sobarch-scripts
 # pkgver tracks the date any packaged script last changed.
 # The firstboot *.service units are not packaged: they need __USERNAME__
 # substituted per install, so install_runner.py deploys them.
-pkgver=20261020
-pkgrel=3
+pkgver=20261021
+pkgrel=1
 pkgdesc="Sobarch first-boot reconciliation scripts and the local AUR/custom package sync mechanism"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"
@@ -27,6 +27,7 @@ package() {
     install -Dm644 "$startdir/../../../installer/firstboot/durable-replace.sh" "$pkgdir/usr/local/lib/sobarch/durable-replace.sh"
     install -Dm644 "$startdir/../../../installer/firstboot/rescue-iso-fetch.sh" "$pkgdir/usr/local/lib/sobarch/rescue-iso-fetch.sh"
     install -Dm644 "$startdir/../../../installer/firstboot/notify-user.sh" "$pkgdir/usr/local/lib/sobarch/notify-user.sh"
+    install -Dm644 "$startdir/../../../installer/firstboot/channel.sh" "$pkgdir/usr/local/lib/sobarch/channel.sh"
     install -Dm644 "$startdir/../../../installer/firstboot/pinned-version.sh" "$pkgdir/usr/local/lib/sobarch/pinned-version.sh"
 
     # User timer enabled for every user by shipping the symlink

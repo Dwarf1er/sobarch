@@ -4,7 +4,8 @@
 #   doctor.sh              print the report
 #   doctor.sh --write      write it to ~/sobarch-doctor-<timestamp>.txt
 #
-# Runs as the user. Root-only sections are skipped unless sudo works
+# Runs as the user. Root-only sections need sudo: with a terminal it asks
+# for the password once up front, otherwise they run only if sudo works
 # without a prompt.
 
 set -uo pipefail
@@ -17,6 +18,8 @@ for arg in "$@"; do
     esac
 done
 
+source /usr/local/lib/sobarch/channel.sh
+
 section() { printf '\n== %s ==\n' "$1"; }
 
 # Run a command, noting failure instead of aborting the report.
@@ -27,7 +30,14 @@ try() {
 # Probed once; the probe itself is logged by sudo, so it is filtered from
 # the journal sections below.
 can_sudo=false
-((EUID == 0)) || ! sudo -n true 2>/dev/null || can_sudo=true
+if ((EUID != 0)) && command -v sudo >/dev/null; then
+    # Caches credentials so the later sudo -n calls succeed.
+    if [[ -t 0 && -t 2 ]]; then
+        echo "sobarch doctor: asking for sudo to include root-only sections (Ctrl-C to skip)" >&2
+        sudo -v 2>/dev/null || true
+    fi
+    sudo -n true 2>/dev/null && can_sudo=true
+fi
 
 root_try() {
     if ((EUID == 0)); then
@@ -44,6 +54,8 @@ collect() {
 
     section "Versions"
     try pacman -Q sobarch-skel sobarch-scripts sobarch-limine-snapshots
+    branch="$(sobarch_branch)"
+    printf 'channel: %s (branch %s)\n' "$([[ $branch == develop ]] && echo develop || echo stable)" "$branch"
     echo "kernel: $(uname -r)"
     if command -v hyprctl >/dev/null; then
         hyprctl version 2>&1 | head -n 1

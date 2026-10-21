@@ -24,6 +24,9 @@ Usage: sobarch <command> [args]
                           partition
   doctor [--write]        print a redacted diagnostic report for bug
                           reports (--write saves it under your home)
+  channel [stable|develop]
+                          show or set the update channel (develop is
+                          the unsupported nightly branch)
   help                    show this message
 USAGE
 }
@@ -39,6 +42,27 @@ as_root() {
     fi
 }
 
+channel_cmd() {
+    local file="/etc/sobarch/channel" current="stable"
+    [[ -r "$file" && "$(tr -d '[:space:]' <"$file")" == "develop" ]] && current="develop"
+    if (($# == 0)); then
+        echo "$current"
+        exit 0
+    fi
+    case "$1" in
+        stable | develop) ;;
+        *)
+            echo "sobarch: channel must be 'stable' or 'develop'" >&2
+            exit 2
+            ;;
+    esac
+    if [[ "$1" == "$current" ]]; then
+        echo "Already on $1."
+        exit 0
+    fi
+    as_root bash -c 'mkdir -p /etc/sobarch && echo "$1" >/etc/sobarch/channel' _ "$1"
+}
+
 cmd="${1:-help}"
 shift || true
 
@@ -48,6 +72,7 @@ case "$cmd" in
     aur-sync) as_root "$LIB/aur-sync.sh" "$@" ;;
     snapshot-restore) as_root "$LIB/snapshot-rollback.sh" --online "$@" ;;
     rescue-refresh) as_root "$LIB/refresh-rescue-iso.sh" "$@" ;;
+    channel) channel_cmd "$@" ;;
     doctor) exec "$LIB/doctor.sh" "$@" ;;
     help | -h | --help) usage ;;
     *)

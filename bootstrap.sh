@@ -6,7 +6,9 @@
 set -euo pipefail
 
 REPO="Dwarf1er/sobarch"
+# SOBARCH_CHANNEL=develop selects the nightly branch.
 BRANCH="master"
+[[ "${SOBARCH_CHANNEL:-}" == "develop" ]] && BRANCH="develop"
 ARCHIVE_URL="https://github.com/${REPO}/archive/refs/heads/${BRANCH}.tar.gz"
 
 WORKDIR="$(mktemp -d /tmp/sobarch-installer.XXXXXX)"

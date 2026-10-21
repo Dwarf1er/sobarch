@@ -12,7 +12,13 @@ set -euo pipefail
 shopt -s inherit_errexit
 
 REPO="Dwarf1er/sobarch"
-BRANCH="master"
+# Absent on the first install, before sobarch-scripts is built: stable.
+if [[ -r /usr/local/lib/sobarch/channel.sh ]]; then
+    source /usr/local/lib/sobarch/channel.sh
+    BRANCH="$(sobarch_branch)"
+else
+    BRANCH="master"
+fi
 ARCHIVE_URL="https://github.com/${REPO}/archive/refs/heads/${BRANCH}.tar.gz"
 
 BUILD_USER="sobarch-build"

@@ -198,7 +198,7 @@ if ! $review_only; then
 
     # Base-required packages added after this system was installed are never
     # installed by sync mode, which only touches installed packages.
-    base_pkgs_url="https://raw.githubusercontent.com/Dwarf1er/sobarch/master/scripts/aur-sync/base-required-packages.txt"
+    base_pkgs_url="https://raw.githubusercontent.com/Dwarf1er/sobarch/$(sobarch_branch)/scripts/aur-sync/base-required-packages.txt"
     if base_pkgs_list="$(curl -fsSL "$base_pkgs_url" 2>/dev/null)"; then
         mapfile -t base_pkgs < <(sed 's/#.*//' <<<"$base_pkgs_list" | awk 'NF{$1=$1;print}')
         for pkg in "${base_pkgs[@]}"; do
