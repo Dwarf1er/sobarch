@@ -61,6 +61,184 @@ in the picker after an update.
 Browse the [tinted gallery](https://tinted-theming.github.io/tinted-gallery/)
 for the full list of available schemes.
 
+## Theming other apps
+
+Sobarch themes the apps it ships. Anything else can join the same
+switch by becoming one more tinty *item*: a template that produces a
+color file for each scheme, the path that file is written to when a scheme
+is applied, and an optional command that reloads the app. Once an item
+exists, the theme picker applies it with every other app, since the
+picker only calls `tinty apply`.
+
+The items live in `~/.config/tinted-theming/tinty/config.toml`. Sobarch
+ships that file, and [Update System](../updating-system/) merges new
+defaults into it, so add your own items at the end of the file to keep
+merges simple. If an update does conflict, resolve it with Sobarch,
+Review Conflicts.
+
+### Option 1: use an existing template
+
+Many apps already have a published template. Search the
+[tinted-theming](https://github.com/tinted-theming) organization (repos
+named `tinted-<app>`) and the
+[base16 template list](https://github.com/tinted-theming/home/blob/main/builder-repos.md).
+A template repo holds one prebuilt theme file per scheme, so you only
+need to point tinty at it, the way Sobarch does for kitty:
+
+```toml
+[[items]]
+path = "https://github.com/tinted-theming/tinted-terminal"
+name = "tinted-terminal-kitty"
+themes-dir = "themes/kitty"
+write-to-file = ["~/.config/kitty/onedark.conf"]
+supported-systems = ["base16", "base24", "tinted8"]
+```
+
+| Key | Meaning |
+|---|---|
+| `path` | Git URL of the template repo, or a local directory. |
+| `name` | Any unique name. |
+| `themes-dir` | Directory inside the repo holding one file per scheme. |
+| `write-to-file` | Where the chosen scheme's file is copied. This is the file your app reads. |
+| `hook` | Optional shell command run after the file is written, usually a reload. |
+| `supported-systems` | Scheme systems this template has files for: `base16`, `base24`, `tinted8`. Schemes of other systems skip the item. |
+
+Fetch the new item and apply the current scheme again:
+
+```sh
+tinty install
+tinty apply "$(tinty current)"
+```
+
+Then make your app read the written file, usually with an `include` or
+`source` line in its own config (see [Wiring the app](#wiring-the-app)).
+
+### Option 2: write your own template
+
+When no template exists, make a local one. It is a directory with a
+`templates/` folder holding a small config and a
+[mustache](https://mustache.github.io/) file. Sobarch's own local
+templates live under `~/.config/sobarch/tinty-templates/`, and anything
+you add there is rebuilt by Update System, which also re-renders it after a
+skel update. This example
+themes [zathura](https://pwmt.org/projects/zathura/).
+
+1. Create the template folder:
+
+   ```sh
+   mkdir -p ~/.config/sobarch/tinty-templates/zathura/templates
+   ```
+
+2. Tell the builder what to generate, in
+   `zathura/templates/config.yaml`. This produces one file per scheme:
+
+   ```yaml
+   default:
+     filename: "colors/{{ scheme-system }}-{{ scheme-slug }}.conf"
+     supported-systems: [base16, base24]
+   ```
+
+3. Write the template, in `zathura/templates/default.mustache`. Each
+   `{{baseNN-hex}}` becomes that color of the scheme, without the `#`:
+
+   ```
+   set default-bg   "#{{base00-hex}}"
+   set default-fg   "#{{base05-hex}}"
+   set statusbar-bg "#{{base01-hex}}"
+   set statusbar-fg "#{{base04-hex}}"
+   set highlight-color "#{{base0A-hex}}"
+   set highlight-active-color "#{{base0D-hex}}"
+   ```
+
+4. Register the item at the end of `config.toml`:
+
+   ```toml
+   [[items]]
+   path = "~/.config/sobarch/tinty-templates/zathura"
+   name = "my-zathura"
+   themes-dir = "colors"
+   write-to-file = ["~/.config/zathura/colors"]
+   supported-systems = ["base16", "base24"]
+   ```
+
+5. Render every scheme, register the item and apply:
+
+   ```sh
+   tinty build ~/.config/sobarch/tinty-templates/zathura
+   tinty install
+   tinty apply "$(tinty current)"
+   ```
+
+6. Make zathura read the file, by adding `include colors` to
+   `~/.config/zathura/zathurarc`.
+
+From then on the picker recolors zathura with everything else. Re-run
+`tinty build` on the template directory whenever you edit the template.
+
+#### Which color goes where
+
+The base16 slots are the same for every scheme, so pick by role and the
+app follows any scheme:
+
+| Slots | Role |
+|---|---|
+| `base00`, `base01`, `base02` | Backgrounds: main, lighter (status bars), selection. |
+| `base03` | Comments and muted text. |
+| `base04`, `base05`, `base06`, `base07` | Foregrounds, from dim to bright. |
+| `base08` to `base0F` | Accents: red, orange, yellow, green, cyan, blue, purple, brown. Use `base08` for errors, `base0A` for warnings, `base0B` for success and `base0D` for links and focus. |
+
+Besides `{{baseNN-hex}}`, templates can use the red, green and blue
+components (`{{baseNN-rgb-r}}`, `{{baseNN-rgb-g}}`, `{{baseNN-rgb-b}}`) for
+apps that want `rgb()` or `rgba()` values. The full variable list is in
+the [builder specification](https://github.com/tinted-theming/home/blob/main/builder.md).
+Base24 schemes add `base10` to `base17`, and the template above leaves
+them unused.
+
+### Wiring the app
+
+An item only writes a file; the app has to read it. In order of
+preference:
+
+- **The app can include another file** (Hyprland, mako, kitty, zathura,
+  most terminals and bars). Add one `include`, `source` or `@import` line
+  to its config pointing at the `write-to-file` path, and keep the rest of
+  its config yours. This is how Sobarch themes mako: its `config` includes
+  `~/.config/mako/colors`.
+- **The app has no include** (single-file configs such as `starship.toml`).
+  Make the template the whole file, set `write-to-file` to the config
+  itself, and move your own settings into the template. Anything you edit
+  in the written file is overwritten on the next apply.
+- **The app reads colors from its own theme directory** (btop, for
+  example). Write the file into that directory and select the theme by
+  name once, in the app's settings. Sobarch does this for btop.
+
+### Reloading the app
+
+Most apps read colors once at launch. If yours does not reload by itself,
+add a `hook` that makes it re-read the file:
+
+```toml
+hook = "makoctl reload"
+hook = "hyprctl reload"
+hook = "pkill -USR1 kitty"
+```
+
+Check the app's documentation for a reload command or signal. If it has
+none, leave `hook` out and the new colors appear the next time you open
+the app.
+
+### If an app does not change
+
+- Run `tinty apply "$(tinty current)"` in a terminal and read its output
+  for errors.
+- Check that the file at `write-to-file` exists and has the new colors.
+- `tinty build` fails or reports no themes: look for a typo in the
+  template's `config.yaml`, or a `supported-systems` list that doesn't
+  match what the template actually generates.
+- Base24 or tinted8 schemes skip an item whose `supported-systems` does
+  not list them, so the app keeps its previous colors. A base16-only
+  template is fine; it just won't follow those schemes.
+
 ## The same desktop, four schemes
 
 Terminal, waybar, and wallpaper all recolor together, whatever scheme
