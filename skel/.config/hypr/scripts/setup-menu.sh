@@ -50,7 +50,6 @@ while :; do
     menu_add wallpaper "Wallpaper" photo.svg "$(current_wallpaper)"
     menu_add mimetypes "Default Apps" apps.svg
     ((has_rescue)) && menu_add rescue "Refresh Rescue ISO" device-usb.svg
-    menu_add channel "Update Channel" refresh.svg "$(sobarch channel 2>/dev/null)"
     menu_add doctor "Diagnostic Report" stethoscope.svg
     menu_add docs "Documentation" book.svg
 
@@ -65,7 +64,6 @@ while :; do
         wallpaper) menu_sub wallpaper-menu.sh ;;
         mimetypes) menu_sub mimetype-menu.sh ;;
         rescue) menu_sub refresh-rescue-menu.sh ;;
-        channel) menu_sub channel-menu.sh ;;
         doctor) menu_sub doctor-menu.sh ;;
         docs) xdg-open "https://sobarch.antoinepoulin.com" & menu_done ;;
     esac

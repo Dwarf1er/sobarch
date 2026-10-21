@@ -24,12 +24,12 @@ Usage: sobarch <command> [args]
                           partition
   doctor [--write]        print a redacted diagnostic report for bug
                           reports (--write saves it under your home)
-  channel [--yes] [stable|develop]
-                          show or set the update channel (develop is
-                          the unsupported nightly branch)
   help                    show this message
 USAGE
 }
+
+# Not listed in usage: `channel [--yes] [stable|develop]` shows or sets the
+# update channel, for testers (see the Updating docs).
 
 # sudo when there's a terminal for the password prompt, else pkexec.
 as_root() {

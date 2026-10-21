@@ -71,3 +71,26 @@ If you'd rather just revisit conflicts left over from a previous run
 without re-checking everything else, use **Review Conflicts** instead.
 It re-runs the same interactive walkthrough over whatever
 `.sobarch-new` files are still sitting on disk.
+
+## Testing the develop branch
+
+Updates normally come from the `master` branch, which only changes when
+a release is cut. Day-to-day work lands on `develop` first. Testers and
+advanced users can follow it instead:
+
+```sh
+sobarch channel            # prints stable or develop
+sobarch channel develop    # follow the nightly branch
+sobarch channel stable     # back to master
+```
+
+`develop` is unsupported and can break. Take a snapshot before switching,
+and mention the channel in bug reports (`sobarch doctor` prints it).
+Switching back to `stable` does not downgrade anything already updated
+from `develop`: it only stops following it, so restore a snapshot if you
+need the old versions back. The command asks for confirmation when you
+leave `develop`, and `--yes` skips the prompt.
+
+To install from `develop`, run the bootstrap with
+`SOBARCH_CHANNEL=develop`, then run `sobarch channel develop` after the
+first boot.
