@@ -134,20 +134,20 @@ themes [zathura](https://pwmt.org/projects/zathura/).
 
    ```yaml
    default:
-     filename: "colors/{{ scheme-system }}-{{ scheme-slug }}.conf"
+     filename: "colors/{% raw %}{{ scheme-system }}{% endraw %}-{% raw %}{{ scheme-slug }}{% endraw %}.conf"
      supported-systems: [base16, base24]
    ```
 
 3. Write the template, in `zathura/templates/default.mustache`. Each
-   `{{baseNN-hex}}` becomes that color of the scheme, without the `#`:
+   `{% raw %}{{baseNN-hex}}{% endraw %}` becomes that color of the scheme, without the `#`:
 
    ```
-   set default-bg   "#{{base00-hex}}"
-   set default-fg   "#{{base05-hex}}"
-   set statusbar-bg "#{{base01-hex}}"
-   set statusbar-fg "#{{base04-hex}}"
-   set highlight-color "#{{base0A-hex}}"
-   set highlight-active-color "#{{base0D-hex}}"
+   set default-bg   "#{% raw %}{{base00-hex}}{% endraw %}"
+   set default-fg   "#{% raw %}{{base05-hex}}{% endraw %}"
+   set statusbar-bg "#{% raw %}{{base01-hex}}{% endraw %}"
+   set statusbar-fg "#{% raw %}{{base04-hex}}{% endraw %}"
+   set highlight-color "#{% raw %}{{base0A-hex}}{% endraw %}"
+   set highlight-active-color "#{% raw %}{{base0D-hex}}{% endraw %}"
    ```
 
 4. Register the item at the end of `config.toml`:
@@ -187,8 +187,8 @@ app follows any scheme:
 | `base04`, `base05`, `base06`, `base07` | Foregrounds, from dim to bright. |
 | `base08` to `base0F` | Accents: red, orange, yellow, green, cyan, blue, purple, brown. Use `base08` for errors, `base0A` for warnings, `base0B` for success and `base0D` for links and focus. |
 
-Besides `{{baseNN-hex}}`, templates can use the red, green and blue
-components (`{{baseNN-rgb-r}}`, `{{baseNN-rgb-g}}`, `{{baseNN-rgb-b}}`) for
+Besides `{% raw %}{{baseNN-hex}}{% endraw %}`, templates can use the red, green and blue
+components (`{% raw %}{{baseNN-rgb-r}}{% endraw %}`, `{% raw %}{{baseNN-rgb-g}}{% endraw %}`, `{% raw %}{{baseNN-rgb-b}}{% endraw %}`) for
 apps that want `rgb()` or `rgba()` values. The full variable list is in
 the [builder specification](https://github.com/tinted-theming/home/blob/main/builder.md).
 Base24 schemes add `base10` to `base17`, and the template above leaves
