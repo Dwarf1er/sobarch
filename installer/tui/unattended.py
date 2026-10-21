@@ -15,6 +15,7 @@ from config_gen import (
     write_firstboot_package_lists,
     write_git_config,
     write_profile_selection,
+    write_channel,
     write_security_flags,
 )
 from disks import list_disks
@@ -141,6 +142,7 @@ def _write_dry_run_configs(state: WizardState, hardware: HardwareInfo, output_di
     write_firstboot_package_lists(state, output_dir)
     write_security_flags(state, output_dir)
     write_git_config(state, output_dir)
+    write_channel(output_dir)
 
 
 def run_unattended(answer_path: Path, output_dir: Path, dry_run: bool) -> int:

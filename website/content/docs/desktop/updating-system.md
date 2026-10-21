@@ -98,4 +98,6 @@ command:
 curl -fsSL <bootstrap-url> | bash -s -- --channel develop
 ```
 
-Then run `sobarch channel develop` after the first boot.
+The installed system records `develop` and keeps following it. An ISO
+built from `develop`, or an installer run from a `develop` git checkout,
+does the same.

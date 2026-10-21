@@ -13,5 +13,8 @@ sobarch-install-output/*
 # Rendered by build-tinty-templates.sh
 skel/.config/sobarch/tinty-templates/*/colors/
 
+# Stamped by bootstrap.sh and the ISO build
+.channel
+
 # Zola build output, rebuilt by CI
 website/public/

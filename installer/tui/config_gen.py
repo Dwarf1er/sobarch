@@ -5,6 +5,7 @@ The templates are edited as parsed JSON because the partition edits are structur
 
 import json
 import os
+import subprocess
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -255,6 +256,33 @@ def write_security_flags(state: WizardState, sobarch_dir: Path) -> Path:
     sobarch_dir.mkdir(parents=True, exist_ok=True)
     path = sobarch_dir / "ssh-enabled"
     path.write_text("true\n" if state.ssh_enabled else "false\n")
+    return path
+
+
+def detect_channel() -> str:
+    """Channel this checkout came from: bootstrap.sh and the ISO build stamp
+    .channel; a plain git clone falls back to its branch."""
+    root = Path(__file__).resolve().parent.parent.parent
+    try:
+        stamped = (root / ".channel").read_text().strip()
+    except OSError:
+        stamped = ""
+    if not stamped and (root / ".git").exists():
+        try:
+            stamped = subprocess.run(
+                ["git", "-C", str(root), "rev-parse", "--abbrev-ref", "HEAD"],
+                capture_output=True, text=True, check=True,
+            ).stdout.strip()
+        except (OSError, subprocess.CalledProcessError):
+            pass
+    return "develop" if stamped == "develop" else "stable"
+
+
+def write_channel(sobarch_dir: Path) -> Path:
+    """Record the update channel the system was installed from."""
+    sobarch_dir.mkdir(parents=True, exist_ok=True)
+    path = sobarch_dir / "channel"
+    path.write_text(f"{detect_channel()}\n")
     return path
 
 

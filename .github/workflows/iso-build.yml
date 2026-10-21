@@ -27,6 +27,10 @@ jobs:
       - name: Install build dependencies
         run: pacman -Sy --needed --noconfirm archiso git grub rsync python gnupg github-cli
 
+      - name: Stamp channel
+        # The ISO's installer records this on the installed system.
+        run: '[ "$GITHUB_REF_NAME" = develop ] && echo develop > .channel || true'
+
       - name: Build ISO
         run: scripts/iso-build/build-iso.sh "$GITHUB_WORKSPACE" "$RUNNER_TEMP/iso"
 

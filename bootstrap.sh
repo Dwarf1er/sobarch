@@ -30,6 +30,8 @@ trap 'rm -rf "$WORKDIR"' EXIT
 
 echo "sobarch: fetching installer from ${REPO}@${BRANCH}..."
 curl -fsSL "$ARCHIVE_URL" | tar -xz -C "$WORKDIR" --strip-components=1
+# The installer records this on the target so updates follow the same branch.
+[[ "$BRANCH" == develop ]] && echo develop > "$WORKDIR/.channel"
 
 echo "sobarch: launching installer..."
 # stdin is curl's pipe, so the TUI must read keys from the tty.

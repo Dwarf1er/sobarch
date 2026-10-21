@@ -14,6 +14,7 @@ from config_gen import (
     write_configs,
     write_firstboot_package_lists,
     write_git_config,
+    write_channel,
     write_security_flags,
 )
 import network
@@ -316,6 +317,7 @@ def run_install(
         write_firstboot_package_lists(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
         write_security_flags(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
         write_git_config(state, MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
+        write_channel(MOUNTPOINT / SOBARCH_DIR_IN_TARGET.relative_to("/"))
 
         firstboot_service_dir = MOUNTPOINT / FIRSTBOOT_SERVICE_DIR_IN_TARGET.relative_to("/")
         firstboot_service_dir.mkdir(parents=True, exist_ok=True)

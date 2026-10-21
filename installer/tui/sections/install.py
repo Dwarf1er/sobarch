@@ -16,6 +16,7 @@ from config_gen import (
     write_firstboot_package_lists,
     write_git_config,
     write_profile_selection,
+    write_channel,
     write_security_flags,
 )
 from disks import list_disks
@@ -210,6 +211,7 @@ class InstallSection(Section):
                 *write_firstboot_package_lists(app.state, out_dir),
                 write_security_flags(app.state, out_dir),
                 write_git_config(app.state, out_dir),
+                write_channel(out_dir),
             ]
         except ConfigGenError as error:
             note.update(Text(str(error), style="red"))
