@@ -14,6 +14,9 @@ if ! command -v tinty >/dev/null 2>&1; then
     exit 1
 fi
 
+# Picks up edits to local.toml.
+/usr/local/lib/sobarch/tinty-config.sh 2>/dev/null
+
 # "base16-atelier-forest-light" -> "Atelier Forest Light", raw id kept as the row id.
 entries=$(tinty list | awk -F'-' '
     length($0) == 0 { next }

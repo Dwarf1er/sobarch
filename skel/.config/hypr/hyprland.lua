@@ -48,7 +48,7 @@ hl.on("hyprland.start", function()
 -- `tinty list` is empty until `tinty install` has fetched the schemes and
 -- templates, so run it (and build the local templates) on first login and
 -- retry on later logins if it failed, e.g. no network yet.
-	hl.exec_cmd("command -v tinty >/dev/null 2>&1 && { tinty list | grep -q . || { tinty install && /usr/local/lib/sobarch/build-tinty-templates.sh; }; tinty init; }")
+	hl.exec_cmd("command -v tinty >/dev/null 2>&1 && { /usr/local/lib/sobarch/tinty-config.sh; tinty list | grep -q . || { tinty install && /usr/local/lib/sobarch/build-tinty-templates.sh; }; tinty init; }")
 end)
 
 -------------------------------

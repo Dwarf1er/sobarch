@@ -1,4 +1,6 @@
-# Configuration for Tinty (https://github.com/tinted-theming/tinty)
+# Base configuration for Tinty (https://github.com/tinted-theming/tinty).
+# tinty-config.sh joins this with local.toml into config.toml, which is the
+# file tinty reads. Your own items go in local.toml.
 #
 # Local items under ~/.config/sobarch/tinty-templates/ must be rendered with
 # build-tinty-templates.sh before `tinty apply` can use them.
