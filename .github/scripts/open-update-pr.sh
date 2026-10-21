@@ -44,7 +44,7 @@ git push --force origin "$branch"
     echo
     echo "[Workflow run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
 } > pr-body.txt
-gh pr create --title "$title" --head "$branch" --base master --body-file pr-body.txt
+gh pr create --title "$title" --head "$branch" --base develop --body-file pr-body.txt
 
 echo "branch=$branch" >> "$GITHUB_OUTPUT"
 echo "created=true" >> "$GITHUB_OUTPUT"

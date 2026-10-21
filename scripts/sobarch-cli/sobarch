@@ -24,7 +24,7 @@ Usage: sobarch <command> [args]
                           partition
   doctor [--write]        print a redacted diagnostic report for bug
                           reports (--write saves it under your home)
-  channel [stable|develop]
+  channel [--yes] [stable|develop]
                           show or set the update channel (develop is
                           the unsupported nightly branch)
   help                    show this message
@@ -43,7 +43,11 @@ as_root() {
 }
 
 channel_cmd() {
-    local file="/etc/sobarch/channel" current="stable"
+    local file="/etc/sobarch/channel" current="stable" yes=false
+    if [[ "${1:-}" == "--yes" ]]; then
+        yes=true
+        shift
+    fi
     [[ -r "$file" && "$(tr -d '[:space:]' <"$file")" == "develop" ]] && current="develop"
     if (($# == 0)); then
         echo "$current"
@@ -59,6 +63,19 @@ channel_cmd() {
     if [[ "$1" == "$current" ]]; then
         echo "Already on $1."
         exit 0
+    fi
+    if [[ "$current" == "develop" ]] && ! $yes; then
+        cat >&2 <<'WARN'
+Switching develop -> stable does not downgrade anything. Packages and
+configs already updated from develop stay, and may be newer than stable
+expects. To undo them, restore a snapshot from before you switched.
+WARN
+        if [[ ! -t 0 ]]; then
+            echo "sobarch: refusing without a terminal; pass --yes to proceed" >&2
+            exit 1
+        fi
+        read -r -p "Switch to stable anyway? [y/N] " answer
+        [[ "$answer" =~ ^[Yy]$ ]] || exit 1
     fi
     as_root bash -c 'mkdir -p /etc/sobarch && echo "$1" >/etc/sobarch/channel' _ "$1"
 }
