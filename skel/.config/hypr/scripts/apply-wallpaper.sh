@@ -113,9 +113,9 @@ set_wallpaper() {
             # Hung: restart it once, then retry.
             [[ -n "${restarted:-}" ]] && return 1
             restarted=1
-            pkill -x hyprpaper || true
+            pkill -9 -x hyprpaper || true
             sleep 0.5
-            setsid hyprpaper >/dev/null 2>&1 &
+            setsid hyprpaper >/dev/null 2>&1 9>&- &
             sleep 1
             continue
         fi
