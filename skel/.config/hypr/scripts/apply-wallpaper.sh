@@ -70,7 +70,6 @@ if [[ "$wallpaper" == *.svg ]]; then
     # PNG after the SVG's checksum.
     sum=$(cksum <"$path_to_apply" | cut -d' ' -f1)
     rasterized="$WORKDIR/wallpaper-$sum.png"
-    find "$WORKDIR" -maxdepth 1 -type f ! -name "wallpaper-$sum*" ! -name wallpaper.svg -delete
     [[ -f "$rasterized" ]] || rsvg-convert "$path_to_apply" -o "$rasterized" || exit 0
     svg_to_fit="$path_to_apply"
     path_to_apply="$rasterized"
@@ -110,8 +109,16 @@ set_wallpaper() {
     local attempt
     for attempt in {1..20}; do
         timeout 2 hyprctl hyprpaper wallpaper "$1" >/dev/null 2>&1 && return 0
-        # Timed out: hyprpaper is hung, retrying won't help.
-        [[ $? -eq 124 ]] && return 1
+        if [[ $? -eq 124 ]]; then
+            # Hung: restart it once, then retry.
+            [[ -n "${restarted:-}" ]] && return 1
+            restarted=1
+            pkill -x hyprpaper || true
+            sleep 0.5
+            setsid hyprpaper >/dev/null 2>&1 &
+            sleep 1
+            continue
+        fi
         sleep 0.1
     done
     return 1
@@ -131,3 +138,8 @@ done < <(hyprctl monitors | awk '
     /^[[:space:]]+[0-9]+x[0-9]+@/ { split($1, mode, /[x@]/); w = mode[1]; h = mode[2] }
     /^[[:space:]]+transform:/ { if ($2 % 2) { t = w; w = h; h = t }; print name, w, h }
 ')
+
+# Old renders go only now that hyprpaper no longer shows them.
+[[ -n "${sum:-}" ]] &&
+    find "$WORKDIR" -maxdepth 1 -type f ! -name "wallpaper-$sum*" ! -name wallpaper.svg -delete
+exit 0
