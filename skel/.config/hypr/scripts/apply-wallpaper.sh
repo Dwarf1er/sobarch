@@ -18,8 +18,17 @@ wallpaper="$DEFAULT_WALLPAPER"
 [[ -f "$CURRENT_FILE" ]] && wallpaper="$(<"$CURRENT_FILE")"
 [[ -f "$wallpaper" ]] || exit 0
 
-# The second rm cleans up renders from older versions of this script.
-rm -rf "$WORKDIR"
+# Hotplug (a KVM switch) fires a burst of events: the last one wins after a
+# short quiet period, and runs never overlap.
+RUNTIME="${XDG_RUNTIME_DIR:-/tmp}"
+token="$$-$RANDOM"
+echo "$token" >"$RUNTIME/sobarch-wallpaper.token"
+sleep 2
+[[ "$(<"$RUNTIME/sobarch-wallpaper.token")" == "$token" ]] || exit 0
+exec 9>"$RUNTIME/sobarch-wallpaper.lock"
+flock 9
+
+# Cleans up renders from older versions of this script.
 rm -f "$HOME/.cache/sobarch"/wallpaper.svg "$HOME/.cache/sobarch"/wallpaper*.png
 
 path_to_apply="$wallpaper"
@@ -61,7 +70,8 @@ if [[ "$wallpaper" == *.svg ]]; then
     # PNG after the SVG's checksum.
     sum=$(cksum <"$path_to_apply" | cut -d' ' -f1)
     rasterized="$WORKDIR/wallpaper-$sum.png"
-    rsvg-convert "$path_to_apply" -o "$rasterized" || exit 0
+    find "$WORKDIR" -maxdepth 1 -type f ! -name "wallpaper-$sum*" ! -name wallpaper.svg -delete
+    [[ -f "$rasterized" ]] || rsvg-convert "$path_to_apply" -o "$rasterized" || exit 0
     svg_to_fit="$path_to_apply"
     path_to_apply="$rasterized"
 
@@ -99,17 +109,22 @@ fit_to_monitor() {
 set_wallpaper() {
     local attempt
     for attempt in {1..20}; do
-        hyprctl hyprpaper wallpaper "$1" >/dev/null 2>&1 && return 0
+        timeout 2 hyprctl hyprpaper wallpaper "$1" >/dev/null 2>&1 && return 0
+        # Timed out: hyprpaper is hung, retrying won't help.
+        [[ $? -eq 124 ]] && return 1
         sleep 0.1
     done
     return 1
 }
 
+active=$(timeout 2 hyprctl hyprpaper listactive 2>/dev/null || true)
+
 # Rotated monitors still report the unrotated mode, so swap w/h for odd transforms.
 while read -r name width height; do
-    [[ -z "$name" ]] && continue
+    [[ -z "$name" || "$name" == FALLBACK ]] && continue
     monitor_path="$path_to_apply"
     [[ -n "${fill_color:-}" ]] && monitor_path="$(fit_to_monitor "$width" "$height")"
+    grep -F "$monitor_path" <<<"$active" | grep -qF "$name" && continue
     set_wallpaper "${name},${monitor_path},cover" || true
 done < <(hyprctl monitors | awk '
     /^Monitor / { name = $2 }
