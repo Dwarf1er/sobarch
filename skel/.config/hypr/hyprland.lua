@@ -63,6 +63,17 @@ end
 pcall(function() hl.on("monitor.added", refresh_wallpaper) end)
 pcall(function() hl.on("monitor.removed", refresh_wallpaper) end)
 
+-- Lid closed with an external monitor: turn the built-in panel off and keep running.
+local lid = os.getenv("HOME") .. "/.config/hypr/scripts/lid.sh"
+local function lid_sync()
+	hl.exec_cmd(lid .. " sync")
+end
+pcall(function() hl.on("monitor.added", lid_sync) end)
+pcall(function() hl.on("monitor.removed", lid_sync) end)
+pcall(function() hl.on("hyprland.start", lid_sync) end)
+pcall(function() hl.bind("switch:on:Lid Switch", hl.dsp.exec_cmd(lid .. " close"), { locked = true }) end)
+pcall(function() hl.bind("switch:off:Lid Switch", hl.dsp.exec_cmd(lid .. " open"), { locked = true }) end)
+
 hl.exec_cmd('gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"')
 hl.exec_cmd('gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"')
 hl.exec_cmd('gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark"')
