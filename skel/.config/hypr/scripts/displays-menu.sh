@@ -55,10 +55,16 @@ logical_size() {
 
 lua_escape() { local s=${1//\\/\\\\}; printf '%s' "${s//\"/\\\"}"; }
 
+# Rule key for monitor $1: its description, or the port when it has none.
+rule_key() {
+    local i=$1
+    if [ -n "${M_DESC[$i]}" ]; then echo "desc:$(lua_escape "${M_DESC[$i]}")"; else echo "${M_NAME[$i]}"; fi
+}
+
 # Prints one hl.monitor block for monitor $1.
 emit_block() {
     local i=$1 out
-    out="desc:$(lua_escape "${M_DESC[$i]}")"
+    out=$(rule_key "$i")
     if ((M_OFF[i])); then
         printf 'hl.monitor({\n\toutput = "%s",\n\tdisabled = true,\n})\n\n' "$out"
         return
@@ -78,7 +84,7 @@ emit_block() {
 keep_absent_blocks() {
     [ -f "$MONITORS_LUA" ] || return 0
     local present="" i
-    for i in "${!M_NAME[@]}"; do present+="desc:$(lua_escape "${M_DESC[$i]}")$SEP"; done
+    for i in "${!M_NAME[@]}"; do present+="$(rule_key "$i")$SEP"; done
     awk -v present="$present" -v sep="$SEP" '
         /^hl\.monitor\(\{/ { inblock = 1; block = "" }
         inblock {
@@ -180,7 +186,17 @@ pick_mode() {
         seen+="$mode "
         menu_add "$mode" "${mode%@*}" "" "$(awk -v r="${mode#*@}" 'BEGIN { printf "%g Hz", r }')$([ "$mode" = "$cur" ] && echo " · current")"
     done
-    menu_show "resolution" "${M_NAME[$i]}" "$cur"
+    menu_add custom "Custom..." "" "for monitors that report no modes"
+    menu_show "resolution" "${M_NAME[$i]}" "$cur" || return 1
+    [ "$MENU_ID" = custom ] || return 0
+    local in
+    MENU_PLACEHOLDER="1920x1080@60" in=$(menu_input "mode" "WIDTHxHEIGHT@REFRESH") || return 1
+    [[ "$in" == *@* ]] || in+="@60"
+    if [[ ! "$in" =~ ^[0-9]+x[0-9]+@[0-9]+(\.[0-9]+)?$ ]]; then
+        menu_notify "Use the form 1920x1080@60." critical
+        return 1
+    fi
+    MENU_ID=$in
 }
 
 pick_scale() {
