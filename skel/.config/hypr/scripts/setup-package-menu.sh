@@ -56,7 +56,7 @@ fi
 
 # An AUR build can take minutes, so hand off and close every menu level.
 if [[ "${pkg_is_aur[$choice]}" == 1 ]]; then
-    menu_progress "Installing $choice..." "$choice installed." sobarch aur-sync "$choice" ||
+    menu_progress "Installing $choice..." "$choice installed." pkexec /usr/local/lib/sobarch/aur-sync.sh "$choice" ||
         menu_notify "Check /var/log/sobarch/aur-sync.log for the full build output." critical
 else
     menu_progress "Installing $choice..." "$choice installed." pkexec pacman -S --needed --noconfirm "$choice"
