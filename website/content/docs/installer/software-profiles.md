@@ -67,8 +67,9 @@ starting Sunshine also creates a separate 1920x1080 screen that exists
 only for Moonlight, parked where the cursor can't reach it, and points
 Sunshine at it; stopping Sunshine removes it. Your real monitors and
 workspaces stay as they are. It's still your one session: windows and
-keyboard focus are shared with the remote user. Sunshine's only app is
-**Desktop**, which streams whichever monitor it is pointed at.
+keyboard focus are shared with the remote user. Sunshine offers two apps:
+**Desktop**, which streams whichever monitor it is pointed at, and
+**Steam Big Picture**.
 
 To stream from outside your home network, put both machines on a VPN
 such as Tailscale rather than forwarding ports.
