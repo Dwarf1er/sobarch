@@ -10,7 +10,7 @@ toc = true
 +++
 
 The installer offers profiles for common use cases: Developer, Gaming,
-Creative, Maker/3D Printing, Virtualization, Office, Browsers & Chat,
+Creative, Maker/3D Printing, Remote Access, Virtualization, Office, Browsers & Chat,
 System Tuning, and Input Method. In the installer's Software step, the profiles
 are listed on the left and the selected profile's packages on the
 right; check the ones you want, or press `a` to toggle every package
@@ -34,6 +34,7 @@ delayed isn't actually avoidable if any of it happened during install.
 | **Gaming** | `gamescope`, `lutris`, `mangohud`, `prismlauncher`, `protontricks`, `steam`, `gale-bin` (AUR), `protonup-qt-bin` (AUR) |
 | **Creative** | `audacity`, `calf`, `deepfilternet-ladspa`, `easyeffects`, `gimp`, `inkscape`, `lsp-plugins`, `obs-studio`, `shotcut` |
 | **Maker / 3D Printing** | `blender`, `freecad`, `orca-slicer-bin` (AUR) |
+| **Remote Access** | `moonlight-qt`, `sunshine-bin` (AUR) |
 | **Virtualization** | `quickemu-git` (AUR), `quickgui-bin` (AUR) |
 | **Office** | `homebank`, `libreoffice-fresh` |
 | **Browsers & Chat** | `signal-desktop`, `brave-origin-bin` (AUR), `vesktop-bin` (AUR) |

@@ -4,7 +4,7 @@ pkgname=sobarch-scripts
 # The firstboot *.service units are not packaged: they need __USERNAME__
 # substituted per install, so install_runner.py deploys them.
 pkgver=20261024
-pkgrel=2
+pkgrel=3
 pkgdesc="Sobarch first-boot reconciliation scripts and the local AUR/custom package sync mechanism"
 arch=('any')
 url="https://github.com/Dwarf1er/sobarch"

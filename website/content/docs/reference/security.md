@@ -20,6 +20,13 @@ named exceptions get through:
 - **LocalSend** (`53317`, TCP and UDP): opened unconditionally, since
   it's a required package regardless of whether you've launched it
   yet.
+- **mDNS** (`5353`, UDP): opened unconditionally, so `.local` names
+  and service discovery (printers, Moonlight, LocalSend peers) work;
+  Avahi is installed and running on every install.
+- **Sunshine** (`47984`, `47989`, `48010` TCP; `47998`-`48000`, `48010`
+  UDP): opened unconditionally so Moonlight can connect once the
+  Remote Access profile is installed. The web UI port (`47990`) stays
+  closed.
 - **SSH** (`22`): only if you enabled it during install; see below.
 
 The forward chain is default-drop too; the output chain is

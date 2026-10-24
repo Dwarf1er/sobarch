@@ -68,8 +68,8 @@ polkit.addRule(function(action, subject) {
 });
 EOF
 
-# Based on the ArchWiki "Simple & Safe" nftables example. The LocalSend port
-# is always open since it's a required package.
+# Based on the ArchWiki "Simple & Safe" nftables example. The LocalSend and mDNS
+# ports are always open since both are required.
 echo "sobarch-firstboot: installing the nftables baseline ruleset..."
 id=$(notify_user normal "sobarch: security baseline" "Installing the firewall ruleset..." "$id")
 
@@ -102,6 +102,13 @@ table inet filter {
         # LocalSend
         tcp dport 53317 accept
         udp dport 53317 accept
+
+        # mDNS
+        udp dport 5353 accept
+
+        # Sunshine streaming (the web UI port stays closed)
+        tcp dport { 47984, 47989, 48010 } accept
+        udp dport { 47998, 47999, 48000, 48010 } accept
 ${ssh_rule}
     }
 

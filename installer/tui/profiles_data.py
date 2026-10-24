@@ -59,6 +59,7 @@ PROFILES: tuple[Profile, ...] = (
         "maker",
         _pkgs("blender", "freecad") + _pkgs("orca-slicer-bin", aur=True),
     ),
+    Profile("Remote Access", "remote-access", _pkgs("moonlight-qt") + _pkgs("sunshine-bin", aur=True)),
     Profile("Virtualization", "virtualization", _pkgs("quickemu-git", "quickgui-bin", aur=True)),
     Profile("Office", "office", _pkgs("homebank", "libreoffice-fresh")),
     Profile(
