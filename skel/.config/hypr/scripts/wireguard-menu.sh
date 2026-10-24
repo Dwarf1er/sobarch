@@ -64,7 +64,7 @@ import_menu() {
     menu_add paste "Paste from Clipboard" clipboard.svg
     while IFS= read -r f; do
         menu_add "$f" "${f##*/}" file.svg "${f%/*}"
-    done < <(find "$HOME" "$HOME/Downloads" "$HOME/.config/wireguard" -maxdepth 1 -name '*.conf' -type f 2>/dev/null | sort -u)
+    done < <(find "$HOME" "$HOME/Downloads" "$OUT_DIR" -maxdepth 1 -name '*.conf' -type f 2>/dev/null | sort -u)
     menu_show import "Pick a WireGuard config" || return
     case "$MENU_ID" in
         paste) import_from_clipboard; return ;;

@@ -87,7 +87,7 @@ service:
    The file holds that device's private key, so delete it afterwards.
 4. On the other sobarch machine, open **System → VPN → Import Config**,
    pick the file (the menu lists `.conf` files in your home, Downloads and
-   `~/.config/wireguard` folders) or paste the config from the clipboard,
+   `~/.config/sobarch/wireguard` folders) or paste the config from the clipboard,
    then turn the tunnel on under **Tunnels**.
 5. In Moonlight, add the host by its tunnel address (`10.8.0.1`).
    Auto-discovery doesn't cross the tunnel, so you do this once.
