@@ -106,9 +106,8 @@ table inet filter {
         # mDNS
         udp dport 5353 accept
 
-        # Sunshine streaming (the web UI port stays closed)
-        tcp dport { 47984, 47989, 48010 } accept
-        udp dport { 47998, 47999, 48000, 48010 } accept
+        # Exceptions added by firewall-open.sh (Sunshine, WireGuard)
+        include "/etc/nftables.d/*.nft"
 ${ssh_rule}
     }
 

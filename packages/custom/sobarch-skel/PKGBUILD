@@ -2,7 +2,7 @@
 pkgname=sobarch-skel
 # pkgver tracks the date skel/ last changed.
 pkgver=20261024
-pkgrel=11
+pkgrel=12
 pkgdesc="Sobarch distribution-owned default desktop configuration (skel)"
 arch=('any')
 backup=('etc/xdg/mimeapps.list')

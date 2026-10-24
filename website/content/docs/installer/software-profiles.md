@@ -34,7 +34,7 @@ delayed isn't actually avoidable if any of it happened during install.
 | **Gaming** | `gamescope`, `lutris`, `mangohud`, `prismlauncher`, `protontricks`, `steam`, `gale-bin` (AUR), `protonup-qt-bin` (AUR) |
 | **Creative** | `audacity`, `calf`, `deepfilternet-ladspa`, `easyeffects`, `gimp`, `inkscape`, `lsp-plugins`, `obs-studio`, `shotcut` |
 | **Maker / 3D Printing** | `blender`, `freecad`, `orca-slicer-bin` (AUR) |
-| **Remote Access** | `moonlight-qt`, `sunshine-bin` (AUR) |
+| **Remote Access** | `moonlight-qt`, `sunshine-bin` (AUR), `wireguard-tools` |
 | **Virtualization** | `quickemu-git` (AUR), `quickgui-bin` (AUR) |
 | **Office** | `homebank`, `libreoffice-fresh` |
 | **Browsers & Chat** | `signal-desktop`, `brave-origin-bin` (AUR), `vesktop-bin` (AUR) |
@@ -71,8 +71,27 @@ keyboard focus are shared with the remote user. Sunshine offers two apps:
 **Desktop**, which streams whichever monitor it is pointed at, and
 **Steam Big Picture**.
 
-To stream from outside your home network, put both machines on a VPN
-such as Tailscale rather than forwarding ports.
+To stream from outside your home network, use **System → VPN**, which
+sets up a WireGuard tunnel between your machines with no third-party
+service:
+
+1. On the machine running Sunshine, pick **Set Up Server** and enter your
+   home's public IP address or hostname. Sobarch can't look this up for
+   you.
+2. Forward UDP port `51820` on your router to that machine. This is the
+   one step sobarch can't do for you, and it only works if your internet
+   provider gives you a public address (not CGNAT).
+3. Pick **Add Device**, name it, and either scan the QR code with the
+   WireGuard app on a phone or copy the saved config
+   (`~/.config/sobarch/wireguard/NAME.conf`) to another sobarch machine.
+   The file holds that device's private key, so delete it afterwards.
+4. On the other sobarch machine, open **System → VPN → Import Config**,
+   pick the file, then turn the tunnel on under **Tunnels**.
+5. In Moonlight, add the host by its tunnel address (`10.8.0.1`).
+   Auto-discovery doesn't cross the tunnel, so you do this once.
+
+Only traffic to the host goes through the tunnel; the rest of the
+client's internet is unaffected.
 
 ## Installing a profile package later
 

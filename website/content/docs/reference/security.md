@@ -24,10 +24,16 @@ named exceptions get through:
   and service discovery (printers, Moonlight, LocalSend peers) work;
   Avahi is installed and running on every install.
 - **Sunshine** (`47984`, `47989`, `48010` TCP; `47998`-`48000`, `48010`
-  UDP): opened unconditionally so Moonlight can connect once the
-  Remote Access profile is installed. The web UI port (`47990`) stays
-  closed.
+  UDP): opened only while `sunshine-bin` is installed, so Moonlight can
+  connect. The web UI port (`47990`) stays closed.
+- **WireGuard** (`51820`, UDP): opened only once you set up a VPN server
+  from the VPN menu, and closed again when you remove it.
 - **SSH** (`22`): only if you enabled it during install; see below.
+
+Sunshine's and WireGuard's exceptions are plain rule files in
+`/etc/nftables.d/`, which the baseline ruleset includes; they come and go
+with the package or the VPN server, so the baseline itself doesn't need
+editing.
 
 The forward chain is default-drop too; the output chain is
 default-accept.
