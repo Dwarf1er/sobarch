@@ -35,11 +35,13 @@ for name in "${installed[@]}"; do is_installed["$name"]=1; done
 menu_reset
 for pass in available installed; do
     for name in "${names[@]}"; do
+        base="${name%-bin}"
+        base="${base%-git}"
         if [[ "$pass" == available && -z "${is_installed[$name]:-}" ]]; then
-            menu_add "$name" "$name" "$name,package-x-generic" \
+            menu_add "$name" "$name" "$name,$base,package.svg" \
                 "${pkg_profile[$name]}$([[ "${pkg_is_aur[$name]}" == 1 ]] && echo " · AUR")"
         elif [[ "$pass" == installed && -n "${is_installed[$name]:-}" ]]; then
-            menu_add "$name" "$name" "$name,package-x-generic" "installed"
+            menu_add "$name" "$name" "$name,$base,package.svg" "installed"
         fi
     done
 done
