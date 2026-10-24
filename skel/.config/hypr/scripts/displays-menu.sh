@@ -22,6 +22,8 @@ load_monitors() {
     while IFS="$SEP" read -r name desc w h refresh x y scale transform off mirror modes; do
         M_NAME+=("$name") M_DESC+=("$desc") M_W+=("$w") M_H+=("$h")
         M_REFRESH+=("$refresh") M_X+=("$x") M_Y+=("$y") M_SCALE+=("$scale")
+        # lid.sh turns the panel off while the lid is shut; that isn't a choice to keep.
+        [[ "$name" =~ ^(eDP|LVDS|DSI) ]] && grep -qs closed /proc/acpi/button/lid/*/state && off=0
         M_TRANSFORM+=("$transform") M_OFF+=("$off") M_MIRROR+=("$mirror")
         M_MODES+=("$modes")
     done < <(hyprctl monitors all | awk -v sep="$SEP" '

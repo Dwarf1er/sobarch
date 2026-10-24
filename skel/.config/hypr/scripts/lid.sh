@@ -16,6 +16,12 @@ external_active() {
     hyprctl monitors | awk '/^Monitor / && $2 !~ /^(eDP|LVDS|DSI)/ { found = 1 } END { exit !found }'
 }
 
+disabled_internal_monitors() {
+    hyprctl monitors all | awk '
+        /^Monitor / { name = $2; next }
+        /^\tdisabled: true/ && name ~ /^(eDP|LVDS|DSI)/ { print name }'
+}
+
 lid_closed() { grep -qs closed /proc/acpi/button/lid/*/state; }
 
 inhibit() {
@@ -45,6 +51,12 @@ case "${1:-}" in
             inhibit
         else
             release
+            # A saved "disabled" rule must not leave the machine with no display.
+            if ! lid_closed; then
+                for m in $(disabled_internal_monitors); do
+                    hyprctl eval "hl.monitor({ output = \"$m\", mode = \"preferred\", position = \"auto\", scale = \"auto\" })" >/dev/null
+                done
+            fi
             # Last external monitor unplugged with the lid shut: nothing left to show.
             lid_closed && systemctl suspend
         fi
