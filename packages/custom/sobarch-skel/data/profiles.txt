@@ -2,7 +2,7 @@ developer|Developer|docker,docker-buildx,docker-compose,mise,presenterm
 gaming|Gaming|gamescope,lutris,mangohud,prismlauncher,protontricks,steam,gale-bin:aur,protonup-qt-bin:aur
 creative|Creative|audacity,calf,deepfilternet-ladspa,easyeffects,gimp,inkscape,lsp-plugins,obs-studio,shotcut
 maker|Maker / 3D Printing|blender,freecad,orca-slicer-bin:aur
-remote-access|Remote Access|moonlight-qt,sunshine-bin:aur,wireguard-tools,zenity
+remote-access|Remote Access|moonlight-qt,sunshine-bin:aur,wireguard-tools
 virtualization|Virtualization|quickemu-git:aur,quickgui-bin:aur
 office|Office|homebank,libreoffice-fresh
 browsers-chat|Browsers & Chat|signal-desktop,brave-origin-bin:aur,vesktop-bin:aur
