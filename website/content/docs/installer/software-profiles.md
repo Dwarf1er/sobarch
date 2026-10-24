@@ -52,6 +52,17 @@ from its web app without root), not an AUR one. Installing
 Vencord files, as described in [AUR & Custom
 Packages](../../packages/aur-and-custom/).
 
+## Remote Access
+
+The profile installs Sunshine (the streaming host) and Moonlight (the
+client). Sunshine isn't started automatically: use **Super → System →
+Remote Access** to start or stop it. On first run, open its web UI from
+that menu (`https://localhost:47990`) to create the admin account, then
+enter the PIN Moonlight shows under **PIN** in the web UI to pair. The
+web UI port is closed in the firewall, so it's only reachable from the
+machine itself. To stream from outside your home network, put both
+machines on a VPN such as Tailscale rather than forwarding ports.
+
 ## Installing a profile package later
 
 Anything you skipped during install, or decide you want afterward, is
