@@ -117,6 +117,11 @@ EOF
 
 systemctl enable --now nftables.service
 
+# The pacman hook only fires on a docker install after this file exists.
+if pacman -Q docker &>/dev/null; then
+    /usr/local/lib/sobarch/docker-setup.sh
+fi
+
 if [[ "$ssh_enabled" == "true" ]]; then
     echo "sobarch-firstboot: SSH enabled, installing openssh..."
     id=$(notify_user normal "sobarch: security baseline" "Installing and enabling SSH..." "$id")

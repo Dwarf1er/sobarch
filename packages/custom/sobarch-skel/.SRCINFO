@@ -1,6 +1,6 @@
 pkgbase = sobarch-skel
 	pkgdesc = Sobarch distribution-owned default desktop configuration (skel)
-	pkgver = 20261023
+	pkgver = 20261024
 	pkgrel = 1
 	url = https://github.com/Dwarf1er/sobarch
 	arch = any

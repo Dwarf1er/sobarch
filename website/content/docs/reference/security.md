@@ -25,6 +25,16 @@ named exceptions get through:
 The forward chain is default-drop too; the output chain is
 default-accept.
 
+### Docker
+
+The forward chain drops by default, which would cut containers off from
+the network. Installing `docker` (the Developer profile includes it)
+also adds `wheel` users to the `docker` group (effective at next login),
+enables `docker.socket`, and adds a rule to `/etc/nftables.conf` that
+accepts forwarded traffic from `docker0` and `br-*` bridges. Ports published with `-p` stay
+reachable from this machine only; other machines are blocked by the
+forward chain, so exposing one needs your own `chain forward` rule.
+
 ### Opening a port yourself
 
 Add a rule inside `chain input` in `/etc/nftables.conf`:

@@ -1,7 +1,7 @@
 # Maintainer: Dwarf1er
 pkgname=sobarch-skel
 # pkgver tracks the date skel/ last changed.
-pkgver=20261023
+pkgver=20261024
 pkgrel=1
 pkgdesc="Sobarch distribution-owned default desktop configuration (skel)"
 arch=('any')

@@ -32,7 +32,7 @@ def _pkgs(*names: str, aur: bool = False) -> tuple[Package, ...]:
 
 PROFILES: tuple[Profile, ...] = (
     # neovim is in base.json.
-    Profile("Developer", "developer", _pkgs("mise", "presenterm")),
+    Profile("Developer", "developer", _pkgs("docker", "docker-buildx", "docker-compose", "mise", "presenterm")),
     Profile(
         "Gaming",
         "gaming",
@@ -59,6 +59,7 @@ PROFILES: tuple[Profile, ...] = (
         "maker",
         _pkgs("blender", "freecad") + _pkgs("orca-slicer-bin", aur=True),
     ),
+    Profile("Remote Access", "remote-access", _pkgs("rustdesk-bin", aur=True)),
     Profile("Virtualization", "virtualization", _pkgs("quickemu-git", "quickgui-bin", aur=True)),
     Profile("Office", "office", _pkgs("homebank", "libreoffice-fresh")),
     Profile(
