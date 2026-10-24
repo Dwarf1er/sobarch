@@ -34,7 +34,7 @@ delayed isn't actually avoidable if any of it happened during install.
 | **Gaming** | `gamescope`, `lutris`, `mangohud`, `prismlauncher`, `protontricks`, `steam`, `gale-bin` (AUR), `protonup-qt-bin` (AUR) |
 | **Creative** | `audacity`, `calf`, `deepfilternet-ladspa`, `easyeffects`, `gimp`, `inkscape`, `lsp-plugins`, `obs-studio`, `shotcut` |
 | **Maker / 3D Printing** | `blender`, `freecad`, `orca-slicer-bin` (AUR) |
-| **Remote Access** | `moonlight-qt`, `sunshine-bin` (AUR), `wireguard-tools` |
+| **Remote Access** | `moonlight-qt`, `sunshine-bin` (AUR), `wireguard-tools`, `zenity` |
 | **Virtualization** | `quickemu-git` (AUR), `quickgui-bin` (AUR) |
 | **Office** | `homebank`, `libreoffice-fresh` |
 | **Browsers & Chat** | `signal-desktop`, `brave-origin-bin` (AUR), `vesktop-bin` (AUR) |
@@ -86,7 +86,9 @@ service:
    (`~/.config/sobarch/wireguard/NAME.conf`) to another sobarch machine.
    The file holds that device's private key, so delete it afterwards.
 4. On the other sobarch machine, open **System → VPN → Import Config**,
-   pick the file, then turn the tunnel on under **Tunnels**.
+   choose the file (with the file picker, or from your home or Downloads
+   folder) or paste the config from the clipboard, then turn the tunnel on
+   under **Tunnels**.
 5. In Moonlight, add the host by its tunnel address (`10.8.0.1`).
    Auto-discovery doesn't cross the tunnel, so you do this once.
 

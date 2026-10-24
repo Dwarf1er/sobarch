@@ -37,23 +37,46 @@ show_qr() {
         --mesg="$title"$'\n\n'"$(qrencode -t UTF8 "$payload" | sed 's/^/ /')" </dev/null
 }
 
+# Imports FILE as a tunnel (named after the file), autoconnect off.
+import_file() {
+    local f="$1" name="${1##*/}"
+    name="${name%.conf}"
+    menu_run nmcli connection import type wireguard file "$f" || return 1
+    menu_run nmcli connection modify "$name" connection.autoconnect no
+    menu_notify "Imported “$name”. Turn it on from the Tunnels list."
+}
+
+import_from_clipboard() {
+    local name dir
+    grep -q '^\[Interface\]' < <(wl-paste 2>/dev/null) ||
+        { menu_notify "The clipboard doesn't hold a WireGuard config." critical; return; }
+    name=$(MENU_PLACEHOLDER="e.g. home (letters, digits, dashes)" menu_input "name" "Name for this tunnel") || return
+    [[ "$name" =~ ^[a-z0-9-]{1,15}$ ]] || { menu_notify "Use 1-15 lowercase letters, digits or dashes." critical; return; }
+    dir=$(mktemp -d)
+    (umask 077; wl-paste >"$dir/$name.conf")
+    import_file "$dir/$name.conf" && wl-copy --clear
+    rm -rf "$dir"
+}
+
 import_menu() {
     local f
     menu_reset
+    menu_add choose "Choose File..." file.svg "file picker"
+    menu_add paste "Paste from Clipboard" clipboard.svg
     while IFS= read -r f; do
         menu_add "$f" "${f##*/}" file.svg "${f%/*}"
     done < <(find "$HOME" "$HOME/Downloads" -maxdepth 1 -name '*.conf' -type f 2>/dev/null | sort -u)
-    if ((${#MENU_IDS[@]} == 0)); then
-        menu_notify "No .conf files in your home or Downloads folder."
-        return
-    fi
-    menu_show import "Pick a WireGuard config file" || return
-    f="$MENU_ID"
-    local name="${f##*/}"
-    name="${name%.conf}"
-    menu_run nmcli connection import type wireguard file "$f" || return
-    menu_run nmcli connection modify "$name" connection.autoconnect no
-    menu_notify "Imported “$name”. Turn it on from this menu."
+    menu_show import "Pick a WireGuard config" || return
+    case "$MENU_ID" in
+        paste) import_from_clipboard; return ;;
+        choose)
+            command -v zenity >/dev/null || { menu_notify "Install zenity to use the file picker." critical; return; }
+            f=$(zenity --file-selection --title="WireGuard config" --filename="$HOME/Downloads/" \
+                --file-filter='WireGuard configs | *.conf' 2>/dev/null) || return
+            ;;
+        *) f="$MENU_ID" ;;
+    esac
+    import_file "$f" || return
     confirm "Delete $f? NetworkManager keeps its own copy, and the file holds a private key." Delete && rm -f "$f"
 }
 
