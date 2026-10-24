@@ -20,10 +20,34 @@ named exceptions get through:
 - **LocalSend** (`53317`, TCP and UDP): opened unconditionally, since
   it's a required package regardless of whether you've launched it
   yet.
+- **mDNS** (`5353`, UDP): opened unconditionally, so `.local` names
+  and service discovery (printers, Moonlight, LocalSend peers) work;
+  Avahi is installed and running on every install.
+- **Sunshine** (`47984`, `47989`, `48010` TCP; `47998`-`48000`, `48010`
+  UDP): opened only while `sunshine-bin` is installed, so Moonlight can
+  connect. The web UI port (`47990`) stays closed.
+- **WireGuard** (`51820`, UDP): opened only once you set up a VPN server
+  from the VPN menu, and closed again when you remove it.
 - **SSH** (`22`): only if you enabled it during install; see below.
+
+Sunshine's and WireGuard's exceptions (see [Remote
+Access](../../desktop/remote-access/)) are plain rule files in
+`/etc/nftables.d/`, which the baseline ruleset includes; they come and go
+with the package or the VPN server, so the baseline itself doesn't need
+editing.
 
 The forward chain is default-drop too; the output chain is
 default-accept.
+
+### Docker
+
+The forward chain drops by default, which would cut containers off from
+the network. Installing `docker` (the Developer profile includes it)
+also adds `wheel` users to the `docker` group (effective at next login),
+enables `docker.socket`, and adds a rule to `/etc/nftables.conf` that
+accepts forwarded traffic from `docker0` and `br-*` bridges. Ports published with `-p` stay
+reachable from this machine only; other machines are blocked by the
+forward chain, so exposing one needs your own `chain forward` rule.
 
 ### Opening a port yourself
 

@@ -200,6 +200,7 @@
         "7zip",
         "adw-gtk-theme",
         "archlinux-xdg-menu",
+        "avahi",
         "bash-completion",
         "brightnessctl",
         "btop",
@@ -237,6 +238,7 @@
         "mpv",
         "neovim",
         "networkmanager",
+        "nss-mdns",
         "nftables",
         "ntfs-3g",
         "oo7",
@@ -282,6 +284,7 @@
     "services": [
         "NetworkManager",
         "NetworkManager-wait-online.service",
+        "avahi-daemon.service",
         "ly@tty2.service"
     ],
     "swap": {

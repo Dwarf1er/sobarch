@@ -107,3 +107,9 @@ cheat sheet itself, which are better pressed than launched from a menu.
 A bind opts in with a `-- run: <shell command>` line right after its
 `-- kb:` line in `keybinds.lua`; the command is a copy of what the bind
 does, so keep the two in step when you edit one.
+
+With Moonlight installed, the list also shows its escape chords
+(`Ctrl+Alt+Shift+Z` releases the keyboard and mouse back to your machine,
+`X` toggles fullscreen, `Q` ends the stream). They work even while
+Moonlight is capturing system shortcuts, so a stream of another sobarch
+machine never traps you. On a Mac keyboard, `Alt` is `Option`.

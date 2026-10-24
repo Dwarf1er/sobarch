@@ -71,10 +71,11 @@ Optional, applied after first boot, and unchecked by default:
 
 | Profile | Included |
 | --- | --- |
-| Developer | `mise`, `presenterm` |
+| Developer | Docker, `mise`, `presenterm` |
 | Gaming | Steam, Lutris, Prism Launcher, gamescope, MangoHud, Protontricks, ProtonUp-Qt, Gale |
 | Creative | GIMP, Inkscape, OBS Studio, Shotcut, Audacity, EasyEffects, Calf, LSP plugins, DeepFilterNet |
 | Maker / 3D Printing | Blender, FreeCAD, OrcaSlicer |
+| Remote Access | Moonlight, Sunshine, WireGuard tools |
 | Virtualization | QuickEMU, QuickGUI |
 | Office | LibreOffice, Homebank |
 | Browsers & Chat | Brave, Signal, Vesktop |

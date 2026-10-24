@@ -35,11 +35,13 @@ for name in "${installed[@]}"; do is_installed["$name"]=1; done
 menu_reset
 for pass in available installed; do
     for name in "${names[@]}"; do
+        base="${name%-bin}"
+        base="${base%-git}"
         if [[ "$pass" == available && -z "${is_installed[$name]:-}" ]]; then
-            menu_add "$name" "$name" "$name,package-x-generic" \
+            menu_add "$name" "$name" "$name,$base,package.svg" \
                 "${pkg_profile[$name]}$([[ "${pkg_is_aur[$name]}" == 1 ]] && echo " · AUR")"
         elif [[ "$pass" == installed && -n "${is_installed[$name]:-}" ]]; then
-            menu_add "$name" "$name" "$name,package-x-generic" "installed"
+            menu_add "$name" "$name" "$name,$base,package.svg" "installed"
         fi
     done
 done
@@ -54,7 +56,7 @@ fi
 
 # An AUR build can take minutes, so hand off and close every menu level.
 if [[ "${pkg_is_aur[$choice]}" == 1 ]]; then
-    menu_progress "Installing $choice..." "$choice installed." sobarch aur-sync "$choice" ||
+    menu_progress "Installing $choice..." "$choice installed." pkexec /usr/local/lib/sobarch/aur-sync.sh "$choice" ||
         menu_notify "Check /var/log/sobarch/aur-sync.log for the full build output." critical
 else
     menu_progress "Installing $choice..." "$choice installed." pkexec pacman -S --needed --noconfirm "$choice"

@@ -3,7 +3,7 @@ pkgname=sobarch-scripts
 # pkgver tracks the date any packaged script last changed.
 # The firstboot *.service units are not packaged: they need __USERNAME__
 # substituted per install, so install_runner.py deploys them.
-pkgver=20261021
+pkgver=20261024
 pkgrel=4
 pkgdesc="Sobarch first-boot reconciliation scripts and the local AUR/custom package sync mechanism"
 arch=('any')
@@ -19,7 +19,7 @@ sha256sums=()
 package() {
     install -dm755 "$pkgdir/usr/local/lib/sobarch"
 
-    for script in apply-skel.sh apply-security-baseline.sh apply-git-setup.sh install-profile-packages.sh unblock-rfkill.sh refresh-rescue-iso.sh setup-rescue-iso.sh build-tinty-templates.sh tinty-config.sh doctor.sh; do
+    for script in apply-skel.sh apply-security-baseline.sh apply-git-setup.sh install-profile-packages.sh unblock-rfkill.sh refresh-rescue-iso.sh setup-rescue-iso.sh build-tinty-templates.sh tinty-config.sh doctor.sh docker-setup.sh firewall-open.sh wireguard-server.sh; do
         install -Dm755 "$startdir/../../../installer/firstboot/$script" "$pkgdir/usr/local/lib/sobarch/$script"
     done
 
@@ -46,6 +46,9 @@ package() {
     install -Dm755 "$startdir/../../../scripts/aur-sync/aur-sync.sh" "$pkgdir/usr/local/lib/sobarch/aur-sync.sh"
 
     install -Dm644 "$startdir/../../../scripts/aur-sync/sobarch-aur-sync.hook" "$pkgdir/etc/pacman.d/hooks/sobarch-aur-sync.hook"
+
+    install -Dm644 "$startdir/../../../scripts/docker-setup/sobarch-docker-setup.hook" "$pkgdir/etc/pacman.d/hooks/sobarch-docker-setup.hook"
+    install -Dm644 "$startdir/../../../scripts/sunshine-firewall/sobarch-sunshine-firewall.hook" "$pkgdir/etc/pacman.d/hooks/sobarch-sunshine-firewall.hook"
 
     # Also run at install time; packaged so update-system.sh can re-run
     # them when branding assets change.

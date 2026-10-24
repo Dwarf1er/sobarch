@@ -47,6 +47,14 @@ displays_state() {
     ((n == 1)) && echo "1 monitor" || echo "$n monitors"
 }
 
+vpn_state() {
+    local n
+    n=$(nmcli -t -f TYPE connection show --active 2>/dev/null | grep -c '^wireguard$')
+    ((n > 0)) && echo "$n on" || echo "off"
+}
+
+remote_access_state() { systemctl --user is-active --quiet app-dev.lizardbyte.app.Sunshine.service && echo "on" || echo "off"; }
+
 recording_state() { pgrep -x wf-recorder >/dev/null && echo "recording"; }
 
 # tlpctl is only installed on laptops.
@@ -57,6 +65,8 @@ while :; do
     menu_add network "Network" wifi.svg "$(network_state)"
     menu_add bluetooth "Bluetooth" bluetooth.svg "$(bluetooth_state)"
     command -v tlpctl >/dev/null && menu_add power-profile "Power Profile" battery-2.svg "$(tlpctl get 2>/dev/null)"
+    command -v wg >/dev/null && menu_add vpn "VPN" world.svg "$(vpn_state)"
+    command -v sunshine >/dev/null && menu_add remote-access "Remote Access" plug.svg "$(remote_access_state)"
     menu_add displays "Displays" devices.svg "$(displays_state)"
     command -v wf-recorder >/dev/null && menu_add recording "Screen Recording" movie.svg "$(recording_state)"
     menu_add firmware "Firmware" cpu.svg "$(firmware_state)"
@@ -68,6 +78,8 @@ while :; do
         network) menu_sub network-menu.sh ;;
         bluetooth) menu_sub bluetooth-menu.sh ;;
         power-profile) menu_sub power-profile-menu.sh ;;
+        vpn) menu_sub wireguard-menu.sh ;;
+        remote-access) menu_sub remote-access-menu.sh ;;
         displays) menu_sub displays-menu.sh ;;
         recording) menu_sub recording-menu.sh ;;
         firmware) menu_sub fwupd-menu.sh ;;

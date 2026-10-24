@@ -49,6 +49,12 @@ menu_add menu-cursor "Menus: cursor left / right" "" "Ctrl + H / Ctrl + L"
 menu_add menu-page "Menus: next / previous page" "" "Ctrl + D / Ctrl + U"
 menu_add menu-back "Menus: go back one level" "" "Escape"
 
+if command -v moonlight >/dev/null; then
+    menu_add moonlight-release "Moonlight: release keyboard and mouse" "" "Ctrl + Alt + Shift + Z"
+    menu_add moonlight-fullscreen "Moonlight: toggle fullscreen" "" "Ctrl + Alt + Shift + X"
+    menu_add moonlight-quit "Moonlight: end the stream" "" "Ctrl + Alt + Shift + Q"
+fi
+
 MENU_PLACEHOLDER="Search keybinds"
 selected=""
 while menu_show keybinds "▸ = Enter runs it" "$selected"; do

@@ -1,0 +1,10 @@
+# Opens the baseline firewall to Docker, adds wheel users to the docker group.
+[Trigger]
+Operation = Install
+Type = Package
+Target = docker
+
+[Action]
+Description = sobarch: setting up Docker (firewall, group, socket)...
+When = PostTransaction
+Exec = /usr/local/lib/sobarch/docker-setup.sh

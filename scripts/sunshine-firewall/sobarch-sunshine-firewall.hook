@@ -1,0 +1,12 @@
+# Opens Sunshine's streaming ports while sunshine-bin is installed.
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = sunshine-bin
+
+[Action]
+Description = sobarch: updating the Sunshine firewall exception...
+When = PostTransaction
+Exec = /usr/local/lib/sobarch/firewall-open.sh sync sunshine sunshine-bin

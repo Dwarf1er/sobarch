@@ -68,8 +68,8 @@ polkit.addRule(function(action, subject) {
 });
 EOF
 
-# Based on the ArchWiki "Simple & Safe" nftables example. The LocalSend port
-# is always open since it's a required package.
+# Based on the ArchWiki "Simple & Safe" nftables example. The LocalSend and mDNS
+# ports are always open since both are required.
 echo "sobarch-firstboot: installing the nftables baseline ruleset..."
 id=$(notify_user normal "sobarch: security baseline" "Installing the firewall ruleset..." "$id")
 
@@ -102,6 +102,12 @@ table inet filter {
         # LocalSend
         tcp dport 53317 accept
         udp dport 53317 accept
+
+        # mDNS
+        udp dport 5353 accept
+
+        # Exceptions added by firewall-open.sh (Sunshine, WireGuard)
+        include "/etc/nftables.d/*.nft"
 ${ssh_rule}
     }
 
@@ -116,6 +122,11 @@ ${ssh_rule}
 EOF
 
 systemctl enable --now nftables.service
+
+# The pacman hook only fires on a docker install after this file exists.
+if pacman -Q docker &>/dev/null; then
+    /usr/local/lib/sobarch/docker-setup.sh
+fi
 
 if [[ "$ssh_enabled" == "true" ]]; then
     echo "sobarch-firstboot: SSH enabled, installing openssh..."

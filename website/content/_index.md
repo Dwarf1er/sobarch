@@ -48,6 +48,9 @@ name = "Creative"
 name = "Maker / 3D Printing"
 
 [[extra.profiles]]
+name = "Remote Access"
+
+[[extra.profiles]]
 name = "Virtualization"
 
 [[extra.profiles]]
