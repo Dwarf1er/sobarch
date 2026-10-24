@@ -39,7 +39,6 @@ on the AUR forever.
 | `gale-bin` | Lightweight Thunderstore mod client | [Gaming profile](../../installer/software-profiles/) |
 | `protonup-qt-bin` | Installs Proton-GE for Steam and Wine-GE for Lutris | Gaming profile |
 | `orca-slicer-bin` | G-code slicer for 3D printers | Maker / 3D Printing profile |
-| `rustdesk-bin` | Remote desktop client and host; the daemon is left disabled | Remote Access profile |
 | `quickemu-git` | Quickly create and run Windows, macOS and Linux VMs | Virtualization profile |
 | `quickgui-bin` | Flutter frontend for `quickemu` | Virtualization profile |
 | `brave-origin-bin` | Brave's minimalist browser build | Browsers & Chat profile |
