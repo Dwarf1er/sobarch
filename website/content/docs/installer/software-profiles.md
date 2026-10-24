@@ -62,12 +62,13 @@ enter the PIN Moonlight shows under **PIN** in the web UI to pair. The
 web UI port is closed in the firewall, so it's only reachable from the
 machine itself.
 
-**Add Virtual Monitor** in the same menu creates a separate 1920x1080
-screen that exists only for Moonlight, parked where the cursor can't
-reach it, and points Sunshine at it. Your real monitors and workspaces
-stay as they are. It lasts until you remove it or restart Hyprland. It's
-still your one session: windows and keyboard focus are shared with the
-remote user.
+**Virtual Monitor** in the same menu is a setting. When it's on,
+starting Sunshine also creates a separate 1920x1080 screen that exists
+only for Moonlight, parked where the cursor can't reach it, and points
+Sunshine at it; stopping Sunshine removes it. Your real monitors and
+workspaces stay as they are. It's still your one session: windows and
+keyboard focus are shared with the remote user. Sunshine's only app is
+**Desktop**, which streams whichever monitor it is pointed at.
 
 To stream from outside your home network, put both machines on a VPN
 such as Tailscale rather than forwarding ports.
