@@ -30,7 +30,8 @@ named exceptions get through:
   from the VPN menu, and closed again when you remove it.
 - **SSH** (`22`): only if you enabled it during install; see below.
 
-Sunshine's and WireGuard's exceptions are plain rule files in
+Sunshine's and WireGuard's exceptions (see [Remote
+Access](../../desktop/remote-access/)) are plain rule files in
 `/etc/nftables.d/`, which the baseline ruleset includes; they come and go
 with the package or the VPN server, so the baseline itself doesn't need
 editing.

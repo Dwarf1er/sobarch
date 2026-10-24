@@ -54,46 +54,11 @@ Packages](../../packages/aur-and-custom/).
 
 ## Remote Access
 
-The profile installs Sunshine (the streaming host) and Moonlight (the
-client). Sunshine isn't started automatically: use **Super → System →
-Remote Access** to start or stop it. On first run, open its web UI from
-that menu (`https://localhost:47990`) to create the admin account, then
-enter the PIN Moonlight shows under **PIN** in the web UI to pair. The
-web UI port is closed in the firewall, so it's only reachable from the
-machine itself.
-
-**Virtual Monitor** in the same menu is a setting. When it's on,
-starting Sunshine also creates a separate 1920x1080 screen that exists
-only for Moonlight, parked where the cursor can't reach it, and points
-Sunshine at it; stopping Sunshine removes it. Your real monitors and
-workspaces stay as they are. It's still your one session: windows and
-keyboard focus are shared with the remote user. Sunshine offers two apps:
-**Desktop**, which streams whichever monitor it is pointed at, and
-**Steam Big Picture**.
-
-To stream from outside your home network, use **System → VPN**, which
-sets up a WireGuard tunnel between your machines with no third-party
-service:
-
-1. On the machine running Sunshine, pick **Set Up Server** and enter your
-   home's public IP address or hostname. Sobarch can't look this up for
-   you.
-2. Forward UDP port `51820` on your router to that machine. This is the
-   one step sobarch can't do for you, and it only works if your internet
-   provider gives you a public address (not CGNAT).
-3. Pick **Add Device**, name it, and either scan the QR code with the
-   WireGuard app on a phone or copy the saved config
-   (`~/.config/sobarch/wireguard/NAME.conf`) to another sobarch machine.
-   The file holds that device's private key, so delete it afterwards.
-4. On the other sobarch machine, open **System → VPN → Import Config**,
-   pick the file (the menu lists `.conf` files in your home, Downloads and
-   `~/.config/sobarch/wireguard` folders) or paste the config from the clipboard,
-   then turn the tunnel on under **Tunnels**.
-5. In Moonlight, add the host by its tunnel address (`10.8.0.1`).
-   Auto-discovery doesn't cross the tunnel, so you do this once.
-
-Only traffic to the host goes through the tunnel; the rest of the
-client's internet is unaffected.
+The profile installs Sunshine (the streaming host), Moonlight (the
+client) and the WireGuard tools for reaching a machine from outside your
+home network. Nothing starts by itself. See [Remote
+Access](../../desktop/remote-access/) for setup, pairing, the virtual
+monitor and the VPN.
 
 ## Installing a profile package later
 
