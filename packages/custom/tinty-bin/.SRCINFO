@@ -1,6 +1,6 @@
 pkgbase = tinty-bin
 	pkgdesc = A base16 and base24 color scheme manager (prebuilt release binary)
-	pkgver = 0.34.1
+	pkgver = 0.35.0
 	pkgrel = 1
 	url = https://github.com/tinted-theming/tinty
 	arch = x86_64
@@ -12,9 +12,9 @@ pkgbase = tinty-bin
 	conflicts = tinty
 	conflicts = tinty-git
 	options = !debug
-	source = tinty-bin-0.34.1-x86_64.tar.gz::https://github.com/tinted-theming/tinty/releases/download/v0.34.1/tinty-x86_64-unknown-linux-gnu.tar.gz
-	source = tinty-bin-0.34.1-src.tar.gz::https://github.com/tinted-theming/tinty/archive/refs/tags/v0.34.1.tar.gz
-	sha256sums = 311985e4b25c463c09db00e7fd8c9e50a055e07d764c7c0916b7e7e31add0fc3
-	sha256sums = 932c0c6b5c76d6b725ef327fdb71c54976631cc55293c1cd64f30303ace68013
+	source = tinty-bin-0.35.0-x86_64.tar.gz::https://github.com/tinted-theming/tinty/releases/download/v0.35.0/tinty-x86_64-unknown-linux-gnu.tar.gz
+	source = tinty-bin-0.35.0-src.tar.gz::https://github.com/tinted-theming/tinty/archive/refs/tags/v0.35.0.tar.gz
+	sha256sums = 88e51d3a8f6a4bf33b127b7d2647da55f414d8663129674e7fa48d4c03dce537
+	sha256sums = 136e13b94ba1a0fbbb7b1aa1e48b70b94ed9f2a45f4abc81937cabe1c819f860
 
 pkgname = tinty-bin
