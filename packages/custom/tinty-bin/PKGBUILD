@@ -2,7 +2,7 @@
 pkgname=tinty-bin
 # Prebuilt upstream release; the AUR only has tinty-git, too slow to build
 # at install time. .github/scripts/update-tinty-bin.sh bumps pkgver and sums.
-pkgver=0.34.1
+pkgver=0.35.0
 pkgrel=1
 pkgdesc="A base16 and base24 color scheme manager (prebuilt release binary)"
 arch=('x86_64')
@@ -16,8 +16,8 @@ options=('!debug')
 # LICENSE and completions come from the source archive.
 source=("$pkgname-$pkgver-x86_64.tar.gz::$url/releases/download/v$pkgver/tinty-x86_64-unknown-linux-gnu.tar.gz"
         "$pkgname-$pkgver-src.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('311985e4b25c463c09db00e7fd8c9e50a055e07d764c7c0916b7e7e31add0fc3'
-            '932c0c6b5c76d6b725ef327fdb71c54976631cc55293c1cd64f30303ace68013')
+sha256sums=('88e51d3a8f6a4bf33b127b7d2647da55f414d8663129674e7fa48d4c03dce537'
+            '136e13b94ba1a0fbbb7b1aa1e48b70b94ed9f2a45f4abc81937cabe1c819f860')
 
 package() {
     install -Dm755 "$srcdir/tinty" "$pkgdir/usr/bin/tinty"
