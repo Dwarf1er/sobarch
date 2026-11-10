@@ -63,7 +63,8 @@ hl.bind(
 -- run: bash $HOME/.config/hypr/scripts/main-menu.sh
 hl.bind(
 	mainMod .. " + SUPER_L",
-	hl.dsp.exec_cmd("bash -c \"if ! hyprctl activewindow | grep -q 'fullscreen: [1-9][0-9]*'; then " .. menu .. '; fi"')
+	hl.dsp.exec_cmd("bash -c \"if ! hyprctl activewindow | grep -q 'fullscreen: [1-9][0-9]*'; then " .. menu .. '; fi"'),
+	{ release = true }
 )
 -- kb: SUPER + / | Show keybind cheat sheet
 hl.bind(
@@ -164,10 +165,18 @@ hl.bind(
 )
 -- kb: Brightness Up | Raise brightness 10%
 -- run: $HOME/.config/hypr/scripts/osd.sh brightness-up
-hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/osd.sh brightness-up"), { locked = true, repeating = true })
+hl.bind(
+	"XF86MonBrightnessUp",
+	hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/osd.sh brightness-up"),
+	{ locked = true, repeating = true }
+)
 -- kb: Brightness Down | Lower brightness 10%
 -- run: $HOME/.config/hypr/scripts/osd.sh brightness-down
-hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/osd.sh brightness-down"), { locked = true, repeating = true })
+hl.bind(
+	"XF86MonBrightnessDown",
+	hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/osd.sh brightness-down"),
+	{ locked = true, repeating = true }
+)
 
 -- kb: Media Next | Next track
 -- run: playerctl next
