@@ -56,18 +56,29 @@ sed -i 's/Arch Linux install medium/Sobarch installer/' "$PROFILE/grub/grub.cfg"
 # UEFI boots through GRUB, not systemd-boot: t2linux's own ISO does the same
 # since GRUB is the loader known to boot on T2 Macs, and it takes the T2 entry.
 echo "build-iso: switching UEFI boot to GRUB and adding the T2 Mac entry"
-sed -i "s/'uefi.systemd-boot'/'uefi.grub'/" "$PROFILE/profiledef.sh"
-grep -q "'uefi.grub'" "$PROFILE/profiledef.sh"
 
+# These edits patch upstream releng files, so say which anchor went missing
+# instead of exiting silently when upstream changes them.
+releng_changed() {
+    echo "build-iso: $1 not found; upstream releng profile changed, update build-iso.sh" >&2
+    exit 1
+}
+
+sed -i "s/'uefi.systemd-boot'/'uefi.grub'/" "$PROFILE/profiledef.sh"
+grep -q "'uefi.grub'" "$PROFILE/profiledef.sh" || releng_changed "'uefi.systemd-boot' bootmode in profiledef.sh"
+
+# Insert the T2 entry right before the Memtest86+ block. Matching the block's
+# opening `if` (rather than the exact .efi filename) survives archiso 92
+# renaming memtest.efi to memtest86${uefi_machine_type_lower}.efi.
 awk -v entry_file="$REPO_DIR/scripts/iso-build/grub-t2-entry.cfg" '
-    !done && index($0, "memtest86+/memtest.efi") {
+    !done && /^if .*memtest86\+\/memtest/ {
         while ((getline line < entry_file) > 0) print line
         done = 1
     }
     { print }
 ' "$PROFILE/grub/grub.cfg" > "$WORK_DIR/grub.cfg"
 mv "$WORK_DIR/grub.cfg" "$PROFILE/grub/grub.cfg"
-grep -q "archlinux-t2" "$PROFILE/grub/grub.cfg"
+grep -q "archlinux-t2" "$PROFILE/grub/grub.cfg" || releng_changed "Memtest86+ block in grub/grub.cfg"
 
 awk -v default_file="$REPO_DIR/scripts/iso-build/grub-t2-default.cfg" '
     { print }
@@ -76,9 +87,9 @@ awk -v default_file="$REPO_DIR/scripts/iso-build/grub-t2-default.cfg" '
         done = 1
     }
     END { exit !done }
-' "$PROFILE/grub/grub.cfg" > "$WORK_DIR/grub.cfg"
+' "$PROFILE/grub/grub.cfg" > "$WORK_DIR/grub.cfg" || releng_changed "'default=archlinux' line in grub/grub.cfg"
 mv "$WORK_DIR/grub.cfg" "$PROFILE/grub/grub.cfg"
-grep -q "default=archlinux-t2" "$PROFILE/grub/grub.cfg"
+grep -q "default=archlinux-t2" "$PROFILE/grub/grub.cfg" || releng_changed "T2 default entry in grub/grub.cfg"
 
 # Unsigned, so the T2 kernel is only as trustworthy as that mirror.
 cat >> "$PROFILE/pacman.conf" <<'PACMAN_CONF'
