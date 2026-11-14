@@ -4,6 +4,7 @@
 #
 # Re-run `tinty install` here: hyprland.lua only installs when nothing is
 # installed yet, so items added by a later skel update would stay unregistered.
+# Update System runs this, so it also pulls new schemes and templates.
 
 set -euo pipefail
 
@@ -16,6 +17,8 @@ command -v tinty >/dev/null 2>&1 || exit 0
 /usr/local/lib/sobarch/tinty-config.sh
 
 tinty install || true
+# install never refreshes what's already there. Offline is not an error.
+tinty update || true
 
 for template_dir in "$TEMPLATES_DIR"/*/; do
     tinty build "${template_dir%/}"

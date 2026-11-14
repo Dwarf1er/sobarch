@@ -15,6 +15,9 @@ path = "https://github.com/tinted-theming/tinted-terminal"
 name = "tinted-terminal-kitty"
 themes-dir = "themes/kitty"
 write-to-file = ["~/.config/kitty/onedark.conf"]
+# Applying a custom or extra scheme renders into this checkout; without this,
+# those files make `tinty update` skip it.
+allow-dirty-update = true
 supported-systems = ["base16", "base24", "tinted8"]
 
 [[items]]
@@ -42,6 +45,7 @@ name = "base16-hyprland-lua"
 themes-dir = "colors"
 write-to-file = ["~/.config/hypr/colors.lua"]
 hook = "hyprctl reload"
+allow-dirty-update = true
 supported-systems = ["base16"]
 
 [[items]]
