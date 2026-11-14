@@ -19,20 +19,38 @@ if cfg_err=$(/usr/local/lib/sobarch/tinty-config.sh 2>&1) && [ -n "$cfg_err" ]; 
     menu_notify "$(head -n 6 <<<"$cfg_err")" critical
 fi
 
+CUSTOM_SCHEMES="${XDG_DATA_HOME:-$HOME/.local/share}/tinted-theming/tinty/custom-schemes"
+
+# Prints the YAML file behind a custom scheme id, if there is one.
+custom_scheme_file() {
+    local f
+    for f in "$CUSTOM_SCHEMES/${1%%-*}/${1#*-}".yaml "$CUSTOM_SCHEMES/${1%%-*}/${1#*-}".yml; do
+        [[ -f "$f" ]] && { echo "$f"; return 0; }
+    done
+    return 1
+}
+
 # "base16-atelier-forest-light" -> "Atelier Forest Light", raw id kept as the row id.
-entries=$(tinty list | awk -F'-' '
-    length($0) == 0 { next }
+entries=$({
+    tinty list --custom-schemes 2>/dev/null | sed 's/$/\tcustom/'
+    tinty list
+} | awk -F'\t' '
+    length($1) == 0 || seen[$1]++ { next }
     {
-        raw = $0
-        sys = $1
+        raw = $1
+        sys = raw
+        sub(/-.*/, "", sys)
         name = substr(raw, length(sys) + 2)
         gsub(/-/, " ", name)
         n = split(name, words, " ")
         pretty = ""
         for (i = 1; i <= n; i++)
             pretty = pretty (i > 1 ? " " : "") toupper(substr(words[i], 1, 1)) substr(words[i], 2)
-        if (sys == "base24") pretty = pretty " (24-color)"
-        else if (sys == "tinted8") pretty = pretty " (8-color)"
+        tags = ""
+        if (sys == "base24") tags = "24-color"
+        else if (sys == "tinted8") tags = "8-color"
+        if ($2 == "custom") tags = tags (tags != "" ? ", " : "") "custom"
+        if (tags != "") pretty = pretty " (" tags ")"
         print pretty "\t" raw
     }' | sort -f)
 
@@ -46,7 +64,17 @@ command -v rsvg-convert >/dev/null 2>&1 && have_rsvg=1
 generate_swatch() {
     local raw="$1" out="$SWATCH_DIR/$raw.png"
     local colors
-    mapfile -t colors < <(tinty info "$raw" 2>/dev/null | grep -oP '\bbase0[058D]\s*\|\s*\K#[0-9a-fA-F]{6}')
+    local yaml key hex
+    # tinty info can't read custom schemes, so take their colors from the YAML.
+    if yaml=$(custom_scheme_file "$raw"); then
+        colors=()
+        for key in 00 05 08 0D; do
+            hex=$(grep -m1 -oiP "^\s*base${key}\s*:\s*[\"']?#?\K[0-9a-f]{6}" "$yaml") || return 1
+            colors+=("#$hex")
+        done
+    else
+        mapfile -t colors < <(tinty info "$raw" 2>/dev/null | grep -oP '\bbase0[058D]\s*\|\s*\K#[0-9a-fA-F]{6}')
+    fi
     [[ "${#colors[@]}" -eq 4 ]] || return 1
     local svg_tmp
     svg_tmp="$(mktemp --suffix=.svg)"
@@ -67,7 +95,11 @@ if [[ "$have_rsvg" = 1 ]]; then
     mkdir -p "$SWATCH_DIR"
     while IFS=$'\t' read -r _ raw; do
         [[ -n "$raw" ]] || continue
-        [[ -f "$SWATCH_DIR/$raw.png" ]] || missing_raws+="$raw"$'\n'
+        png="$SWATCH_DIR/$raw.png"
+        # An edited custom scheme gets a fresh swatch.
+        if [[ ! -f "$png" ]] || { yaml=$(custom_scheme_file "$raw") && [[ "$yaml" -nt "$png" ]]; }; then
+            missing_raws+="$raw"$'\n'
+        fi
     done <<<"$entries"
 
     if [[ -n "$missing_raws" ]]; then

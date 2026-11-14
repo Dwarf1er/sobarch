@@ -42,6 +42,10 @@ vim.pack.add({ "https://github.com/NicholasMata/nvim-dap-cs" }, { confirm = fals
 require("dap-cs").setup()
 
 local stacks = require("extras")
+-- The roslyn package lives in Crashdummyy's registry, not mason-org's.
+if not vim.tbl_contains(stacks.mason_registries, "github:Crashdummyy/mason-registry") then
+	table.insert(stacks.mason_registries, "github:Crashdummyy/mason-registry")
+end
 -- Ignoring virtual csharp files for rzls.nvim
 table.insert(stacks.telescope_ignore_patterns, "__virtual%.cs$")
 vim.list_extend(stacks.treesitter_parsers, { "c_sharp", "razor" })

@@ -16,8 +16,39 @@ vim.api.nvim_create_autocmd("ColorScheme", {
 	end,
 })
 
+-- tinted-nvim only bundles upstream schemes, so tinty's extra and custom ones
+-- are passed in.
+local function custom_schemes()
+	local schemes = {}
+	local data = vim.fn.expand("~/.local/share/tinted-theming/tinty")
+	local roots = vim.tbl_filter(function(dir)
+		return vim.fn.fnamemodify(dir, ":t") ~= "schemes"
+	end, vim.fn.glob(data .. "/scheme-repos/*", false, true))
+	table.insert(roots, data .. "/custom-schemes")
+	for _, root in ipairs(roots) do
+		for _, system in ipairs({ "base16", "base24" }) do
+			for _, file in ipairs(vim.fn.glob(root .. "/" .. system .. "/*.y*ml", false, true)) do
+				local scheme = { variant = "dark" }
+				for line in io.lines(file) do
+					local slot, hex = line:match("^%s*base(%x%x)%s*:%s*[\"']?#?(%x%x%x%x%x%x)")
+					if slot then
+						scheme["base" .. slot:upper()] = "#" .. hex:lower()
+					end
+					local variant = line:match("^%s*variant%s*:%s*[\"']?(%a+)")
+					if variant == "dark" or variant == "light" then
+						scheme.variant = variant
+					end
+				end
+				schemes[system .. "-" .. vim.fn.fnamemodify(file, ":t:r")] = scheme
+			end
+		end
+	end
+	return schemes
+end
+
 require("tinted-nvim").setup({
 	default_scheme = "base16-onedark",
+	schemes = custom_schemes(),
 	selector = {
 		enabled = true,
 		mode = "file",

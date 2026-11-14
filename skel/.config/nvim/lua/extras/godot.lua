@@ -1,6 +1,8 @@
 local stacks = require("extras")
 
-table.insert(stacks.mason_registries, "github:Crashdummyy/mason-registry")
+if not vim.tbl_contains(stacks.mason_registries, "github:Crashdummyy/mason-registry") then
+	table.insert(stacks.mason_registries, "github:Crashdummyy/mason-registry")
+end
 vim.list_extend(stacks.mason_tools, { "gdtoolkit", "gdscript-formatter" })
 vim.list_extend(stacks.treesitter_parsers, { "gdscript", "godot_resource", "gdshader", "c", "cpp" })
 

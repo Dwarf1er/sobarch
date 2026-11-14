@@ -55,11 +55,91 @@ The picker itself doesn't need to know about it; it only calls
 ## Adding a scheme
 
 `tinty install` fetches the schemes on your first login (retried at the
-next login if you were offline) and again whenever you run
-[Update System](../updating-system/), so newly published schemes show up
-in the picker after an update.
+next login if you were offline), and [Update System](../updating-system/)
+runs `tinty update` to pull the latest ones, so newly published schemes
+show up in the picker after an update.
 Browse the [tinted gallery](https://tinted-theming.github.io/tinted-gallery/)
 for the full list of available schemes.
+
+## Custom palettes
+
+You can add palettes that aren't in the tinted-theming collection, either
+from a git repository that publishes them or from a file of your own.
+Either way, the picker lists them with every other scheme, and applying
+one renders it for every themed app at that moment, so no build step is
+needed.
+
+### From a git repository
+
+If a project publishes its palettes in a git repository with `base16/`
+or `base24/` folders at the top (the same layout as the tinted-theming
+collection), add the repository to `~/.config/tinted-theming/tinty/local.toml`:
+
+```toml
+[[schemes.extras]]
+name = "my-palettes"
+path = "https://github.com/someone/my-palettes"
+```
+
+Then run `/usr/local/lib/sobarch/build-tinty-templates.sh` to fetch it.
+Each `<system>/<name>.yaml` file in the repository becomes the scheme
+`<system>-<name>`. [Update System](../updating-system/) pulls the
+repository again with everything else, so you get the project's changes
+without copying files. If a palette has the same id as one in the
+tinted-theming collection, the repository's version wins.
+
+`path` can also be a local folder with the same layout. A local folder
+is used as it is: Update System never pulls it.
+
+### From a file
+
+Put the YAML file in tinty's custom schemes folder, under the subfolder
+for its system:
+
+```sh
+mkdir -p ~/.local/share/tinted-theming/tinty/custom-schemes/base24
+cp my-palette.yaml ~/.local/share/tinted-theming/tinty/custom-schemes/base24/
+```
+
+The file name becomes the scheme's id, so the file above is listed as
+`base24-my-palette`. Use `base16/` or `base24/` to match the `system` in
+the file. The picker tags these palettes `custom`. To change one, edit
+the file and apply it again; its swatch is redrawn the next time the
+picker opens.
+
+### Writing a palette
+
+A minimal base16 palette looks like this. `system`, `name`, `author` and
+the `palette` colors are required. A base24 one sets `system: "base24"`
+and adds `base10` to `base17`:
+
+```yaml
+system: "base16"
+name: "My Palette"
+author: "You"
+variant: "dark"
+palette:
+  base00: "#1d2021"
+  base01: "#282828"
+  base02: "#32302f"
+  base03: "#665c54"
+  base04: "#a89984"
+  base05: "#d5c4a1"
+  base06: "#ebdbb2"
+  base07: "#fbf1c7"
+  base08: "#fb4934"
+  base09: "#fe8019"
+  base0A: "#fabd2f"
+  base0B: "#b8bb26"
+  base0C: "#8ec07c"
+  base0D: "#83a598"
+  base0E: "#d3869b"
+  base0F: "#d65d0e"
+```
+
+See [which color goes where](#which-color-goes-where) for the role of
+each slot. Neovim reads these palettes when it starts, so restart it
+after adding one.
 
 ## Theming other apps
 
