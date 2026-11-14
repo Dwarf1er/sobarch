@@ -86,7 +86,10 @@ Each `<system>/<name>.yaml` file in the repository becomes the scheme
 `<system>-<name>`. [Update System](../updating-system/) pulls the
 repository again with everything else, so you get the project's changes
 without copying files. If a palette has the same id as one in the
-tinted-theming collection, the repository's version wins.
+tinted-theming collection, the repository's version wins. Only the
+repository's `base16/`, `base24/` and `tinted8/` folders are checked
+out, so other files in it, such as app templates, can't break applying
+its palettes.
 
 `path` can also be a local folder with the same layout. A local folder
 is used as it is: Update System never pulls it.
